@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste – Sensor Simulator (Firestore + RTDB)</title>
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root{ --radius:12px; --gap:12px; --pad:16px; --fg:#0f172a; --muted:#6b7280; --line:#e5e7eb; --brand:#2563eb; }
+    *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Arial}
+    body{max-width:980px;margin:28px auto;padding:0 16px;color:var(--fg)}
+    h1{font-size:22px;margin:0 0 14px}
+    h2{font-size:18px;margin:0 0 10px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 2px 6px rgba(0,0,0,.06);padding:var(--pad);margin:14px 0}
+    .row{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:center}
+    label{display:block;margin:6px 0 4px}
+    input,select,button{padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px}
+    button{cursor:pointer}
+    .primary{background:var(--brand);color:#fff;border:none}
+    .ghost{background:#f3f4f6}
+    .danger{background:#ef4444;color:#fff;border:none}
+    .muted{color:var(--muted);font-size:13px}
+    .ok{color:#16a34a}.err{color:#dc2626}
+    code{background:#f8fafc;border:1px dashed var(--line);padding:2px 6px;border-radius:8px}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:var(--gap)}
+    @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <h1>Smart Waste – Sensor Simulator (Firestore + RTDB)</h1>
+  <p class="muted">จำลองการส่งข้อมูลจาก Ultrasonic / RFID / GPS ไปยัง <b>Cloud Firestore</b> และ <b>Realtime Database</b></p>
+
+  <!-- ───────────────────────── 1) ถังขยะ (Ultrasonic + RFID) ───────────────────────── -->
+  <div class="card">
+    <h2>1) ถังขยะ (Ultrasonic + RFID)</h2>
+    <div class="grid2">
+      <div>
+        <label>เลือกถังจาก Firestore (collection <code>smartbins</code>)</label>
+        <select id="binSelect"><option value="">(กำลังโหลด…)</option></select>
+        <div id="binInfo" class="muted" style="margin-top:6px">(ยังไม่ได้เลือกถัง)</div>
+      </div>
+      <div>
+        <label>ระดับความเต็มปัจจุบัน</label>
+        <div class="row">
+          <input id="fillShown" type="number" min="0" max="100" style="width:120px" readonly>
+          <button class="primary" id="btnFillUp">+ เพิ่ม 5%</button>
+          <button class="ghost"   id="btnFillDown">- ลด 5%</button>
+          <button class="ghost"   id="btnSet">บันทึกค่ากำหนด…</button>
+          <button class="danger"  id="btnEmpty">เทถัง (RFID)</button>
+        </div>
+      </div>
+    </div>
+    <p id="binMsg" class="muted" style="margin-top:8px"></p>
+    <div class="muted" style="margin-top:8px">
+      Path เอกสารถัง: <code>smartbins/&lt;binId&gt;</code> • Log เทถัง: <code>smartbins/&lt;binId&gt;/rfidEmptyLogs/&lt;autoId&gt;</code><br>
+      พิกัดลงทะเบียนใช้ฟิลด์ <code>lat,lng</code> (จากหน้า regis) • พิกัดขณะเทเก็บที่ <code>lastEmptiedLat,lastEmptiedLng</code>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── 2) รถเก็บขยะ (GPS) ───────────────────────── -->
+  <div class="card">
+    <h2>2) รถเก็บขยะ (GPS)</h2>
+    <div class="grid2">
+      <div>
+        <label>เลือกรถจาก Firestore (collection <code>trucks</code>)</label>
+        <div class="row">
+          <select id="truckSelect" style="min-width:180px"><option value="">(กำลังโหลด…)</option></select>
+          <button id="btnCreateTruck" class="primary">+ สร้างรถใหม่</button>
+        </div>
+        <p class="muted" id="truckInfo" style="margin-top:6px">(ยังไม่ได้เลือกรถ)</p>
+      </div>
+      <div>
+        <label>โหมดส่งพิกัด</label>
+        <div class="row">
+          <select id="mode">
+            <option value="watch">ใช้ GPS จริง (watchPosition)</option>
+            <option value="simulate">จำลองการวิ่ง (Random Walk)</option>
+          </select>
+          <label>คาบส่ง (ms)</label>
+          <input id="sendMs" type="number" value="2000" min="250" step="250" style="width:120px">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="btnStart" class="primary">เริ่มส่งพิกัด</button>
+          <button id="btnStop"  class="ghost" disabled>หยุดส่ง</button>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div>พิกัดล่าสุด (FS/RTDB): <code id="loc">—</code></div>
+      <div class="muted">Firestore: <code>trucks/&lt;truckId&gt;</code> • RTDB สด: <code>trucks_live/&lt;truckId&gt;</code></div>
+    </div>
+    <p id="truckMsg" class="muted" style="margin-top:8px"></p>
+  </div>
+
+  <script>
+    /* ========== Firebase Config ========== */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // Firestore + RTDB
+    const db   = firebase.firestore();
+    const rtdb = firebase.database();
+
+    /* ========== 1) ถังขยะ ========== */
+    const binSel = document.getElementById('binSelect');
+    const binInfo= document.getElementById('binInfo');
+    const fillShown=document.getElementById('fillShown');
+    const binMsg = document.getElementById('binMsg');
+    let binRef = null, binUnsub = null;
+
+    async function loadBins(){
+      const snap = await db.collection('smartbins').orderBy('createdAt','desc').get();
+      binSel.innerHTML = '<option value="">-- เลือกถัง --</option>';
+      snap.forEach(doc=>{
+        const d=doc.data()||{};
+        const opt=document.createElement('option');
+        opt.value=doc.id;
+        opt.textContent = d.name ? `${doc.id} • ${d.name}` : doc.id;
+        binSel.appendChild(opt);
+      });
+    }
+    loadBins();
+
+    binSel.addEventListener('change', ()=>{
+      if(binUnsub) binUnsub();
+      const id = binSel.value;
+      if(!id){ binInfo.textContent='(ยังไม่ได้เลือกถัง)'; fillShown.value=''; return; }
+      binRef = db.collection('smartbins').doc(id);
+      binUnsub = binRef.onSnapshot(doc=>{
+        if(!doc.exists){ binInfo.textContent='ไม่พบเอกสารนี้'; return; }
+        const d = doc.data()||{};
+        fillShown.value = Number(d.fillLevel||0);
+        binInfo.innerHTML =
+          `ID: <b>${doc.id}</b> • ชื่อ: ${d.name||'—'} • RFID: ${d.rfid||'—'}`
+          + ` • อัปเดตล่าสุด: ${d.updatedAt?.toDate?.().toLocaleString?.()||'—'}`;
+      });
+    });
+
+    function clamp01_100(v){return Math.max(0,Math.min(100,v));}
+    async function setFill(val){
+      if(!binRef){ binMsg.textContent='ยังไม่ได้เลือกถัง'; return; }
+      val = clamp01_100(Number(val)||0);
+      await binRef.update({ fillLevel: val, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      binMsg.textContent = `✅ อัปเดต fillLevel = ${val}%`; binMsg.className='ok';
+    }
+    document.getElementById('btnFillUp').onclick   = ()=> setFill((+fillShown.value||0)+5);
+    document.getElementById('btnFillDown').onclick = ()=> setFill((+fillShown.value||0)-5);
+    document.getElementById('btnSet').onclick = async ()=>{
+      if(!binRef) return;
+      const val = Number(prompt("กรอกค่า fillLevel ใหม่ (0–100):", fillShown.value||0));
+      if(isNaN(val)) return;
+      await setFill(val);
+    };
+
+    /* ====== เพิ่ม: เทถัง + เก็บพิกัดขณะเท + ชื่อรถ ====== */
+    // จะอ่านพิกัดสดจาก RTDB path trucks_live/<truckId>
+    document.getElementById('btnEmpty').onclick = async ()=>{
+      if(!binRef){
+        binMsg.textContent = 'กรุณาเลือกถังก่อน'; binMsg.className='err'; return;
+      }
+      try{
+        // ดึงพิกัดรถจาก RTDB ถ้าเลือกไว้
+        let emptiedLat = null, emptiedLng = null;
+        if(currentTruckId){
+          const liveSnap = await rtdb.ref('trucks_live/'+currentTruckId).once('value');
+          const live = liveSnap.val() || null;
+          if(live && typeof live.lat==='number' && typeof live.lng==='number'){
+            emptiedLat = live.lat; emptiedLng = live.lng;
+          }
+        }
+
+        // อ่านเอกสารถัง 1 ครั้งเพื่อดึงพิกัดลงทะเบียน (lat/lng) ไปเก็บใน log ด้วย
+        const binSnap = await binRef.get();
+        const b = binSnap.data() || {};
+
+        // อัปเดตสถานะถัง + บันทึกฟิลด์แยกพิกัดขณะเท + รถที่เท
+        await binRef.update({
+          fillLevel: 0,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastEmptiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastEmptiedLat: emptiedLat,             // พิกัด "ตอนเท"
+          lastEmptiedLng: emptiedLng,
+          lastEmptiedByTruck: currentTruckId || null,
+          lastEmptiedByTruckName: currentTruckName || null
+        });
+
+        // ลง log การเท (เก็บทั้งพิกัดตอนเท และพิกัดลงทะเบียนปัจจุบัน)
+        await binRef.collection('rfidEmptyLogs').add({
+          ts: firebase.firestore.FieldValue.serverTimestamp(),
+          truckId: currentTruckId || null,
+          truckName: currentTruckName || null,
+          emptiedLat: emptiedLat,
+          emptiedLng: emptiedLng,
+          regLat: (typeof b.lat === 'number') ? b.lat : null,
+          regLng: (typeof b.lng === 'number') ? b.lng : null
+        });
+
+        binMsg.textContent='✅ เทถังและบันทึกพิกัด/เวลา/รถที่เท แล้ว';
+        binMsg.className='ok';
+      }catch(e){
+        binMsg.textContent='❌ เทถังไม่สำเร็จ: '+e.message;
+        binMsg.className='err';
+      }
+    };
+
+    /* ========== 2) รถเก็บขยะ (ส่งพิกัด: Firestore + RTDB สด) ========== */
+    const truckSel = document.getElementById('truckSelect');
+    const truckInfo= document.getElementById('truckInfo');
+    const truckMsg = document.getElementById('truckMsg');
+    const locEl    = document.getElementById('loc');
+    const modeSel  = document.getElementById('mode');
+    const sendMsEl = document.getElementById('sendMs');
+    const btnStart = document.getElementById('btnStart');
+    const btnStop  = document.getElementById('btnStop');
+
+    let truckRef=null, posTimer=null, geoWatchId=null, truckUnsub=null;
+
+    // เก็บตัวตนรถเพื่อใช้ตอนเทถัง
+    let currentTruckId = null;
+    let currentTruckName = null;
+
+    async function loadTrucks(){
+      const snap = await db.collection('trucks').get();
+      truckSel.innerHTML = '<option value="">-- เลือกรถ --</option>';
+      snap.forEach(doc=>{
+        const d=doc.data()||{};
+        const opt=document.createElement('option');
+        opt.value=doc.id;
+        opt.textContent = d.name ? `${doc.id} • ${d.name}` : doc.id;
+        truckSel.appendChild(opt);
+      });
+    }
+    loadTrucks();
+
+    truckSel.addEventListener('change', ()=>{
+      if(truckUnsub) truckUnsub();
+      const id = truckSel.value;
+      currentTruckId = id || null;
+      currentTruckName = null;
+
+      if(!id){ truckInfo.textContent='(ยังไม่ได้เลือกรถ)'; return; }
+
+      truckRef = db.collection('trucks').doc(id);
+      truckUnsub = truckRef.onSnapshot(doc=>{
+        if(!doc.exists){ truckInfo.textContent='ไม่พบรถนี้ใน Firestore'; return; }
+        const d = doc.data()||{};
+        currentTruckName = d.name || null;
+        truckInfo.innerHTML = `ID: <b>${doc.id}</b> • ชื่อ: ${d.name||'—'} • อัปเดตล่าสุด: ${d.updatedAt?.toDate?.().toLocaleString?.()||'—'}`;
+        if(d.lat && d.lng) locEl.textContent = `${d.lat.toFixed?.(6)}, ${d.lng.toFixed?.(6)}`;
+      });
+    });
+
+    // สร้างรถใหม่
+    document.getElementById('btnCreateTruck').onclick = async ()=>{
+      const id = prompt("ระบุ Truck ID (เช่น TRUCK01):","TRUCK01");
+      if(!id) return;
+      const name = prompt("ตั้งชื่อรถ (เช่น รถเขตเมือง)","รถเขตเมือง");
+      await db.collection('trucks').doc(id).set({
+        name: name||null, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+      await loadTrucks();
+      truckSel.value = id;
+      truckSel.dispatchEvent(new Event('change'));
+    };
+
+    // เริ่ม/หยุด ส่งพิกัด (เขียน Firestore + RTDB สด)
+    btnStart.onclick = ()=>{
+      if(!truckRef){ truckMsg.textContent='กรุณาเลือกรถก่อน'; truckMsg.className='err'; return; }
+      btnStart.disabled=true; btnStop.disabled=false; truckMsg.textContent='เริ่มส่งพิกัด…'; truckMsg.className='muted';
+      const mode = modeSel.value;
+      const ms = Math.max(250, Number(sendMsEl.value)||2000);
+
+      if(mode==='watch' && navigator.geolocation){
+        geoWatchId = navigator.geolocation.watchPosition(
+          pos => saveTruckPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.speed||null, pos.coords.heading||null),
+          err => { truckMsg.textContent = '⚠️ GPS error: '+err.message; truckMsg.className='err'; },
+          { enableHighAccuracy:true, maximumAge:0, timeout:10000 }
+        );
+      }else{
+        let lat = 6.46007, lng = 100.35933; // เริ่มแถว UniMAP
+        posTimer = setInterval(()=>{
+          const dLat = (Math.random()-0.5)*0.0008;
+          const dLng = (Math.random()-0.5)*0.0008;
+          lat += dLat; lng += dLng;
+          saveTruckPosition(lat,lng,null,null);
+        }, ms);
+      }
+    };
+
+    btnStop.onclick = ()=>{
+      if(geoWatchId!==null){ navigator.geolocation.clearWatch(geoWatchId); geoWatchId=null; }
+      if(posTimer){ clearInterval(posTimer); posTimer=null; }
+      btnStart.disabled=false; btnStop.disabled=true;
+      truckMsg.textContent='หยุดส่งพิกัดแล้ว'; truckMsg.className='muted';
+    };
+
+    // บันทึกพิกัดทั้ง Firestore (หลัก + ประวัติ) และ RTDB สด
+    async function saveTruckPosition(lat,lng,speed,heading){
+      locEl.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+      // Firestore: เอกสารหลัก
+      await truckRef.set({
+        lat, lng, speed: speed??null, heading: heading??null,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+
+      // Firestore: ประวัติ
+      await truckRef.collection('positions').add({
+        lat, lng, speed: speed??null, heading: heading??null,
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // RTDB สด (สำหรับ live map หน้า truck.html)
+      if(currentTruckId){
+        await rtdb.ref('trucks_live/'+currentTruckId).set({
+          lat, lng, speed: speed ?? null, heading: heading ?? null,
+          ts: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+
+      truckMsg.textContent='✅ ส่งพิกัดแล้ว';
+      truckMsg.className='ok';
+    }
+  </script>
+</body>
+</html>

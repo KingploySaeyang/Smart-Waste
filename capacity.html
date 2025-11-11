@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - ความจุถังขยะ</title>
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
+    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row;}
+
+    /* Sidebar */
+    .sidebar{width:250px;background:#2f3640;color:#f5f6fa;display:flex;flex-direction:column;padding-top:20px;transition:all 0.3s ease;}
+    .sidebar h2{text-align:center;color:#00a8ff;margin-bottom:25px}
+    .menu a{display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;border-left:4px solid transparent;transition:.3s}
+    .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
+
+    /* ปุ่มเปิดเมนูสำหรับมือถือ */
+    .toggle-btn{
+      display:none;position:fixed;top:14px;left:14px;
+      background:#00a8ff;color:#fff;border:none;padding:8px 12px;
+      border-radius:6px;cursor:pointer;z-index:1000;
+    }
+
+    /* Main */
+    main{flex:1;padding:30px;overflow-y:auto}
+    h1{color:#2f3640;margin-bottom:16px}
+    .content{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+
+    /* Card + table */
+    .card{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
+    label{display:block;margin-bottom:6px}
+    select,input{padding:9px 12px;border:1px solid #d1d5db;border-radius:10px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    table{width:100%;border-collapse:collapse;margin-top:12px;overflow-x:auto;display:block}
+    th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+    th{background:#fafafa}
+    .muted{color:#6b7280;font-size:12px}
+    code{background:#f8fafc;border:1px dashed #e5e7eb;border-radius:8px;padding:2px 6px}
+    .empty{padding:10px;border:1px dashed #e5e7eb;border-radius:10px;background:#fafafa}
+    .chip{display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;padding:6px 10px;border-radius:999px;font-size:12px}
+
+    /* Responsive */
+    @media (max-width:900px){
+      body{flex-direction:column}
+      .sidebar{position:fixed;left:-250px;top:0;height:100%;z-index:999;}
+      .sidebar.show{left:0}
+      .toggle-btn{display:block}
+      main{padding:70px 16px 20px}
+      h1{text-align:center}
+      .row{flex-direction:column;align-items:flex-start}
+      select,input{width:100%;max-width:100%}
+      table{font-size:14px}
+      th,td{padding:6px 8px}
+    }
+
+    /* ========== OVERRIDES: ทำให้ปุ่ม/ฟอร์ม/หัวข้อ เท่ากันทุกหน้า ========== */
+
+/* ขนาดฐานบนมือถือ: ให้กดง่าย ไม่เล็ก */
+:root{
+  --btn-min-h: 44px;
+  --btn-pad-x: 16px;
+  --btn-pad-y: 10px;
+  --btn-radius: 12px;
+  --btn-font: 16px;
+}
+
+/* หัวข้อให้ยึดตำแหน่ง/ระยะเดียวกันทุกหน้า */
+h1{ margin: 0 0 16px; line-height: 1.25; }
+h3{ margin: 0 0 10px; line-height: 1.35; }
+
+/* ฟอร์มให้เท่ากัน: input/select/button */
+input[type="text"],
+input[type="number"],
+select,
+button{
+  min-height: var(--btn-min-h);
+  padding: var(--btn-pad-y) var(--btn-pad-x);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font);
+  line-height: 1.2;
+}
+
+/* ปุ่มฐาน (ใช้ครอบทั้ง primary/ghost) */
+button,
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+  border: 0;
+}
+
+/* ธีมปุ่ม */
+.primary{ background:#2563eb; color:#fff; }
+.primary:hover{ filter: brightness(1.05); }
+.primary:active{ transform: translateY(1px); }
+
+.ghost{ background:#f4f4f5; color:#111827; }
+.ghost:hover{ filter: brightness(0.98); }
+.ghost:active{ transform: translateY(1px); }
+
+/* ป้าย chip ให้สูงเท่าปุ่ม */
+.chip{
+  min-height: var(--btn-min-h);
+  padding: 0 var(--btn-pad-x);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+}
+
+/* ปุ่ม ☰ เมนู ให้หน้าตา/ขนาดเหมือนกันทุกหน้า */
+.toggle-btn{
+  min-height: var(--btn-min-h);
+  padding: var(--btn-pad-y) var(--btn-pad-x);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font);
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+/* ตาราง: ปุ่มลบให้สูงเท่ากัน */
+table button{ min-height: var(--btn-min-h); padding: 6px 12px; border-radius: 10px; }
+
+/* การ์ด/คอนเทนต์ ให้ระยะหายใจเท่ากัน */
+.content{ padding: 24px; border-radius: 12px; }
+.card{ padding: 14px; border-radius: 12px; }
+
+/* แถวฟอร์ม: ให้คอลัมน์กว้างเต็มบนมือถือ */
+@media (max-width: 900px){
+  .row{ flex-direction: column; align-items: stretch; }
+  .row > div{ width: 100%; }
+  input[type="text"], input[type="number"], select{ width: 100%; }
+  h1{ text-align: center; }
+}
+
+/* โฟกัสสำหรับคีย์บอร์ด (a11y) */
+button:focus, .toggle-btn:focus, .primary:focus, .ghost:focus,
+input:focus, select:focus{
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+  </style>
+</head>
+<body>
+  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu">
+      <a href="home.html">หน้าหลัก</a>
+      <a href="register.html">ลงทะเบียน</a>
+      <a href="capacity.html" class="active">ความจุถังขยะ</a>
+      <a href="truck.html">ตำแหน่งรถเก็บขยะ</a>
+      <a href="report.html">รายงานย้อนหลัง</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <h1>ความจุถังขยะ</h1>
+    <div class="content">
+      <p class="muted" style="margin-bottom:8px">ค้นหาและดูรายการถังจาก Firestore แบบเรียลไทม์</p>
+
+      <!-- การ์ดตัวกรอง -->
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>โหมดตัวกรอง</label>
+            <select id="mode">
+              <option value="eq">เท่ากับ</option>
+              <option value="gte">มากกว่าหรือเท่ากับ</option>
+              <option value="lte">น้อยกว่าหรือเท่ากับ</option>
+              <option value="between">ระหว่างช่วง (รวมขอบ)</option>
+            </select>
+          </div>
+          <div id="singleBox">
+            <label>ค่า <b>fillLevel</b> (0–100)</label>
+            <select id="level"></select>
+          </div>
+          <div id="rangeBox" style="display:none">
+            <label>ช่วงค่า <b>fillLevel</b> (0–100)</label>
+            <select id="minLevel"></select> –
+            <select id="maxLevel"></select>
+          </div>
+          <div class="muted">คอลเลกชัน: <code>smartbins</code></div>
+        </div>
+        <p id="status" class="muted" style="margin-top:6px"></p>
+      </div>
+
+      <!-- ตารางผลลัพธ์ -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="chip"><span id="count">0</span> รายการ</div>
+          <div class="muted">เรียง “ล่าสุดก่อน” โดยอิงเวลาฟิลด์ <code>createdAt</code></div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>name</th>
+                <th>rfid</th>
+                <th>fillLevel</th>
+                <th>(lat,lng)</th>
+                <th>เมื่อ</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty" style="display:none">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
+
+    /* Firebase Config */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0",
+      measurementId: "G-B3D2V8DJC1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const col = db.collection('smartbins');
+
+    const modeSel=document.getElementById('mode'),
+          levelSel=document.getElementById('level'),
+          minSel=document.getElementById('minLevel'),
+          maxSel=document.getElementById('maxLevel'),
+          singleBox=document.getElementById('singleBox'),
+          rangeBox=document.getElementById('rangeBox'),
+          rows=document.getElementById('rows'),
+          emptyNote=document.getElementById('empty'),
+          status=document.getElementById('status'),
+          countEl=document.getElementById('count');
+
+    function fill0to100(sel){
+      sel.innerHTML='';
+      for(let i=0;i<=100;i++){
+        const opt=document.createElement('option');
+        opt.value=i; opt.textContent=i;
+        sel.appendChild(opt);
+      }
+    }
+    [levelSel,minSel,maxSel].forEach(fill0to100);
+    levelSel.value=100; minSel.value=80; maxSel.value=100;
+    let unsubscribe=null;
+
+    function buildQuery(){
+      const mode=modeSel.value;
+      if(typeof unsubscribe==='function')unsubscribe();
+
+      singleBox.style.display=(mode==='between')?'none':'';
+      rangeBox.style.display=(mode==='between')?'':'none';
+
+      let q=col;
+      if(mode==='eq'){const n=+levelSel.value;status.textContent=`fillLevel == ${n}`;q=q.where('fillLevel','==',n);}
+      else if(mode==='gte'){const n=+levelSel.value;status.textContent=`fillLevel >= ${n}`;q=q.where('fillLevel','>=',n);}
+      else if(mode==='lte'){const n=+levelSel.value;status.textContent=`fillLevel <= ${n}`;q=q.where('fillLevel','<=',n);}
+      else if(mode==='between'){const a=+minSel.value,b=+maxSel.value;const lo=Math.min(a,b),hi=Math.max(a,b);status.textContent=`${lo} <= fillLevel <= ${hi}`;q=q.where('fillLevel','>=',lo).where('fillLevel','<=',hi);}
+
+      unsubscribe=q.onSnapshot(snap=>{
+        const arr=[];snap.forEach(doc=>{const d=doc.data()||{};arr.push({...d,id:doc.id,_ts:d.createdAt?.toMillis?d.createdAt.toMillis():0});});
+        arr.sort((a,b)=>b._ts-a._ts);
+        rows.innerHTML='';
+        arr.forEach(d=>{
+          const when=d.createdAt?.toDate?d.createdAt.toDate().toLocaleString():'—';
+          const tr=document.createElement('tr');
+          tr.innerHTML=`
+            <td><code>${d.id}</code></td>
+            <td>${d.name??'—'}</td>
+            <td>${d.rfid??'—'}</td>
+            <td>${d.fillLevel??'—'}</td>
+            <td>${(d.lat??'—')}, ${(d.lng??'—')}</td>
+            <td class="muted">${when}</td>`;
+          rows.appendChild(tr);
+        });
+        countEl.textContent=arr.length;
+        emptyNote.style.display=arr.length?'none':'block';
+      },err=>{
+        status.textContent='เกิดข้อผิดพลาด: '+err.message;
+      });
+    }
+
+    buildQuery();
+    [modeSel,levelSel,minSel,maxSel].forEach(el=>el.addEventListener('change',buildQuery));
+  </script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - รายงานย้อนหลัง</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
+    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row;}
+
+    /* Sidebar */
+    .sidebar{
+      width:250px;background:#2f3640;color:#f5f6fa;
+      display:flex;flex-direction:column;padding-top:20px;
+      transition:all .3s ease;
+    }
+    .sidebar h2{text-align:center;color:#00a8ff;margin-bottom:25px}
+    .menu a{
+      display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;
+      border-left:4px solid transparent;transition:.3s;
+    }
+    .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
+
+    /* ปุ่มเปิด/ปิดเมนูบนมือถือ */
+    .toggle-btn{
+      display:none;position:fixed;top:14px;left:14px;
+      background:#00a8ff;color:#fff;border:none;padding:8px 12px;
+      border-radius:6px;cursor:pointer;z-index:1000;
+    }
+
+    /* Main */
+    main{flex:1;padding:30px;overflow-y:auto}
+    h1{color:#2f3640;margin-bottom:16px}
+    .content{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+    .zone-card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:8px;cursor:pointer;transition:.2s;}
+    .zone-card:hover{background:#f0f4ff;border-color:#2563eb;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+    table{width:100%;border-collapse:collapse;margin-top:16px;}
+    th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;}
+    th{background:#fafafa;}
+    .muted{color:#6b7280;font-size:13px;}
+
+    /* Responsive */
+    @media(max-width:900px){
+      body{flex-direction:column}
+      .sidebar{position:fixed;left:-250px;top:0;height:100%;z-index:999;}
+      .sidebar.show{left:0}
+      .toggle-btn{display:block}
+      main{padding:70px 16px 20px}
+      h1{text-align:center}
+    }
+
+    /* ========== ปรับขนาดและสไตล์ให้เหมือนทุกหน้า ========== */
+    :root{
+      --btn-min-h:44px;
+      --btn-pad-x:16px;
+      --btn-pad-y:10px;
+      --btn-radius:12px;
+      --btn-font:16px;
+    }
+
+    button,.btn{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-height:var(--btn-min-h);padding:var(--btn-pad-y) var(--btn-pad-x);
+      border-radius:var(--btn-radius);font-size:var(--btn-font);line-height:1.2;
+      border:0;cursor:pointer;
+    }
+    .toggle-btn{box-shadow:0 2px 6px rgba(0,0,0,.08);}
+    h1{margin:0 0 16px;line-height:1.25;}
+  </style>
+</head>
+
+<body>
+  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu">
+      <a href="home.html">หน้าหลัก</a>
+      <a href="register.html">ลงทะเบียน</a>
+      <a href="capacity.html">ความจุถังขยะ</a>
+      <a href="truck.html">ตำแหน่งรถเก็บขยะ</a>
+      <a href="report.html" class="active">รายงานย้อนหลัง</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <h1>รายงานย้อนหลัง</h1>
+    <div class="content">
+      <h3>สรุปจำนวนครั้งที่ถังขยะเต็ม (≥80%) ต่อเขต</h3>
+      <canvas id="zoneChart" style="max-width:100%;height:320px;margin:12px 0 24px;"></canvas>
+
+      <hr style="margin:24px 0;">
+      <h3>เลือกเขตเพื่อดูรายละเอียด</h3>
+      <div id="zones" class="grid"></div>
+      <hr style="margin:16px 0;">
+      <div id="report"></div>
+    </div>
+  </main>
+
+  <script>
+    function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
+
+    /* ===== Firebase ===== */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const col = db.collection('smartbins');
+
+    const zonesDiv = document.getElementById('zones');
+    const reportDiv = document.getElementById('report');
+    let chart = null;
+
+    async function loadSummary(){
+      const snap = await col.get();
+      const counter = {}; 
+      const zones = new Set();
+
+      snap.forEach(doc=>{
+        const d = doc.data();
+        if(!d.zone) return;
+        zones.add(d.zone);
+        if(d.fillLevel >= 80){
+          if(!counter[d.zone]) counter[d.zone]=0;
+          counter[d.zone]++;
+        }
+      });
+
+      // Chart.js
+      const labels = Object.keys(counter);
+      const data = Object.values(counter);
+      const ctx = document.getElementById("zoneChart").getContext("2d");
+      if(chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label:"จำนวนครั้งที่ถังเต็ม",
+            data,
+            backgroundColor:"#2563eb",
+            borderRadius:8
+          }]
+        },
+        options:{
+          responsive:true,
+          scales:{
+            y:{beginAtZero:true,title:{display:true,text:"จำนวนครั้ง"}},
+            x:{title:{display:true,text:"เขตพื้นที่"}}
+          },
+          plugins:{
+            legend:{display:false},
+            tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y} ครั้ง`}}
+          }
+        }
+      });
+
+      zonesDiv.innerHTML = '';
+      zones.forEach(z=>{
+        const div = document.createElement('div');
+        div.className = 'zone-card';
+        div.textContent = z;
+        div.onclick = ()=>showReport(z);
+        zonesDiv.appendChild(div);
+      });
+      if(zones.size===0) zonesDiv.innerHTML='<p class="muted">ยังไม่มีข้อมูลเขตในระบบ</p>';
+    }
+
+    async function showReport(zone){
+      reportDiv.innerHTML = `<h3>รายงาน: ${zone}</h3><p class="muted">กำลังโหลดข้อมูล...</p>`;
+      const snap = await col.where('zone','==',zone).get();
+      const counter = {};
+      snap.forEach(doc=>{
+        const d = doc.data();
+        if(!d.name) return;
+        if(!counter[d.name]) counter[d.name]=0;
+        if(d.fillLevel>=80) counter[d.name]++;
+      });
+
+      const sorted = Object.entries(counter).sort((a,b)=>b[1]-a[1]);
+      if(sorted.length===0){
+        reportDiv.innerHTML = `<p class="muted">ยังไม่มีข้อมูลการเต็มของถังในเขตนี้</p>`;
+        return;
+      }
+
+      let html = `<table><thead><tr><th>ชื่อถัง</th><th>จำนวนครั้งที่เต็ม (≥80%)</th></tr></thead><tbody>`;
+      sorted.forEach(([name,count])=>{
+        html += `<tr><td>${name}</td><td>${count}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+      reportDiv.innerHTML = html;
+    }
+
+    loadSummary();
+  </script>
+</body>
+</html>

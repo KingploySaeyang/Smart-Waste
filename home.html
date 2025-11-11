@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - หน้าหลักผู้ดูแลระบบ</title>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
+    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row}
+
+    /* ─ Sidebar ─ */
+    .sidebar{
+      width:250px;background:#2f3640;color:#f5f6fa;
+      display:flex;flex-direction:column;padding-top:20px;
+      transition:all 0.3s ease;
+    }
+    .sidebar h2{text-align:center;color:#00a8ff;margin-bottom:25px}
+    .menu a{
+      display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;
+      border-left:4px solid transparent;transition:.3s;
+    }
+    .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
+
+    /* ─ ปุ่มเปิด/ปิดเมนู (มือถือ) ─ */
+    .toggle-btn{
+      display:none;position:fixed;top:14px;left:14px;
+      background:#00a8ff;color:#fff;border:none;padding:8px 12px;
+      border-radius:6px;cursor:pointer;z-index:1000;
+    }
+
+    /* ─ Main ─ */
+    main{flex:1;padding:30px;overflow-y:auto}
+    h1{color:#2f3640;margin-bottom:16px}
+    .content{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+
+    /* ─ Dashboard Cards ─ */
+    .cards{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px}
+    .card{
+      flex:1 1 220px;background:#f9fafb;padding:20px;border-radius:10px;
+      border:1px solid #e5e7eb;text-align:center;
+      box-shadow:0 2px 4px rgba(0,0,0,0.05);
+      transition:0.3s;
+    }
+    .card:hover{background:#e0f2fe;transform:translateY(-3px)}
+    .card h3{font-size:18px;color:#2f3640;margin-bottom:6px}
+    .card p{font-size:22px;font-weight:bold;color:#00a8ff}
+
+    /* ─ Responsive ─ */
+    @media (max-width:900px){
+      body{flex-direction:column}
+      .sidebar{position:fixed;left:-250px;top:0;height:100%;z-index:999;}
+      .sidebar.show{left:0}
+      .toggle-btn{display:block}
+      main{padding:70px 16px 20px}
+      .cards{flex-direction:column}
+      .card{width:100%}
+    }
+
+    /* ========== OVERRIDES: ทำให้ปุ่ม/ฟอร์ม/หัวข้อ เท่ากันทุกหน้า ========== */
+
+/* ขนาดฐานบนมือถือ: ให้กดง่าย ไม่เล็ก */
+:root{
+  --btn-min-h: 44px;
+  --btn-pad-x: 16px;
+  --btn-pad-y: 10px;
+  --btn-radius: 12px;
+  --btn-font: 16px;
+}
+
+/* หัวข้อให้ยึดตำแหน่ง/ระยะเดียวกันทุกหน้า */
+h1{ margin: 0 0 16px; line-height: 1.25; }
+h3{ margin: 0 0 10px; line-height: 1.35; }
+
+/* ฟอร์มให้เท่ากัน: input/select/button */
+input[type="text"],
+input[type="number"],
+select,
+button{
+  min-height: var(--btn-min-h);
+  padding: var(--btn-pad-y) var(--btn-pad-x);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font);
+  line-height: 1.2;
+}
+
+/* ปุ่มฐาน (ใช้ครอบทั้ง primary/ghost) */
+button,
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+  border: 0;
+}
+
+/* ธีมปุ่ม */
+.primary{ background:#2563eb; color:#fff; }
+.primary:hover{ filter: brightness(1.05); }
+.primary:active{ transform: translateY(1px); }
+
+.ghost{ background:#f4f4f5; color:#111827; }
+.ghost:hover{ filter: brightness(0.98); }
+.ghost:active{ transform: translateY(1px); }
+
+/* ป้าย chip ให้สูงเท่าปุ่ม */
+.chip{
+  min-height: var(--btn-min-h);
+  padding: 0 var(--btn-pad-x);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+}
+
+/* ปุ่ม ☰ เมนู ให้หน้าตา/ขนาดเหมือนกันทุกหน้า */
+.toggle-btn{
+  min-height: var(--btn-min-h);
+  padding: var(--btn-pad-y) var(--btn-pad-x);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font);
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+/* ตาราง: ปุ่มลบให้สูงเท่ากัน */
+table button{ min-height: var(--btn-min-h); padding: 6px 12px; border-radius: 10px; }
+
+/* การ์ด/คอนเทนต์ ให้ระยะหายใจเท่ากัน */
+.content{ padding: 24px; border-radius: 12px; }
+.card{ padding: 14px; border-radius: 12px; }
+
+/* แถวฟอร์ม: ให้คอลัมน์กว้างเต็มบนมือถือ */
+@media (max-width: 900px){
+  .row{ flex-direction: column; align-items: stretch; }
+  .row > div{ width: 100%; }
+  input[type="text"], input[type="number"], select{ width: 100%; }
+  h1{ text-align: center; }
+}
+
+/* โฟกัสสำหรับคีย์บอร์ด (a11y) */
+button:focus, .toggle-btn:focus, .primary:focus, .ghost:focus,
+input:focus, select:focus{
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+  </style>
+</head>
+<body>
+  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu">
+      <a href="home.html" class="active">หน้าหลัก</a>
+      <a href="register.html">ลงทะเบียน</a>
+      <a href="capacity.html">ความจุถังขยะ</a>
+      <a href="truck.html">ตำแหน่งรถเก็บขยะ</a>
+      <a href="report.html">รายงานย้อนหลัง</a>
+    </nav>
+  </aside>
+
+  <main>
+    <h1>หน้าหลักผู้ดูแลระบบ</h1>
+    <div class="content">
+      <p>ยินดีต้อนรับเข้าสู่ระบบจัดการ <b>Smart Waste</b></p>
+      <p class="muted" style="color:#6b7280;margin-bottom:20px;">เลือกเมนูด้านซ้ายเพื่อเริ่มจัดการข้อมูลได้เลย</p>
+
+      <div class="cards">
+        <div class="card"><h3>จำนวนถังทั้งหมด</h3><p id="totalBins">—</p></div>
+        <div class="card"><h3>ถังเต็ม (≥80%)</h3><p id="fullBins">—</p></div>
+        <div class="card"><h3>ถังเกือบเต็ม (50–79%)</h3><p id="midBins">—</p></div>
+        <div class="card"><h3>ถังว่าง (&lt;50%)</h3><p id="lowBins">—</p></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script>
+    function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
+
+    var firebaseConfig={
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0",
+      measurementId:"G-B3D2V8DJC1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db=firebase.firestore();
+
+    const totalEl=document.getElementById("totalBins");
+    const fullEl=document.getElementById("fullBins");
+    const midEl=document.getElementById("midBins");
+    const lowEl=document.getElementById("lowBins");
+
+    function updateDashboard(){
+      db.collection("smartbins").onSnapshot(snap=>{
+        let total=0,full=0,mid=0,low=0;
+        snap.forEach(doc=>{
+          const d=doc.data();
+          if(d.fillLevel!==undefined && d.fillLevel!==null){
+            total++;
+            if(d.fillLevel>=80) full++;
+            else if(d.fillLevel>=50) mid++;
+            else low++;
+          }
+        });
+        totalEl.textContent=total;
+        fullEl.textContent=full;
+        midEl.textContent=mid;
+        lowEl.textContent=low;
+      });
+    }
+    updateDashboard();
+  </script>
+</body>
+</html>
