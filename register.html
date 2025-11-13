@@ -23,20 +23,19 @@
     fieldset{border:1px solid #e3e3e3;border-radius:12px;margin:16px 0;padding:16px}
     legend{font-weight:bold}
     label{display:block;margin:10px 0 6px}
-    input[type="text"],input[type="number"],select{
-      width:100%;padding:10px;border:1px solid #d7d7d7;border-radius:10px;
-    }
+    input[type="text"],input[type="number"],select{width:100%;padding:10px;border:1px solid #d7d7d7;border-radius:10px}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .row>div{flex:1 1 240px}
     button{padding:10px 14px;border:0;border-radius:10px;cursor:pointer}
     .primary{background:#2563eb;color:#fff}
     .ghost{background:#f4f4f5}
+    .danger{background:#ef4444;color:#fff}
     table{width:100%;border-collapse:collapse;margin-top:12px;overflow-x:auto;display:block}
     th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:left;white-space:nowrap}
     th{background:#fafafa}
     .muted{color:#6b7280;font-size:12px}
     .ok{color:#16a34a}.err{color:#dc2626}
-
+    .actions{display:flex;gap:8px}
     @media (max-width: 900px){
       body{flex-direction:column}
       .sidebar{position:fixed;left:-250px;top:0;height:100%;z-index:999;}
@@ -49,9 +48,8 @@
     }
   </style>
 </head>
-
 <body>
-  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+  <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ เมนู</button>
 
   <aside class="sidebar" id="sidebar">
     <h2>Smart Waste</h2>
@@ -67,13 +65,16 @@
   <main>
     <h1>ลงทะเบียนถังขยะ</h1>
     <div class="content">
+
       <fieldset>
-        <legend>เพิ่มข้อมูลถังขยะ</legend>
-        <p class="muted">หากกรอก <b>Custom ID</b> ระบบจะใช้ ID นั้น; หากเว้นว่าง ระบบจะสร้าง ID ให้อัตโนมัติ</p>
+        <legend id="formLegend">เพิ่มข้อมูลถังขยะ</legend>
+        <p class="muted">
+          ถ้าใส่ <b>Custom ID</b> ระบบจะใช้ ID นั้น; ถ้าเว้นว่าง ระบบจะสร้าง ID ให้อัตโนมัติ<br>
+          <b>regLat/regLng</b> คือพิกัดลงทะเบียน (ตำแหน่งเดิมตลอดไป) และถูกแยกจากพิกัดตอนเทถัง (<code>lastEmptiedLat/Lng</code>)
+        </p>
 
         <div class="row">
           <div><label>Custom ID</label><input id="docId" type="text" placeholder="เช่น BIN-0001" /></div>
-
           <div>
             <label>เขตพื้นที่</label>
             <select id="zone">
@@ -85,17 +86,24 @@
               <option value="เขต4">เขต4</option>
             </select>
           </div>
-
           <div><label>ชื่อถัง / ชื่อจุด</label><input id="name" type="text" placeholder="เช่น ถังหน้าอาคาร A" /></div>
           <div><label>RFID Tag</label><input id="rfid" type="text" placeholder="เช่น 04A1B2C3D4" /></div>
           <div><label>ระดับความเต็ม (%)</label><input id="fillLevel" type="number" min="0" max="100" /></div>
-          <div><label>ละติจูด</label><input id="lat" type="number" step="any" placeholder="6.46007" /></div>
-          <div><label>ลองจิจูด</label><input id="lng" type="number" step="any" placeholder="100.35933" /></div>
+          <div><label>ละติจูด (พิกัดลงทะเบียน)</label><input id="lat" type="number" step="any" placeholder="6.46007" /></div>
+          <div><label>ลองจิจูด (พิกัดลงทะเบียน)</label><input id="lng" type="number" step="any" placeholder="100.35933" /></div>
           <div style="flex-basis:100%"><label>ที่อยู่/รายละเอียดตำแหน่ง</label><input id="address" type="text" placeholder="เช่น หน้าอาคารวิทย์ คณะ..." /></div>
         </div>
 
-        <div style="margin-top:12px">
+        <div class="row" style="align-items:center;margin-top:8px">
+          <label style="display:flex;gap:8px;align-items:center">
+            <input id="updateRegCoords" type="checkbox">
+            อัปเดตพิกัดลงทะเบียน (regLat/regLng) เมื่อแก้ไข
+          </label>
+        </div>
+
+        <div style="margin-top:12px" class="actions">
           <button class="primary" id="btnSave">บันทึก</button>
+          <button class="ghost" id="btnCancel" type="button" style="display:none">ยกเลิกแก้ไข</button>
           <button class="ghost" id="btnReset" type="button">เคลียร์ฟอร์ม</button>
           <span id="msg" style="margin-left:10px"></span>
         </div>
@@ -106,14 +114,8 @@
         <table>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>เขต</th>
-              <th>name</th>
-              <th>rfid</th>
-              <th>fillLevel</th>
-              <th>(lat,lng)</th>
-              <th>เมื่อ</th>
-              <th>ลบ</th>
+              <th>ID</th><th>เขต</th><th>name</th><th>rfid</th><th>fillLevel</th>
+              <th>(regLat,regLng)</th><th>อัปเดตเมื่อ</th><th>จัดการ</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -123,70 +125,142 @@
   </main>
 
   <script>
-    function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
-
+    // ---------- Firebase ----------
     var firebaseConfig={
       apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
       authDomain:"smart-waste-a2bf4.firebaseapp.com",
       projectId:"smart-waste-a2bf4",
       storageBucket:"smart-waste-a2bf4.firebasestorage.app",
       messagingSenderId:"522733244689",
-      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0",
-      measurementId:"G-B3D2V8DJC1"
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
     };
     firebase.initializeApp(firebaseConfig);
     const db=firebase.firestore(),col=db.collection("smartbins");
-    const $=id=>document.getElementById(id),msg=$("msg"),rows=$("rows");
 
-    $("btnSave").addEventListener("click",async()=>{
-      msg.textContent="กำลังบันทึก...";msg.className="";
-      try{
-        const payload={
-          zone:$("zone").value.trim()||null,
-          name:$("name").value.trim()||null,
-          address:$("address").value.trim()||null,
-          rfid:$("rfid").value.trim()||null,
-          fillLevel:$("fillLevel").value?Number($("fillLevel").value):null,
-          lat:$("lat").value?Number($("lat").value):null,
-          lng:$("lng").value?Number($("lng").value):null,
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        };
-        const id=$("docId").value.trim();
-        if(id){await col.doc(id).set(payload,{merge:true});}else{await col.add(payload);}
-        msg.textContent="✅ บันทึกสำเร็จ";msg.className="ok";
-        ["zone","name","address","rfid","fillLevel","lat","lng"].forEach(i=>$(i).value="");
-      }catch(e){msg.textContent="❌ บันทึกล้มเหลว: "+e.message;msg.className="err";}
-    });
+    // ---------- Helpers ----------
+    const $=id=>document.getElementById(id);
+    const msg=$("msg"), rows=$("rows");
+    let editingId=null; // เก็บ ID ที่กำลังแก้ไข
 
-    $("btnReset").addEventListener("click",()=>{
+    function clearForm(){
       ["docId","zone","name","address","rfid","fillLevel","lat","lng"].forEach(i=>$(i).value="");
-      msg.textContent="";msg.className="";
+      $("updateRegCoords").checked=false;
+      $("btnSave").textContent="บันทึก";
+      $("btnCancel").style.display="none";
+      $("formLegend").textContent="เพิ่มข้อมูลถังขยะ";
+      editingId=null;
+      msg.textContent=""; msg.className="";
+    }
+
+    // ---------- Save / Update ----------
+    $("btnSave").addEventListener("click", async ()=>{
+      msg.textContent="กำลังบันทึก..."; msg.className="";
+
+      try{
+        const regLat = $("lat").value ? Number($("lat").value) : null;
+        const regLng = $("lng").value ? Number($("lng").value) : null;
+
+        const basePayload = {
+          zone: $("zone").value.trim()||null,
+          name: $("name").value.trim()||null,
+          address: $("address").value.trim()||null,
+          rfid: $("rfid").value.trim()||null,
+          fillLevel: $("fillLevel").value ? Number($("fillLevel").value) : 0,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        const explicitId = $("docId").value.trim();
+        const isCreate = !editingId;
+
+        if(isCreate){
+          // สร้างใหม่: ตั้ง regLat/regLng + lat/lng ครั้งแรก
+          const payload = {
+            ...basePayload,
+            regLat, regLng,
+            lat: regLat, lng: regLng,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          if(explicitId){
+            await col.doc(explicitId).set(payload, {merge:true});
+          }else{
+            await col.add(payload);
+          }
+        }else{
+          // แก้ไข: ไม่แตะ regLat/regLng เว้นแต่ติ๊ก checkbox
+          const payload = { ...basePayload };
+          if ($("updateRegCoords").checked){
+            payload.regLat = regLat;
+            payload.regLng = regLng;
+            // ไม่ไปแตะ lastEmptiedLat/Lng และไม่บังคับ set lat/lng ปัจจุบัน
+          }
+          await col.doc(editingId).set(payload, {merge:true});
+        }
+
+        msg.textContent="✅ บันทึกสำเร็จ"; msg.className="ok";
+        clearForm();
+      }catch(e){
+        msg.textContent="❌ บันทึกล้มเหลว: "+e.message; msg.className="err";
+      }
     });
 
+    $("btnReset").addEventListener("click", clearForm);
+    $("btnCancel").addEventListener("click", clearForm);
+
+    // ---------- List & actions ----------
     col.orderBy("createdAt","desc").onSnapshot(snap=>{
       rows.innerHTML="";
       snap.forEach(doc=>{
         const d=doc.data()||{};
-        const when=d.createdAt?.toDate?d.createdAt.toDate().toLocaleString():"—";
-        rows.innerHTML+=`
+        const when=d.updatedAt?.toDate ? d.updatedAt.toDate().toLocaleString() : "—";
+        const regPair = `${(d.regLat??"—")}, ${(d.regLng??"—")}`;
+        rows.innerHTML += `
           <tr>
             <td><code>${doc.id}</code></td>
             <td>${d.zone??"—"}</td>
             <td>${d.name??"—"}</td>
             <td>${d.rfid??"—"}</td>
             <td>${d.fillLevel??"—"}</td>
-            <td>${(d.lat??"—")}, ${(d.lng??"—")}</td>
+            <td>${regPair}</td>
             <td class="muted">${when}</td>
-            <td><button class="ghost" onclick="deleteDoc('${doc.id}')">ลบ</button></td>
+            <td class="actions">
+              <button class="ghost" onclick="editDoc('${doc.id}')">แก้ไข</button>
+              <button class="danger" onclick="deleteDoc('${doc.id}')">ลบ</button>
+            </td>
           </tr>`;
       });
     });
 
-    async function deleteDoc(id){
+    window.editDoc = async (id)=>{
+      try{
+        const snap = await col.doc(id).get();
+        if(!snap.exists) return;
+        const d = snap.data()||{};
+        // เติมฟอร์ม
+        $("docId").value = id;          // ให้เห็น ID ปัจจุบัน (แก้/ไม่แก้ก็ได้)
+        $("zone").value = d.zone ?? "";
+        $("name").value = d.name ?? "";
+        $("address").value = d.address ?? "";
+        $("rfid").value = d.rfid ?? "";
+        $("fillLevel").value = d.fillLevel ?? 0;
+        $("lat").value = (d.regLat ?? "");   // โชว์พิกัดลงทะเบียน (ถ้าจะอัปเดตต้องติ๊ก checkbox)
+        $("lng").value = (d.regLng ?? "");
+
+        editingId = id;
+        $("btnSave").textContent = "บันทึกการแก้ไข";
+        $("btnCancel").style.display = "inline-block";
+        $("formLegend").textContent = "แก้ไขข้อมูลถังขยะ";
+        msg.textContent="กำลังแก้ไขเอกสาร: "+id; msg.className="muted";
+      }catch(e){
+        msg.textContent = "อ่านข้อมูลไม่สำเร็จ: "+e.message; msg.className="err";
+      }
+    };
+
+    window.deleteDoc = async (id)=>{
       if(confirm("ลบเอกสารนี้หรือไม่? ("+id+")")){
         await col.doc(id).delete();
+        if(editingId===id) clearForm();
       }
-    }
+    };
   </script>
 </body>
 </html>

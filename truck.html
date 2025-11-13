@@ -5,67 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Waste - ตำแหน่งรถเก็บขยะ (RTDB Live)</title>
 
-  <!-- Firebase SDK v8 -->
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Leaflet Map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <style>
     *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
-    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row;}
-
-    /* Sidebar */
-    .sidebar{
-      width:250px;background:#2f3640;color:#f5f6fa;
-      display:flex;flex-direction:column;padding-top:20px;
-      transition:all .3s ease;
-    }
+    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row}
+    .sidebar{width:250px;background:#2f3640;color:#f5f6fa;display:flex;flex-direction:column;padding-top:20px;transition:.3s}
     .sidebar h2{text-align:center;color:#00a8ff;margin-bottom:25px}
-    .menu a{
-      display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;
-      border-left:4px solid transparent;transition:.3s;
-    }
+    .menu a{display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;border-left:4px solid transparent;transition:.3s}
     .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
-
-    /* ปุ่มเปิด/ปิดเมนู (มือถือ) */
-    .toggle-btn{
-      display:none;position:fixed;top:14px;left:14px;
-      background:#00a8ff;color:#fff;border:none;padding:10px 16px;
-      border-radius:12px;cursor:pointer;z-index:1000;font-size:16px;
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
-    }
-
-    /* Main */
+    .toggle-btn{display:none;position:fixed;top:14px;left:14px;background:#00a8ff;color:#fff;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;z-index:1000;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
     main{flex:1;padding:30px;overflow-y:auto}
     h1{color:#2f3640;margin-bottom:16px}
     .content{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     label{display:block;margin:6px 0 4px}
-    select,button,input{
-      min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid #cbd5e1;font-size:16px
-    }
+    select,button,input{min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid #cbd5e1;font-size:16px}
     button{cursor:pointer;border:0}
     .primary{background:#2563eb;color:#fff}
     .ghost{background:#f4f4f5;color:#111827}
-
     .muted{color:#6b7280;font-size:13px}
     .card{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
-
-    /* Map */
     #map{width:100%;height:460px;border-radius:12px;border:1px solid #e5e7eb}
-
-    /* Table */
     table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+    th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:left}
     th{background:#fafafa}
-
     @media(max-width:900px){
       body{flex-direction:column}
       .sidebar{position:fixed;left:-250px;top:0;height:100%;z-index:999}
@@ -75,8 +46,6 @@
       h1{text-align:center}
       .row{flex-direction:column;align-items:stretch}
       #map{height:360px}
-      table{font-size:14px}
-      th,td{padding:6px 8px}
     }
   </style>
 </head>
@@ -107,6 +76,7 @@
             </div>
             <p id="truckInfo" class="muted" style="margin-top:6px">(ยังไม่ได้เลือกรถ)</p>
           </div>
+
           <div style="flex:1 1 260px">
             <label>พิกัด RTDB สด</label>
             <div class="row">
@@ -120,31 +90,15 @@
 
       <div id="map"></div>
 
-      <!-- 🔻 ตารางพิกัดล่าสุดจาก Firestore (positions) -->
       <div class="card">
-        <h3>ประวัติตำแหน่งล่าสุด (Firestore)</h3>
-        <p class="muted">ที่อยู่: <code>trucks/&lt;truckId&gt;/positions</code> — แสดง 20 รายการล่าสุด</p>
-        <div style="overflow-x:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>เวลา</th>
-                <th>Lat</th>
-                <th>Lng</th>
-                <th>Speed</th>
-                <th>Heading</th>
-              </tr>
-            </thead>
-            <tbody id="posRows"></tbody>
-          </table>
-        </div>
+        <h3>อัปเดตล่าสุด</h3>
+        <div id="feed" class="muted">—</div>
       </div>
     </div>
   </main>
 
   <script>
-    /* ========== Firebase Config ========== */
+    /* Firebase */
     var firebaseConfig = {
       apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
       authDomain: "smart-waste-a2bf4.firebaseapp.com",
@@ -157,110 +111,93 @@
     const fs   = firebase.firestore();
     const rtdb = firebase.database();
 
-    /* ========== UI refs ========== */
-    const truckSel  = document.getElementById('truckSelect');
-    const truckInfo = document.getElementById('truckInfo');
-    const coordEl   = document.getElementById('coord');
-    const btnCreate = document.getElementById('btnCreate');
-    const btnCenter = document.getElementById('btnCenter');
-    const posRows   = document.getElementById('posRows');
-
-    /* ========== Map init (Leaflet) ========== */
-    const start = [6.46007, 100.35933]; // พิกัดเริ่มต้น (UniMAP ใกล้ ๆ)
+    /* Map */
+    const start = [6.46007, 100.35933];
     const map = L.map('map').setView(start, 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 20, attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 20, attribution: '&copy; OpenStreetMap' }).addTo(map);
+    let marker = L.marker(start, { draggable:false }).addTo(map).bindPopup('ตำแหน่งรถ').openPopup();
 
-    let marker = L.marker(start, { draggable:false }).addTo(map);
-    marker.bindPopup('ตำแหน่งรถ').openPopup();
+    /* UI refs */
+    const truckSel = document.getElementById('truckSelect');
+    const truckInfo= document.getElementById('truckInfo');
+    const coordEl  = document.getElementById('coord');
+    const btnCreate= document.getElementById('btnCreate');
+    const btnCenter= document.getElementById('btnCenter');
+    const feedEl   = document.getElementById('feed');
 
-    /* ========== Load truck list from Firestore ========== */
+    /* โหลดรายชื่อรถ */
     async function loadTrucks(){
       const snap = await fs.collection('trucks').get();
       truckSel.innerHTML = '<option value="">-- เลือกรถ --</option>';
       snap.forEach(doc=>{
-        const d=doc.data()||{};
-        const opt=document.createElement('option');
-        opt.value=doc.id;
+        const d = doc.data() || {};
+        const opt = document.createElement('option');
+        opt.value = doc.id;
         opt.textContent = d.name ? `${doc.id} • ${d.name}` : doc.id;
         truckSel.appendChild(opt);
       });
     }
     loadTrucks();
 
-    /* ========== RTDB live listener per truck ========== */
-    let liveRef = null;   // rtdb ref for current truck
-    function detachLive(){
+    /* ตัวแปรสำหรับ detach listeners */
+    let liveRef = null;       // RTDB ref
+    let histUnsub = null;     // Firestore onSnapshot unsubscribe
+
+    function detach(){
       if(liveRef){ liveRef.off(); liveRef = null; }
+      if(typeof histUnsub === 'function'){ histUnsub(); histUnsub = null; }
     }
 
-    /* ========== Firestore positions listener per truck ========== */
-    let posUnsub = null;
-    function detachPos(){
-      if(posUnsub){ posUnsub(); posUnsub=null; }
-    }
-
+    /* เปลี่ยนรถที่เลือก */
     truckSel.addEventListener('change', async ()=>{
-      detachLive(); detachPos();
+      detach();
       const id = truckSel.value;
-      posRows.innerHTML = '';
       if(!id){
-        truckInfo.textContent='(ยังไม่ได้เลือกรถ)';
+        truckInfo.textContent = '(ยังไม่ได้เลือกรถ)';
         coordEl.value = '';
+        feedEl.textContent = '—';
         return;
       }
 
-      // แสดงข้อมูลพื้นฐานของรถจาก Firestore
       const doc = await fs.collection('trucks').doc(id).get();
       if(!doc.exists){
         truckInfo.textContent = 'ไม่พบรถนี้ใน Firestore';
-      }else{
-        const d = doc.data() || {};
-        truckInfo.innerHTML = `ID: <b>${doc.id}</b> • ชื่อ: ${d.name||'—'} • อัปเดตล่าสุด (FS): ${d.updatedAt?.toDate?.().toLocaleString?.()||'—'}`;
+        return;
       }
+      const d = doc.data() || {};
+      truckInfo.innerHTML = `ID: <b>${doc.id}</b> • ชื่อ: ${d.name || '—'} • อัปเดตล่าสุด (FS): ${d.updatedAt?.toDate?.().toLocaleString?.() || '—'}`;
 
-      // 🔴 สดจาก RTDB: trucks_live/<id>
-      liveRef = rtdb.ref('trucks_live/'+id);
-      liveRef.on('value', snap=>{
-        const v = snap.val();
-        if(!v || typeof v.lat!=='number' || typeof v.lng!=='number'){
+      /* RTDB live position */
+      liveRef = rtdb.ref('trucks_live/' + id);
+      liveRef.on('value', s=>{
+        const v = s.val();
+        if(!v || typeof v.lat !== 'number' || typeof v.lng !== 'number'){
           coordEl.value = '—';
           return;
         }
-        coordEl.value = `${v.lat.toFixed(6)}, ${v.lng.toFixed(6)}  (t=${v.ts||'-'})`;
+        coordEl.value = `${v.lat.toFixed(6)}, ${v.lng.toFixed(6)} (t=${v.ts || '-'})`;
         marker.setLatLng([v.lat, v.lng]);
-        // เลื่อนกล้องนุ่ม ๆ เมื่อระยะห่างมากกว่า ~50 ม.
-        const dist = map.distance(map.getCenter(), [v.lat, v.lng]);
-        if(dist > 50) map.panTo([v.lat, v.lng], { animate:true, duration:.6 });
+        map.panTo([v.lat, v.lng], { animate:true });
       });
 
-      // 📘 ประวัติจาก Firestore: trucks/<id>/positions (ล่าสุด 20)
-      posUnsub = fs.collection('trucks').doc(id)
-        .collection('positions')
-        .orderBy('ts','desc')
-        .limit(20)
-        .onSnapshot(snap=>{
-          const rows = [];
-          let idx = 1;
-          snap.forEach(doc=>{
-            const d = doc.data() || {};
-            const ts = d.ts?.toDate?.() ? d.ts.toDate().toLocaleString() : '—';
-            rows.push(`
-              <tr>
-                <td>${idx++}</td>
-                <td class="muted">${ts}</td>
-                <td>${(typeof d.lat==='number') ? d.lat.toFixed(6) : '—'}</td>
-                <td>${(typeof d.lng==='number') ? d.lng.toFixed(6) : '—'}</td>
-                <td>${(d.speed ?? '—')}</td>
-                <td>${(d.heading ?? '—')}</td>
-              </tr>
-            `);
+      /* Firestore history (ล่าสุด 10 แถว) */
+      histUnsub = fs.collection('trucks').doc(id)
+        .collection('positions').orderBy('ts','desc').limit(10)
+        .onSnapshot(sn=>{
+          if(sn.empty){ feedEl.textContent = '—'; return; }
+          let html = '<table><thead><tr><th>เวลา</th><th>Lat</th><th>Lng</th></tr></thead><tbody>';
+          sn.forEach(row=>{
+            const p = row.data() || {};
+            const t = p.ts?.toDate?.()?.toLocaleString?.() || '—';
+            html += `<tr><td>${t}</td><td>${p.lat ?? '—'}</td><td>${p.lng ?? '—'}</td></tr>`;
           });
-          posRows.innerHTML = rows.join('') || `<tr><td colspan="6" class="muted">ยังไม่มีประวัติตำแหน่ง</td></tr>`;
+          html += '</tbody></table>';
+          feedEl.innerHTML = html;
         });
     });
 
+    /* สร้างรถใหม่อย่างง่าย */
     btnCreate.addEventListener('click', async ()=>{
       const id = prompt("ระบุ Truck ID (เช่น TRUCK01):","TRUCK01");
       if(!id) return;
@@ -274,18 +211,16 @@
       truckSel.dispatchEvent(new Event('change'));
     });
 
+    /* โฟกัสหมุด */
     btnCenter.addEventListener('click', ()=>{
-      const val = coordEl.value.split(',').map(s=>parseFloat(s));
-      if(val.length>=2 && !Number.isNaN(val[0]) && !Number.isNaN(val[1])){
-        map.setView([val[0], val[1]], 17, { animate:true });
+      const parts = coordEl.value.split(',').map(s=>parseFloat(s));
+      if(parts.length >= 2 && !Number.isNaN(parts[0]) && !Number.isNaN(parts[1])){
+        map.setView([parts[0], parts[1]], 17, { animate:true });
       }
     });
 
-    // ทำความสะอาด listener เมื่อออกจากหน้า
-    window.addEventListener('beforeunload', ()=>{
-      detachLive();
-      detachPos();
-    });
+    /* เคลียร์ listener เมื่อออกจากหน้า */
+    window.addEventListener('beforeunload', detach);
   </script>
 </body>
 </html>
