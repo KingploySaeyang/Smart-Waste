@@ -57,6 +57,12 @@
       .card{width:100%}
     }
 
+    /* Language switcher */
+    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
+    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;min-height:unset;}
+    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
+
+
     /* ========== OVERRIDES: ทำให้ปุ่ม/ฟอร์ม/หัวข้อ เท่ากันทุกหน้า ========== */
 
 /* ขนาดฐานบนมือถือ: ให้กดง่าย ไม่เล็ก */
@@ -147,7 +153,7 @@ input:focus, select:focus{
 
   </style>
 </head>
-<body>
+<body style="position:relative;">
   <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
 
   <aside class="sidebar" id="sidebar">
@@ -164,6 +170,13 @@ input:focus, select:focus{
   <main>
     <h1>หน้าหลักผู้ดูแลระบบ</h1>
     <div class="content">
+      <div class="lang-switcher">
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
       <p>ยินดีต้อนรับเข้าสู่ระบบจัดการ <b>Smart Waste</b></p>
       <p class="muted" style="color:#6b7280;margin-bottom:20px;">เลือกเมนูด้านซ้ายเพื่อเริ่มจัดการข้อมูลได้เลย</p>
 
@@ -182,7 +195,6 @@ input:focus, select:focus{
 
   <script>
     function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
-
     var firebaseConfig={
       apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
       authDomain:"smart-waste-a2bf4.firebaseapp.com",
@@ -194,6 +206,88 @@ input:focus, select:focus{
     };
     firebase.initializeApp(firebaseConfig);
     const db=firebase.firestore();
+
+    /* ===== i18n ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - หน้าหลักผู้ดูแลระบบ",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
+        mainTitle: "หน้าหลักผู้ดูแลระบบ",
+        welcome: "ยินดีต้อนรับเข้าสู่ระบบจัดการ <b>Smart Waste</b>",
+        welcomeHint: "เลือกเมนูด้านซ้ายเพื่อเริ่มจัดการข้อมูลได้เลย",
+        cardTotal: "จำนวนถังทั้งหมด",
+        cardFull: "ถังเต็ม (≥80%)",
+        cardMid: "ถังเกือบเต็ม (50–79%)",
+        cardLow: "ถังว่าง (<50%)",
+      },
+      en: {
+        pageTitle: "Smart Waste - Admin Dashboard",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
+        mainTitle: "Admin Dashboard",
+        welcome: "Welcome to the <b>Smart Waste</b> management system",
+        welcomeHint: "Select a menu on the left to start managing data.",
+        cardTotal: "Total Bins",
+        cardFull: "Full Bins (≥80%)",
+        cardMid: "Near Full Bins (50–79%)",
+        cardLow: "Empty Bins (<50%)",
+      },
+      ms: {
+        pageTitle: "Smart Waste - Papan Pemuka Pentadbir",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
+        mainTitle: "Papan Pemuka Pentadbir",
+        welcome: "Selamat datang ke sistem pengurusan <b>Smart Waste</b>",
+        welcomeHint: "Pilih menu di sebelah kiri untuk mula mengurus data.",
+        cardTotal: "Jumlah Tong",
+        cardFull: "Tong Penuh (≥80%)",
+        cardMid: "Tong Hampir Penuh (50–79%)",
+        cardLow: "Tong Kosong (<50%)",
+      }
+    };
+    let currentLang = localStorage.getItem('sw_lang') || 'th';
+    const langSelect = document.getElementById('langSelect');
+
+    function getTranslation(key) { return translations[currentLang][key] || key; }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('sw_lang', lang);
+      langSelect.value = lang;
+
+      document.title = getTranslation('pageTitle');
+      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
+      document.querySelector('h1').textContent = getTranslation('mainTitle');
+      document.querySelector('.content p:not(.muted)').innerHTML = getTranslation('welcome');
+      document.querySelector('.content .muted').innerHTML = getTranslation('welcomeHint');
+      const navLinks = document.querySelectorAll('.menu a');
+      navLinks[0].textContent = getTranslation('navHome');
+      navLinks[1].textContent = getTranslation('navRegister');
+      navLinks[2].textContent = getTranslation('navCapacity');
+      navLinks[3].textContent = getTranslation('navTruck');
+      navLinks[4].textContent = getTranslation('navReport');
+      const cardTitles = document.querySelectorAll('.cards .card h3');
+      cardTitles[0].textContent = getTranslation('cardTotal');
+      cardTitles[1].textContent = getTranslation('cardFull');
+      cardTitles[2].textContent = getTranslation('cardMid');
+      cardTitles[3].textContent = getTranslation('cardLow');
+    }
+
+    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
 
     const totalEl=document.getElementById("totalBins");
     const fullEl=document.getElementById("fullBins");
@@ -218,6 +312,8 @@ input:focus, select:focus{
         lowEl.textContent=low;
       });
     }
+
+    changeLanguage(currentLang); // Initial load
     updateDashboard();
   </script>
 </body>

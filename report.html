@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Waste - รายงานย้อนหลัง</title>
 
-  <!-- Firebase -->
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -28,24 +29,31 @@
     }
     .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
 
-    /* ปุ่มเปิด/ปิดเมนูบนมือถือ */
+    /* Mobile toggle */
     .toggle-btn{
       display:none;position:fixed;top:14px;left:14px;
       background:#00a8ff;color:#fff;border:none;padding:8px 12px;
       border-radius:6px;cursor:pointer;z-index:1000;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
     }
 
     /* Main */
     main{flex:1;padding:30px;overflow-y:auto}
-    h1{color:#2f3640;margin-bottom:16px}
+    h1{color:#2f3640;margin:0 0 16px;line-height:1.25;}
     .content{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
     .zone-card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:8px;cursor:pointer;transition:.2s;}
     .zone-card:hover{background:#f0f4ff;border-color:#2563eb;}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
-    table{width:100%;border-collapse:collapse;margin-top:16px;}
-    th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left;}
-    th{background:#fafafa;}
     .muted{color:#6b7280;font-size:13px;}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 4px}
+
+    button{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-height:44px;padding:10px 16px;border-radius:12px;font-size:16px;line-height:1.2;
+      border:0;cursor:pointer;
+    }
+    .ghost{background:#f4f4f5;color:#111827}
+    canvas{max-width:100%;height:320px;margin:12px 0 8px;border:1px solid #eee;border-radius:10px}
 
     /* Responsive */
     @media(max-width:900px){
@@ -57,28 +65,16 @@
       h1{text-align:center}
     }
 
-    /* ========== ปรับขนาดและสไตล์ให้เหมือนทุกหน้า ========== */
-    :root{
-      --btn-min-h:44px;
-      --btn-pad-x:16px;
-      --btn-pad-y:10px;
-      --btn-radius:12px;
-      --btn-font:16px;
-    }
+    /* Language switcher */
+    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
+    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;}
+    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
 
-    button,.btn{
-      display:inline-flex;align-items:center;justify-content:center;
-      min-height:var(--btn-min-h);padding:var(--btn-pad-y) var(--btn-pad-x);
-      border-radius:var(--btn-radius);font-size:var(--btn-font);line-height:1.2;
-      border:0;cursor:pointer;
-    }
-    .toggle-btn{box-shadow:0 2px 6px rgba(0,0,0,.08);}
-    h1{margin:0 0 16px;line-height:1.25;}
   </style>
 </head>
 
 <body>
-  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+  <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ เมนู</button>
 
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
@@ -96,20 +92,29 @@
   <main>
     <h1>รายงานย้อนหลัง</h1>
     <div class="content">
-      <h3>สรุปจำนวนครั้งที่ถังขยะเต็ม (≥80%) ต่อเขต</h3>
-      <canvas id="zoneChart" style="max-width:100%;height:320px;margin:12px 0 24px;"></canvas>
+      <div class="lang-switcher">
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
+      <div class="row">
+        <h3 id="chartTitle" style="margin-right:auto">สรุปจำนวน “การเทถัง” ต่อเขต</h3>
+        <button id="btnBack" class="ghost" style="display:none">⬅ ย้อนกลับ</button>
+      </div>
+      <canvas id="zoneChart"></canvas>
 
-      <hr style="margin:24px 0;">
+      <hr style="margin:20px 0;">
       <h3>เลือกเขตเพื่อดูรายละเอียด</h3>
+      <p class="muted" id="zonesHint">คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” รายถังในเขตนั้น</p>
       <div id="zones" class="grid"></div>
-      <hr style="margin:16px 0;">
-      <div id="report"></div>
+
+      <div id="loading" class="muted" style="margin-top:10px;display:none">กำลังคำนวณข้อมูล…</div>
     </div>
   </main>
 
   <script>
-    function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
-
     /* ===== Firebase ===== */
     var firebaseConfig = {
       apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
@@ -121,93 +126,241 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const col = db.collection('smartbins');
 
-    const zonesDiv = document.getElementById('zones');
-    const reportDiv = document.getElementById('report');
+    const LOG_COLLECTION = 'trashEmptyingList'; // subcollection ของแต่ละถังที่ใช้บันทึกการเท
+
+    const zonesDiv   = document.getElementById('zones');
+    const chartTitle = document.getElementById('chartTitle');
+    const btnBack    = document.getElementById('btnBack');
+    const loadingEl  = document.getElementById('loading');
+    const langSelect = document.getElementById('langSelect');
+
+    const ctx = document.getElementById('zoneChart').getContext('2d');
     let chart = null;
 
-    async function loadSummary(){
-      const snap = await col.get();
-      const counter = {}; 
-      const zones = new Set();
-
-      snap.forEach(doc=>{
-        const d = doc.data();
-        if(!d.zone) return;
-        zones.add(d.zone);
-        if(d.fillLevel >= 80){
-          if(!counter[d.zone]) counter[d.zone]=0;
-          counter[d.zone]++;
-        }
-      });
-
-      // Chart.js
-      const labels = Object.keys(counter);
-      const data = Object.values(counter);
-      const ctx = document.getElementById("zoneChart").getContext("2d");
+    // utility: สร้าง/อัปเดตกราฟ
+    function renderChart(labels, data, labelText){
       if(chart) chart.destroy();
       chart = new Chart(ctx, {
         type: "bar",
         data: {
           labels,
           datasets: [{
-            label:"จำนวนครั้งที่ถังเต็ม",
+            label: labelText,
             data,
-            backgroundColor:"#2563eb",
-            borderRadius:8
+            backgroundColor: "#2563eb",
+            borderRadius: 8
           }]
         },
-        options:{
-          responsive:true,
-          scales:{
-            y:{beginAtZero:true,title:{display:true,text:"จำนวนครั้ง"}},
-            x:{title:{display:true,text:"เขตพื้นที่"}}
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: getTranslation('chartYAxis') } },
+            x: { title: { display: true, text: "" } }
           },
-          plugins:{
-            legend:{display:false},
-            tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y} ครั้ง`}}
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.parsed.y} ${getTranslation('times')}`
+              }
+            }
           }
         }
       });
-
-      zonesDiv.innerHTML = '';
-      zones.forEach(z=>{
-        const div = document.createElement('div');
-        div.className = 'zone-card';
-        div.textContent = z;
-        div.onclick = ()=>showReport(z);
-        zonesDiv.appendChild(div);
-      });
-      if(zones.size===0) zonesDiv.innerHTML='<p class="muted">ยังไม่มีข้อมูลเขตในระบบ</p>';
     }
 
-    async function showReport(zone){
-      reportDiv.innerHTML = `<h3>รายงาน: ${zone}</h3><p class="muted">กำลังโหลดข้อมูล...</p>`;
-      const snap = await col.where('zone','==',zone).get();
-      const counter = {};
-      snap.forEach(doc=>{
-        const d = doc.data();
-        if(!d.name) return;
-        if(!counter[d.name]) counter[d.name]=0;
-        if(d.fillLevel>=80) counter[d.name]++;
-      });
+    /* ===== Internationalization (i18n) ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - รายงานย้อนหลัง",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
+        mainTitle: "รายงานย้อนหลัง",
+        summaryTitle: "สรุปจำนวน “การเทถัง” ต่อเขต",
+        backBtn: "⬅ ย้อนกลับ",
+        chartYAxis: "จำนวนครั้ง",
+        times: "ครั้ง",
+        selectZoneTitle: "เลือกเขตเพื่อดูรายละเอียด",
+        selectZoneHint: "คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” รายถังในเขตนั้น",
+        loading: "กำลังคำนวณข้อมูล…",
+        noData: "ยังไม่มีข้อมูลเขต/การเทในระบบ",
+        detailTitle: "จำนวน “การเทถัง” ต่อถัง — เขต: ",
+        unspecifiedZone: "ไม่ระบุเขต",
+        chartLabel: "จำนวนการเท"
+      },
+      en: {
+        pageTitle: "Smart Waste - Historical Report",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
+        mainTitle: "Historical Report",
+        summaryTitle: 'Summary of "Bin Empties" per Zone',
+        backBtn: "⬅ Back",
+        chartYAxis: "Count",
+        times: "times",
+        selectZoneTitle: "Select a zone to see details",
+        selectZoneHint: 'Click on a zone name to see the number of "bin empties" for each bin in that zone',
+        loading: "Calculating data...",
+        noData: "No zone/emptying data in the system yet",
+        detailTitle: 'Number of "Bin Empties" per Bin — Zone: ',
+        unspecifiedZone: "Unspecified Zone",
+        chartLabel: "Empty Count"
+      },
+      ms: {
+        pageTitle: "Smart Waste - Laporan Sejarah",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
+        mainTitle: "Laporan Sejarah",
+        summaryTitle: 'Ringkasan "Pengosongan Tong" setiap Zon',
+        backBtn: "⬅ Kembali",
+        chartYAxis: "Bilangan",
+        times: "kali",
+        selectZoneTitle: "Pilih zon untuk melihat butiran",
+        selectZoneHint: 'Klik pada nama zon untuk melihat bilangan "pengosongan tong" bagi setiap tong di zon itu',
+        loading: "Mengira data...",
+        noData: "Belum ada data zon/pengosongan dalam sistem",
+        detailTitle: 'Bilangan "Pengosongan Tong" setiap Tong — Zon: ',
+        unspecifiedZone: "Zon Tidak Dinyatakan",
+        chartLabel: "Bilangan Pengosongan"
+      }
+    };
 
-      const sorted = Object.entries(counter).sort((a,b)=>b[1]-a[1]);
-      if(sorted.length===0){
-        reportDiv.innerHTML = `<p class="muted">ยังไม่มีข้อมูลการเต็มของถังในเขตนี้</p>`;
-        return;
+    let currentLang = localStorage.getItem('sw_lang') || 'th';
+
+    function getTranslation(key) {
+      return translations[currentLang][key] || key;
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('sw_lang', lang);
+      langSelect.value = lang;
+
+      // Update all static text elements
+      document.title = getTranslation('pageTitle');
+      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
+      const navLinks = document.querySelectorAll('.menu a');
+      navLinks[0].textContent = getTranslation('navHome');
+      navLinks[1].textContent = getTranslation('navRegister');
+      navLinks[2].textContent = getTranslation('navCapacity');
+      navLinks[3].textContent = getTranslation('navTruck');
+      navLinks[4].textContent = getTranslation('navReport');
+      document.querySelector('h1').textContent = getTranslation('mainTitle');
+      document.querySelector('h3:not(#chartTitle)').textContent = getTranslation('selectZoneTitle');
+      document.getElementById('zonesHint').textContent = getTranslation('selectZoneHint');
+      document.getElementById('btnBack').textContent = getTranslation('backBtn');
+      loadingEl.textContent = getTranslation('loading');
+
+      // Reload data to update dynamic text like chart and zone cards
+      loadSummaryByZone();
+    }
+
+    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+
+    // อ่านถังทั้งหมด -> คืน array ของ { id, name, zone }
+    async function getAllBins(){
+      const snap = await db.collection('smartbins').get();
+      const bins = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        bins.push({ id: doc.id, name: d.name || doc.id, zone: d.zone || getTranslation('unspecifiedZone') });
+      });
+      return bins;
+    }
+
+    // นับเอกสารทั้งหมดใน subcollection การเท ของถัง 1 ใบ
+    async function countEmptyForBin(binId){
+      const sub = await db.collection('smartbins').doc(binId).collection(LOG_COLLECTION).get();
+      return sub.size; // จำนวนครั้งที่เททั้งหมดของถังนี้
+    }
+
+    // โหลดสรุปต่อ "เขต"
+    async function loadSummaryByZone(){
+      loadingEl.style.display = 'inline';
+      const bins = await getAllBins();
+
+      // รวบรวมรายชื่อเขตและคำนวณรวม
+      const zoneToCount = new Map();             // เขต -> จำนวนการเทรวม
+      const zoneToBins  = new Map();             // เขต -> รายการถังในเขตนั้น
+
+      // เตรียมโครง
+      for(const b of bins){
+        if(!zoneToBins.has(b.zone)) zoneToBins.set(b.zone, []);
+        zoneToBins.get(b.zone).push(b);
       }
 
-      let html = `<table><thead><tr><th>ชื่อถัง</th><th>จำนวนครั้งที่เต็ม (≥80%)</th></tr></thead><tbody>`;
-      sorted.forEach(([name,count])=>{
-        html += `<tr><td>${name}</td><td>${count}</td></tr>`;
+      // นับการเทแยกถัง แล้วรวมต่อเขต
+      for(const [zone, list] of zoneToBins.entries()){
+        // ใช้ Promise.all เพื่อรอให้การนับของทุกถังในเขตนี้เสร็จก่อน
+        const counts = await Promise.all(
+          list.map(bin => countEmptyForBin(bin.id))
+        );
+        // รวมผลลัพธ์ทั้งหมด
+        const zoneTotal = counts.reduce((sum, current) => sum + current, 0);
+        zoneToCount.set(zone, zoneTotal);
+      }
+
+      // วาดกราฟต่อเขต
+      const labels = Array.from(zoneToCount.keys());
+      const data   = Array.from(zoneToCount.values());
+      chartTitle.textContent = getTranslation('summaryTitle');
+      renderChart(labels, data, getTranslation('chartLabel'));
+      loadingEl.style.display = 'none';
+
+      // ปุ่มเขตด้านล่าง
+      zonesDiv.innerHTML = '';
+      labels.forEach(z=>{
+        const div = document.createElement('div');
+        div.className = 'zone-card';
+        div.textContent = `${z} • ${zoneToCount.get(z)} ${getTranslation('times')}`;
+        div.onclick = ()=>showZoneDetail(z, zoneToBins.get(z));
+        zonesDiv.appendChild(div);
       });
-      html += `</tbody></table>`;
-      reportDiv.innerHTML = html;
+      if(labels.length === 0){
+        zonesDiv.innerHTML = `<p class="muted">${getTranslation('noData')}</p>`;
+      }
+
+      // โหมด root -> ซ่อนปุ่ม Back
+      btnBack.style.display = 'none';
+      btnBack.onclick = null;
     }
 
-    loadSummary();
+    // แสดงกราฟ “จำนวนการเท” ต่อถัง ในเขตที่เลือก
+    async function showZoneDetail(zoneName, binsInZone){
+      loadingEl.style.display = 'inline';
+      // นับต่อถัง
+      const labels = [];
+      const data   = [];
+      for(const b of binsInZone){
+        const c = await countEmptyForBin(b.id);
+        labels.push(b.name);
+        data.push(c);
+      }
+      chartTitle.textContent = `${getTranslation('detailTitle')}${zoneName}`;
+      renderChart(labels, data, getTranslation('chartLabel'));
+
+      // ตั้งค่า Back
+      btnBack.style.display = 'inline-flex';
+      btnBack.onclick = ()=>loadSummaryByZone();
+
+      loadingEl.style.display = 'none';
+    }
+
+    // เริ่มโหลด
+    changeLanguage(currentLang); // Initial load with saved or default language
   </script>
 </body>
 </html>

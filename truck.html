@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Waste - ตำแหน่งรถเก็บขยะ (RTDB Live)</title>
+  <title>Smart Waste - ตำแหน่งรถเก็บขยะ</title>
 
   <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
@@ -47,6 +46,11 @@
       .row{flex-direction:column;align-items:stretch}
       #map{height:360px}
     }
+
+    /* Language switcher */
+    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
+    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;min-height:unset;width:auto;}
+    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
   </style>
 </head>
 <body>
@@ -66,6 +70,13 @@
   <main>
     <h1>ตำแหน่งรถเก็บขยะ (RTDB Live)</h1>
     <div class="content">
+      <div class="lang-switcher">
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
       <div class="card">
         <div class="row">
           <div style="flex:1 1 260px">
@@ -77,14 +88,7 @@
             <p id="truckInfo" class="muted" style="margin-top:6px">(ยังไม่ได้เลือกรถ)</p>
           </div>
 
-          <div style="flex:1 1 260px">
-            <label>พิกัด RTDB สด</label>
-            <div class="row">
-              <input id="coord" type="text" readonly placeholder="—" />
-              <button id="btnCenter" class="ghost">โฟกัสหมุด</button>
-            </div>
-            <p class="muted">อ่านจาก <code>trucks_live/&lt;truckId&gt;</code> (Realtime Database)</p>
-          </div>
+          <button id="btnCenter" class="ghost">โฟกัสหมุด</button>
         </div>
       </div>
 
@@ -109,7 +113,6 @@
     };
     firebase.initializeApp(firebaseConfig);
     const fs   = firebase.firestore();
-    const rtdb = firebase.database();
 
     /* Map */
     const start = [6.46007, 100.35933];
@@ -121,10 +124,10 @@
     /* UI refs */
     const truckSel = document.getElementById('truckSelect');
     const truckInfo= document.getElementById('truckInfo');
-    const coordEl  = document.getElementById('coord');
     const btnCreate= document.getElementById('btnCreate');
     const btnCenter= document.getElementById('btnCenter');
     const feedEl   = document.getElementById('feed');
+    const langSelect = document.getElementById('langSelect');
 
     /* โหลดรายชื่อรถ */
     async function loadTrucks(){
@@ -140,12 +143,147 @@
     }
     loadTrucks();
 
+    /* ===== i18n ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - ตำแหน่งรถเก็บขยะ (RTDB Live)",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
+        mainTitle: "ตำแหน่งรถเก็บขยะ (RTDB Live)",
+        selectTruckLabel: "เลือกรถ (จาก Firestore: trucks)",
+        loading: "(กำลังโหลด…)",
+        selectTruckDefault: "-- เลือกรถ --",
+        createTruckBtn: "+ สร้างรถใหม่",
+        noTruckSelected: "(ยังไม่ได้เลือกรถ)",
+        truckNotFound: "ไม่พบรถนี้ใน Firestore",
+        liveCoordsLabel: "พิกัด RTDB สด",
+        focusBtn: "โฟกัสหมุด",
+        truckInfoText: "ID: <b>%id%</b> • ชื่อ: %name% • อัปเดตล่าสุด (FS): %updatedAt%",
+        rtdbHint: "อ่านจาก trucks_live/<truckId> (Realtime Database)",
+        mapPopup: "ตำแหน่งรถ",
+        latestUpdateTitle: "อัปเดตล่าสุด",
+        historyHeaderTime: "เวลา",
+        historyHeaderLat: "Lat",
+        historyHeaderLng: "Lng",
+        promptTruckId: "ระบุ Truck ID (เช่น TRUCK01):",
+        promptTruckName: "ตั้งชื่อรถ (เช่น รถเขตเมือง)",
+        defaultTruckName: "รถเขตเมือง",
+      },
+      en: {
+        pageTitle: "Smart Waste - Truck Location (RTDB Live)",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
+        mainTitle: "Truck Location (RTDB Live)",
+        selectTruckLabel: "Select Truck (from Firestore: trucks)",
+        loading: "(Loading…)",
+        selectTruckDefault: "-- Select a truck --",
+        createTruckBtn: "+ Create New Truck",
+        noTruckSelected: "(No truck selected)",
+        truckNotFound: "This truck was not found in Firestore",
+        liveCoordsLabel: "Live RTDB Coordinates",
+        focusBtn: "Focus Marker",
+        truckInfoText: "ID: <b>%id%</b> • Name: %name% • Last Updated (FS): %updatedAt%",
+        rtdbHint: "Read from trucks_live/<truckId> (Realtime Database)",
+        mapPopup: "Truck Location",
+        latestUpdateTitle: "Latest Updates",
+        historyHeaderTime: "Time",
+        historyHeaderLat: "Lat",
+        historyHeaderLng: "Lng",
+        promptTruckId: "Specify Truck ID (e.g., TRUCK01):",
+        promptTruckName: "Set truck name (e.g., City Zone Truck)",
+        defaultTruckName: "City Zone Truck",
+      },
+      ms: {
+        pageTitle: "Smart Waste - Lokasi Lori (RTDB Live)",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
+        mainTitle: "Lokasi Lori (RTDB Live)",
+        selectTruckLabel: "Pilih Lori (dari Firestore: trucks)",
+        loading: "(Memuatkan…)",
+        selectTruckDefault: "-- Pilih lori --",
+        createTruckBtn: "+ Cipta Lori Baharu",
+        noTruckSelected: "(Tiada lori dipilih)",
+        truckNotFound: "Lori ini tidak ditemui dalam Firestore",
+        liveCoordsLabel: "Koordinat RTDB Langsung",
+        focusBtn: "Fokus Penanda",
+        truckInfoText: "ID: <b>%id%</b> • Nama: %name% • Terakhir Dikemas Kini (FS): %updatedAt%",
+        rtdbHint: "Baca dari trucks_live/<truckId> (Realtime Database)",
+        mapPopup: "Lokasi Lori",
+        latestUpdateTitle: "Kemas Kini Terkini",
+        historyHeaderTime: "Masa",
+        historyHeaderLat: "Lat",
+        historyHeaderLng: "Lng",
+        promptTruckId: "Nyatakan ID Lori (cth., TRUCK01):",
+        promptTruckName: "Tetapkan nama lori (cth., Lori Zon Bandar)",
+        defaultTruckName: "Lori Zon Bandar",
+      }
+    };
+    let currentLang = localStorage.getItem('sw_lang') || 'th';
+
+    function getTranslation(key) { return translations[currentLang][key] || key; }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('sw_lang', lang);
+      langSelect.value = lang;
+
+      document.title = getTranslation('pageTitle');
+      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
+      const navLinks = document.querySelectorAll('.menu a');
+      navLinks[0].textContent = getTranslation('navHome');
+      navLinks[1].textContent = getTranslation('navRegister');
+      navLinks[2].textContent = getTranslation('navCapacity');
+      navLinks[3].textContent = getTranslation('navTruck');
+      navLinks[4].textContent = getTranslation('navReport');
+      document.querySelector('h1').textContent = getTranslation('mainTitle');
+      const labels = document.querySelectorAll('label');
+      labels[0].textContent = getTranslation('selectTruckLabel');
+      labels[1].textContent = getTranslation('liveCoordsLabel');
+      btnCreate.textContent = getTranslation('createTruckBtn');
+      btnCenter.textContent = getTranslation('focusBtn');
+      document.querySelectorAll('.muted')[1].textContent = getTranslation('rtdbHint');
+      document.querySelector('.card h3').textContent = getTranslation('latestUpdateTitle');
+      marker.bindPopup(getTranslation('mapPopup'));
+
+      // Reload truck list and reset view
+      truckSel.innerHTML = `<option value="">${getTranslation('loading')}</option>`;
+      loadTrucks().then(() => {
+        truckSel.innerHTML = `<option value="">${getTranslation('selectTruckDefault')}</option>`;
+        // Re-populate, because loadTrucks doesn't know about translations
+        fs.collection('trucks').get().then(snap => {
+          snap.forEach(doc => {
+            const d = doc.data() || {};
+            const opt = document.createElement('option');
+            opt.value = doc.id;
+            opt.textContent = d.name ? `${doc.id} • ${d.name}` : doc.id;
+            truckSel.appendChild(opt);
+          });
+        });
+      });
+      truckInfo.textContent = getTranslation('noTruckSelected');
+      feedEl.textContent = '—';
+      detach();
+    }
+
     /* ตัวแปรสำหรับ detach listeners */
-    let liveRef = null;       // RTDB ref
+    let liveUnsub = null;     // Firestore live position unsubscribe
     let histUnsub = null;     // Firestore onSnapshot unsubscribe
 
     function detach(){
-      if(liveRef){ liveRef.off(); liveRef = null; }
+      if(typeof liveUnsub === 'function'){ liveUnsub(); liveUnsub = null; }
       if(typeof histUnsub === 'function'){ histUnsub(); histUnsub = null; }
     }
 
@@ -154,31 +292,29 @@
       detach();
       const id = truckSel.value;
       if(!id){
-        truckInfo.textContent = '(ยังไม่ได้เลือกรถ)';
-        coordEl.value = '';
+        truckInfo.textContent = getTranslation('noTruckSelected');
         feedEl.textContent = '—';
         return;
       }
 
-      const doc = await fs.collection('trucks').doc(id).get();
-      if(!doc.exists){
-        truckInfo.textContent = 'ไม่พบรถนี้ใน Firestore';
-        return;
-      }
-      const d = doc.data() || {};
-      truckInfo.innerHTML = `ID: <b>${doc.id}</b> • ชื่อ: ${d.name || '—'} • อัปเดตล่าสุด (FS): ${d.updatedAt?.toDate?.().toLocaleString?.() || '—'}`;
-
-      /* RTDB live position */
-      liveRef = rtdb.ref('trucks_live/' + id);
-      liveRef.on('value', s=>{
-        const v = s.val();
-        if(!v || typeof v.lat !== 'number' || typeof v.lng !== 'number'){
-          coordEl.value = '—';
+      /* Firestore live position listener */
+      liveUnsub = fs.collection('trucks').doc(id).onSnapshot(doc => {
+        if(!doc.exists){
+          truckInfo.textContent = getTranslation('truckNotFound');
           return;
         }
-        coordEl.value = `${v.lat.toFixed(6)}, ${v.lng.toFixed(6)} (t=${v.ts || '-'})`;
-        marker.setLatLng([v.lat, v.lng]);
-        map.panTo([v.lat, v.lng], { animate:true });
+        const d = doc.data() || {};
+        const truckInfoString = getTranslation('truckInfoText')
+          .replace('%id%', doc.id)
+          .replace('%name%', d.name || '—')
+          .replace('%updatedAt%', d.updatedAt?.toDate?.().toLocaleString?.() || '—');
+        truckInfo.innerHTML = truckInfoString;
+
+        // Update map marker if lat/lng exist
+        if(typeof d.lat === 'number' && typeof d.lng === 'number'){
+          marker.setLatLng([d.lat, d.lng]);
+          map.panTo([d.lat, d.lng], { animate:true });
+        }
       });
 
       /* Firestore history (ล่าสุด 10 แถว) */
@@ -186,7 +322,7 @@
         .collection('positions').orderBy('ts','desc').limit(10)
         .onSnapshot(sn=>{
           if(sn.empty){ feedEl.textContent = '—'; return; }
-          let html = '<table><thead><tr><th>เวลา</th><th>Lat</th><th>Lng</th></tr></thead><tbody>';
+          let html = `<table><thead><tr><th>${getTranslation('historyHeaderTime')}</th><th>${getTranslation('historyHeaderLat')}</th><th>${getTranslation('historyHeaderLng')}</th></tr></thead><tbody>`;
           sn.forEach(row=>{
             const p = row.data() || {};
             const t = p.ts?.toDate?.()?.toLocaleString?.() || '—';
@@ -199,9 +335,9 @@
 
     /* สร้างรถใหม่อย่างง่าย */
     btnCreate.addEventListener('click', async ()=>{
-      const id = prompt("ระบุ Truck ID (เช่น TRUCK01):","TRUCK01");
+      const id = prompt(getTranslation('promptTruckId'),"TRUCK01");
       if(!id) return;
-      const name = prompt("ตั้งชื่อรถ (เช่น รถเขตเมือง)","รถเขตเมือง");
+      const name = prompt(getTranslation('promptTruckName'), getTranslation('defaultTruckName'));
       await fs.collection('trucks').doc(id).set({
         name: name || null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -213,14 +349,17 @@
 
     /* โฟกัสหมุด */
     btnCenter.addEventListener('click', ()=>{
-      const parts = coordEl.value.split(',').map(s=>parseFloat(s));
-      if(parts.length >= 2 && !Number.isNaN(parts[0]) && !Number.isNaN(parts[1])){
-        map.setView([parts[0], parts[1]], 17, { animate:true });
+      const currentLatLng = marker.getLatLng();
+      if(currentLatLng){
+        map.setView(currentLatLng, 17, { animate:true });
       }
     });
 
     /* เคลียร์ listener เมื่อออกจากหน้า */
     window.addEventListener('beforeunload', detach);
+
+    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+    changeLanguage(currentLang); // Initial load
   </script>
 </body>
 </html>

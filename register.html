@@ -46,6 +46,11 @@
       input,select,button{font-size:16px}
       h1{text-align:center}
     }
+
+    /* Language switcher */
+    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
+    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;width:auto;}
+    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
   </style>
 </head>
 <body>
@@ -65,6 +70,13 @@
   <main>
     <h1>ลงทะเบียนถังขยะ</h1>
     <div class="content">
+      <div class="lang-switcher">
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
 
       <fieldset>
         <legend id="formLegend">เพิ่มข้อมูลถังขยะ</legend>
@@ -142,19 +154,229 @@
     const msg=$("msg"), rows=$("rows");
     let editingId=null; // เก็บ ID ที่กำลังแก้ไข
 
+    /* ===== i18n ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - ลงทะเบียนถังขยะ",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
+        mainTitle: "ลงทะเบียนถังขยะ",
+        formLegendAdd: "เพิ่มข้อมูลถังขยะ",
+        formLegendEdit: "แก้ไขข้อมูลถังขยะ",
+        formHint: "ถ้าใส่ <b>Custom ID</b> ระบบจะใช้ ID นั้น; ถ้าเว้นว่าง ระบบจะสร้าง ID ให้อัตโนมัติ<br><b>regLat/regLng</b> คือพิกัดลงทะเบียน (ตำแหน่งเดิมตลอดไป) และถูกแยกจากพิกัดตอนเทถัง (<code>lastEmptiedLat/Lng</code>)",
+        labelCustomId: "Custom ID",
+        labelZone: "เขตพื้นที่",
+        labelName: "ชื่อถัง / ชื่อจุด",
+        labelRfid: "RFID Tag",
+        labelFill: "ระดับความเต็ม (%)",
+        labelLat: "ละติจูด (พิกัดลงทะเบียน)",
+        labelLng: "ลองจิจูด (พิกัดลงทะเบียน)",
+        labelAddress: "ที่อยู่/รายละเอียดตำแหน่ง",
+        labelUpdateCoords: "อัปเดตพิกัดลงทะเบียน (regLat/regLng) เมื่อแก้ไข",
+        placeholderId: "เช่น BIN-0001",
+        zoneDefault: "-- เลือกเขต --",
+        zoneCity: "เมือง",
+        placeholderName: "เช่น ถังหน้าอาคาร A",
+        placeholderAddress: "เช่น หน้าอาคารวิทย์ คณะ...",
+        placeholderRfid: "เช่น 04A1B2C3D4",
+        btnSave: "บันทึก",
+        btnSaveEdit: "บันทึกการแก้ไข",
+        btnCancel: "ยกเลิกแก้ไข",
+        btnReset: "เคลียร์ฟอร์ม",
+        listTitle: "รายการถังขยะ",
+        tableId: "ID",
+        tableZone: "เขต",
+        tableName: "name",
+        tableRfid: "rfid",
+        tableFill: "fillLevel",
+        tableCoords: "(regLat,regLng)",
+        tableUpdated: "อัปเดตเมื่อ",
+        tableManage: "จัดการ",
+        btnEdit: "แก้ไข",
+        btnDelete: "ลบ",
+        msgSaving: "กำลังบันทึก...",
+        msgSaveOk: "✅ บันทึกสำเร็จ",
+        msgSaveErr: "❌ บันทึกล้มเหลว: ",
+        msgEditing: "กำลังแก้ไขเอกสาร: ",
+        msgReadErr: "อ่านข้อมูลไม่สำเร็จ: ",
+        confirmDelete: "ลบเอกสารนี้หรือไม่? ",
+      },
+      en: {
+        pageTitle: "Smart Waste - Register Bin",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
+        mainTitle: "Register Bin",
+        formLegendAdd: "Add Bin Information",
+        formLegendEdit: "Edit Bin Information",
+        formHint: "If <b>Custom ID</b> is provided, the system will use it; if left blank, an ID will be generated automatically.<br><b>regLat/regLng</b> are the registration coordinates (permanent location) and are separate from the emptying coordinates (<code>lastEmptiedLat/Lng</code>).",
+        labelCustomId: "Custom ID",
+        labelZone: "Zone Area",
+        labelName: "Bin Name / Location Name",
+        labelRfid: "RFID Tag",
+        labelFill: "Fill Level (%)",
+        labelLat: "Latitude (Registration)",
+        labelLng: "Longitude (Registration)",
+        labelAddress: "Address/Location Details",
+        labelUpdateCoords: "Update registration coordinates (regLat/regLng) on edit",
+        placeholderId: "e.g., BIN-0001",
+        zoneDefault: "-- Select Zone --",
+        zoneCity: "City",
+        placeholderName: "e.g., Bin in front of Building A",
+        placeholderAddress: "e.g., In front of Science Building, Faculty of...",
+        placeholderRfid: "e.g., 04A1B2C3D4",
+        btnSave: "Save",
+        btnSaveEdit: "Save Changes",
+        btnCancel: "Cancel Edit",
+        btnReset: "Clear Form",
+        listTitle: "List of Bins",
+        tableId: "ID",
+        tableZone: "Zone",
+        tableName: "name",
+        tableRfid: "rfid",
+        tableFill: "fillLevel",
+        tableCoords: "(regLat,regLng)",
+        tableUpdated: "Updated At",
+        tableManage: "Manage",
+        btnEdit: "Edit",
+        btnDelete: "Delete",
+        msgSaving: "Saving...",
+        msgSaveOk: "✅ Saved successfully",
+        msgSaveErr: "❌ Save failed: ",
+        msgEditing: "Editing document: ",
+        msgReadErr: "Failed to read data: ",
+        confirmDelete: "Delete this document? ",
+      },
+      ms: {
+        pageTitle: "Smart Waste - Daftar Tong",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
+        mainTitle: "Daftar Tong",
+        formLegendAdd: "Tambah Maklumat Tong",
+        formLegendEdit: "Edit Maklumat Tong",
+        formHint: "Jika <b>ID Tersuai</b> diberikan, sistem akan menggunakannya; jika dibiarkan kosong, ID akan dijana secara automatik.<br><b>regLat/regLng</b> ialah koordinat pendaftaran (lokasi tetap) dan berasingan daripada koordinat pengosongan (<code>lastEmptiedLat/Lng</code>).",
+        labelCustomId: "ID Tersuai",
+        labelZone: "Kawasan Zon",
+        labelName: "Nama Tong / Nama Lokasi",
+        labelRfid: "Tag RFID",
+        labelFill: "Tahap Isian (%)",
+        labelLat: "Latitud (Pendaftaran)",
+        labelLng: "Longitud (Pendaftaran)",
+        labelAddress: "Butiran Alamat/Lokasi",
+        labelUpdateCoords: "Kemas kini koordinat pendaftaran (regLat/regLng) semasa mengedit",
+        placeholderId: "cth., BIN-0001",
+        zoneDefault: "-- Pilih Zon --",
+        zoneCity: "Bandar",
+        placeholderName: "cth., Tong di hadapan Bangunan A",
+        placeholderAddress: "cth., Di hadapan Bangunan Sains, Fakulti...",
+        placeholderRfid: "cth., 04A1B2C3D4",
+        btnSave: "Simpan",
+        btnSaveEdit: "Simpan Perubahan",
+        btnCancel: "Batal Edit",
+        btnReset: "Kosongkan Borang",
+        listTitle: "Senarai Tong",
+        tableId: "ID",
+        tableZone: "Zon",
+        tableName: "nama",
+        tableRfid: "rfid",
+        tableFill: "tahapIsian",
+        tableCoords: "(regLat,regLng)",
+        tableUpdated: "Dikemas kini pada",
+        tableManage: "Urus",
+        btnEdit: "Edit",
+        btnDelete: "Padam",
+        msgSaving: "Menyimpan...",
+        msgSaveOk: "✅ Berjaya disimpan",
+        msgSaveErr: "❌ Gagal menyimpan: ",
+        msgEditing: "Mengedit dokumen: ",
+        msgReadErr: "Gagal membaca data: ",
+        confirmDelete: "Padamkan dokumen ini? ",
+      }
+    };
+    let currentLang = localStorage.getItem('sw_lang') || 'th';
+    const langSelect = document.getElementById('langSelect');
+    let listUnsubscribe = null;
+
+    function getTranslation(key) { return translations[currentLang][key] || key; }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('sw_lang', lang);
+      langSelect.value = lang;
+
+      // Update static text
+      document.title = getTranslation('pageTitle');
+      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
+      const navLinks = document.querySelectorAll('.menu a');
+      navLinks[0].textContent = getTranslation('navHome');
+      navLinks[1].textContent = getTranslation('navRegister');
+      navLinks[2].textContent = getTranslation('navCapacity');
+      navLinks[3].textContent = getTranslation('navTruck');
+      navLinks[4].textContent = getTranslation('navReport');
+      document.querySelector('h1').textContent = getTranslation('mainTitle');
+      document.querySelector('fieldset p.muted').innerHTML = getTranslation('formHint');
+      const labels = document.querySelectorAll('div.row label');
+      labels[0].textContent = getTranslation('labelCustomId');
+      labels[1].textContent = getTranslation('labelZone');
+      labels[2].textContent = getTranslation('labelName');
+      labels[3].textContent = getTranslation('labelRfid');
+      labels[4].textContent = getTranslation('labelFill');
+      labels[5].textContent = getTranslation('labelLat');
+      labels[6].textContent = getTranslation('labelLng');
+      labels[7].textContent = getTranslation('labelAddress');
+      labels[8].childNodes[1].textContent = ` ${getTranslation('labelUpdateCoords')}`;
+      const zoneOptions = $('zone').options;
+      zoneOptions[0].textContent = getTranslation('zoneDefault');
+      zoneOptions[1].textContent = getTranslation('zoneCity');
+      $('docId').placeholder = getTranslation('placeholderId');
+      $('name').placeholder = getTranslation('placeholderName');
+      $('rfid').placeholder = getTranslation('placeholderRfid');
+      $('address').placeholder = getTranslation('placeholderAddress');
+      $('btnCancel').textContent = getTranslation('btnCancel');
+      $('btnReset').textContent = getTranslation('btnReset');
+      document.querySelectorAll('fieldset legend')[1].textContent = getTranslation('listTitle');
+      const ths = document.querySelectorAll('table th');
+      ths[0].textContent = getTranslation('tableId');
+      ths[1].textContent = getTranslation('tableZone');
+      ths[2].textContent = getTranslation('tableName');
+      ths[3].textContent = getTranslation('tableRfid');
+      ths[4].textContent = getTranslation('tableFill');
+      ths[5].textContent = getTranslation('tableCoords');
+      ths[6].textContent = getTranslation('tableUpdated');
+      ths[7].textContent = getTranslation('tableManage');
+
+      // Update dynamic text (form legend, save button)
+      clearForm();
+      // Re-attach listener to re-render list with new language
+      if (typeof listUnsubscribe === 'function') listUnsubscribe();
+      attachListListener();
+    }
+
     function clearForm(){
       ["docId","zone","name","address","rfid","fillLevel","lat","lng"].forEach(i=>$(i).value="");
       $("updateRegCoords").checked=false;
-      $("btnSave").textContent="บันทึก";
+      $("btnSave").textContent = getTranslation('btnSave');
       $("btnCancel").style.display="none";
-      $("formLegend").textContent="เพิ่มข้อมูลถังขยะ";
+      $("formLegend").textContent = getTranslation('formLegendAdd');
       editingId=null;
       msg.textContent=""; msg.className="";
     }
 
     // ---------- Save / Update ----------
     $("btnSave").addEventListener("click", async ()=>{
-      msg.textContent="กำลังบันทึก..."; msg.className="";
+      msg.textContent = getTranslation('msgSaving'); msg.className="";
 
       try{
         const regLat = $("lat").value ? Number($("lat").value) : null;
@@ -196,10 +418,10 @@
           await col.doc(editingId).set(payload, {merge:true});
         }
 
-        msg.textContent="✅ บันทึกสำเร็จ"; msg.className="ok";
+        msg.textContent = getTranslation('msgSaveOk'); msg.className="ok";
         clearForm();
       }catch(e){
-        msg.textContent="❌ บันทึกล้มเหลว: "+e.message; msg.className="err";
+        msg.textContent = `${getTranslation('msgSaveErr')}${e.message}`; msg.className="err";
       }
     });
 
@@ -207,29 +429,32 @@
     $("btnCancel").addEventListener("click", clearForm);
 
     // ---------- List & actions ----------
-    col.orderBy("createdAt","desc").onSnapshot(snap=>{
-      rows.innerHTML="";
-      snap.forEach(doc=>{
-        const d=doc.data()||{};
-        const when=d.updatedAt?.toDate ? d.updatedAt.toDate().toLocaleString() : "—";
-        const regPair = `${(d.regLat??"—")}, ${(d.regLng??"—")}`;
-        rows.innerHTML += `
-          <tr>
-            <td><code>${doc.id}</code></td>
-            <td>${d.zone??"—"}</td>
-            <td>${d.name??"—"}</td>
-            <td>${d.rfid??"—"}</td>
-            <td>${d.fillLevel??"—"}</td>
-            <td>${regPair}</td>
-            <td class="muted">${when}</td>
-            <td class="actions">
-              <button class="ghost" onclick="editDoc('${doc.id}')">แก้ไข</button>
-              <button class="danger" onclick="deleteDoc('${doc.id}')">ลบ</button>
-            </td>
-          </tr>`;
+    function attachListListener() {
+      listUnsubscribe = col.orderBy("createdAt","desc").onSnapshot(snap=>{
+        rows.innerHTML="";
+        snap.forEach(doc=>{
+          const d=doc.data()||{};
+          const when=d.updatedAt?.toDate ? d.updatedAt.toDate().toLocaleString() : "—";
+          const regPair = `${(d.regLat??"—")}, ${(d.regLng??"—")}`;
+          rows.innerHTML += `
+            <tr>
+              <td><code>${doc.id}</code></td>
+              <td>${d.zone??"—"}</td>
+              <td>${d.name??"—"}</td>
+              <td>${d.rfid??"—"}</td>
+              <td>${d.fillLevel??"—"}</td>
+              <td>${regPair}</td>
+              <td class="muted">${when}</td>
+              <td class="actions">
+                <button class="ghost" onclick="editDoc('${doc.id}')">${getTranslation('btnEdit')}</button>
+                <button class="danger" onclick="deleteDoc('${doc.id}')">${getTranslation('btnDelete')}</button>
+              </td>
+            </tr>`;
+        });
       });
-    });
+    }
 
+    // These need to be global for the inline onclick handlers
     window.editDoc = async (id)=>{
       try{
         const snap = await col.doc(id).get();
@@ -246,21 +471,24 @@
         $("lng").value = (d.regLng ?? "");
 
         editingId = id;
-        $("btnSave").textContent = "บันทึกการแก้ไข";
+        $("btnSave").textContent = getTranslation('btnSaveEdit');
         $("btnCancel").style.display = "inline-block";
-        $("formLegend").textContent = "แก้ไขข้อมูลถังขยะ";
-        msg.textContent="กำลังแก้ไขเอกสาร: "+id; msg.className="muted";
+        $("formLegend").textContent = getTranslation('formLegendEdit');
+        msg.textContent = `${getTranslation('msgEditing')}${id}`; msg.className="muted";
       }catch(e){
-        msg.textContent = "อ่านข้อมูลไม่สำเร็จ: "+e.message; msg.className="err";
+        msg.textContent = `${getTranslation('msgReadErr')}${e.message}`; msg.className="err";
       }
     };
 
     window.deleteDoc = async (id)=>{
-      if(confirm("ลบเอกสารนี้หรือไม่? ("+id+")")){
+      if(confirm(`${getTranslation('confirmDelete')}(${id})`)){
         await col.doc(id).delete();
         if(editingId===id) clearForm();
       }
     };
+
+    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+    changeLanguage(currentLang); // Initial load
   </script>
 </body>
 </html>

@@ -118,7 +118,7 @@ document.getElementById('btnFillDown').onclick=()=>setFill((+fillShown.value)-5)
 const truckSel=document.getElementById('truckSelect');
 const truckInfo=document.getElementById('truckInfo');
 const truckMsg=document.getElementById('truckMsg');
-let truckRef=null,currentTruckId=null,posTimer=null;
+let truckRef=null,currentTruckId=null,posWatcherId=null;
 
 async function loadTrucks(){
   const snap=await db.collection('trucks').get();
@@ -153,21 +153,42 @@ document.getElementById('btnCreateTruck').onclick=async()=>{
 };
 
 /* ส่งพิกัดจำลอง */
-document.getElementById('btnStart').onclick=()=>{
-  if(!truckRef){truckMsg.textContent='เลือกรถก่อน';truckMsg.className='err';return;}
-  truckMsg.textContent='เริ่มส่งพิกัด';truckMsg.className='muted';
-  let lat=6.46007,lng=100.35933;
-  posTimer=setInterval(async()=>{
-    lat+=(Math.random()-0.5)*0.0008;lng+=(Math.random()-0.5)*0.0008;
-    await truckRef.set({lat,lng,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-    await truckRef.collection('positions').add({lat,lng,ts:firebase.firestore.FieldValue.serverTimestamp()});
-    truckMsg.textContent=`ส่งพิกัดแล้ว (${lat.toFixed(5)}, ${lng.toFixed(5)})`;truckMsg.className='ok';
-  },2000);
+document.getElementById('btnStart').onclick = () => {
+  if (!truckRef) {
+    truckMsg.textContent = 'เลือกรถก่อน';
+    truckMsg.className = 'err';
+    return;
+  }
+  if (!navigator.geolocation) {
+    truckMsg.textContent = 'เบราว์เซอร์ของคุณไม่รองรับ Geolocation';
+    truckMsg.className = 'err';
+    return;
+  }
+
+  truckMsg.textContent = 'กำลังรอรับสัญญาณตำแหน่ง...';
+  truckMsg.className = 'muted';
+
+  const successCallback = async (position) => {
+    const { latitude, longitude } = position.coords;
+    await truckRef.set({ lat: latitude, lng: longitude, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await truckRef.collection('positions').add({ lat: latitude, lng: longitude, ts: firebase.firestore.FieldValue.serverTimestamp() });
+    truckMsg.textContent = `ส่งพิกัดจริงแล้ว (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`;
+    truckMsg.className = 'ok';
+  };
+
+  const errorCallback = (error) => {
+    truckMsg.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
+    truckMsg.className = 'err';
+  };
+
+  posWatcherId = navigator.geolocation.watchPosition(successCallback, errorCallback, { enableHighAccuracy: true });
+
   document.getElementById('btnStart').disabled=true;
   document.getElementById('btnStop').disabled=false;
 };
 document.getElementById('btnStop').onclick=()=>{
-  clearInterval(posTimer);posTimer=null;
+  if (posWatcherId) navigator.geolocation.clearWatch(posWatcherId);
+  posWatcherId = null;
   document.getElementById('btnStart').disabled=false;
   document.getElementById('btnStop').disabled=true;
   truckMsg.textContent='หยุดส่งแล้ว';truckMsg.className='muted';

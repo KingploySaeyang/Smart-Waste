@@ -58,6 +58,11 @@
       th,td{padding:6px 8px}
     }
 
+    /* Language switcher */
+    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
+    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;min-height:unset;width:auto;}
+    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
+
     /* ========== OVERRIDES: ทำให้ปุ่ม/ฟอร์ม/หัวข้อ เท่ากันทุกหน้า ========== */
 
 /* ขนาดฐานบนมือถือ: ให้กดง่าย ไม่เล็ก */
@@ -167,6 +172,13 @@ input:focus, select:focus{
   <main>
     <h1>ความจุถังขยะ</h1>
     <div class="content">
+      <div class="lang-switcher">
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
       <p class="muted" style="margin-bottom:8px">ค้นหาและดูรายการถังจาก Firestore แบบเรียลไทม์</p>
 
       <!-- การ์ดตัวกรอง -->
@@ -223,8 +235,6 @@ input:focus, select:focus{
   </main>
 
   <script>
-    function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
-
     /* Firebase Config */
     var firebaseConfig = {
       apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
@@ -250,6 +260,101 @@ input:focus, select:focus{
           status=document.getElementById('status'),
           countEl=document.getElementById('count');
 
+    /* ===== i18n ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - ความจุถังขยะ",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
+        mainTitle: "ความจุถังขยะ",
+        pageHint: "ค้นหาและดูรายการถังจาก Firestore แบบเรียลไทม์",
+        filterMode: "โหมดตัวกรอง",
+        modeEq: "เท่ากับ",
+        modeGte: "มากกว่าหรือเท่ากับ",
+        modeLte: "น้อยกว่าหรือเท่ากับ",
+        modeBetween: "ระหว่างช่วง (รวมขอบ)",
+        labelSingle: "ค่า fillLevel (0–100)",
+        labelRange: "ช่วงค่า fillLevel (0–100)",
+        collection: "คอลเลกชัน",
+        items: "รายการ",
+        sortHint: "เรียง “ล่าสุดก่อน” โดยอิงเวลาฟิลด์ createdAt",
+        tableId: "ID",
+        tableName: "name",
+        tableRfid: "rfid",
+        tableFill: "fillLevel",
+        tableCoords: "(lat,lng)",
+        tableWhen: "เมื่อ",
+        emptyResult: "ไม่พบข้อมูลตามเงื่อนไขที่เลือก",
+        error: "เกิดข้อผิดพลาด: ",
+      },
+      en: {
+        pageTitle: "Smart Waste - Bin Capacity",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
+        mainTitle: "Bin Capacity",
+        pageHint: "Search and view the list of bins from Firestore in real-time.",
+        filterMode: "Filter Mode",
+        modeEq: "Equal to",
+        modeGte: "Greater than or equal to",
+        modeLte: "Less than or equal to",
+        modeBetween: "Between range (inclusive)",
+        labelSingle: "fillLevel value (0–100)",
+        labelRange: "fillLevel range (0–100)",
+        collection: "Collection",
+        items: "items",
+        sortHint: "Sorted 'latest first' based on the createdAt field's time.",
+        tableId: "ID",
+        tableName: "name",
+        tableRfid: "rfid",
+        tableFill: "fillLevel",
+        tableCoords: "(lat,lng)",
+        tableWhen: "When",
+        emptyResult: "No data found for the selected criteria.",
+        error: "An error occurred: ",
+      },
+      ms: {
+        pageTitle: "Smart Waste - Kapasiti Tong",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
+        mainTitle: "Kapasiti Tong",
+        pageHint: "Cari dan lihat senarai tong dari Firestore dalam masa nyata.",
+        filterMode: "Mod Penapis",
+        modeEq: "Sama dengan",
+        modeGte: "Lebih besar daripada atau sama dengan",
+        modeLte: "Kurang daripada atau sama dengan",
+        modeBetween: "Antara julat (termasuk)",
+        labelSingle: "nilai tahapIsian (0–100)",
+        labelRange: "julat tahapIsian (0–100)",
+        collection: "Koleksi",
+        items: "item",
+        sortHint: "Disusun 'terkini dahulu' berdasarkan masa medan createdAt.",
+        tableId: "ID",
+        tableName: "nama",
+        tableRfid: "rfid",
+        tableFill: "tahapIsian",
+        tableCoords: "(lat,lng)",
+        tableWhen: "Bila",
+        emptyResult: "Tiada data ditemui untuk kriteria yang dipilih.",
+        error: "Ralat telah berlaku: ",
+      }
+    };
+    let currentLang = localStorage.getItem('sw_lang') || 'th';
+    const langSelect = document.getElementById('langSelect');
+
+    function getTranslation(key) { return translations[currentLang][key] || key; }
+
     function fill0to100(sel){
       sel.innerHTML='';
       for(let i=0;i<=100;i++){
@@ -261,6 +366,46 @@ input:focus, select:focus{
     [levelSel,minSel,maxSel].forEach(fill0to100);
     levelSel.value=100; minSel.value=80; maxSel.value=100;
     let unsubscribe=null;
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('sw_lang', lang);
+      langSelect.value = lang;
+
+      document.title = getTranslation('pageTitle');
+      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
+      const navLinks = document.querySelectorAll('.menu a');
+      navLinks[0].textContent = getTranslation('navHome');
+      navLinks[1].textContent = getTranslation('navRegister');
+      navLinks[2].textContent = getTranslation('navCapacity');
+      navLinks[3].textContent = getTranslation('navTruck');
+      navLinks[4].textContent = getTranslation('navReport');
+      document.querySelector('h1').textContent = getTranslation('mainTitle');
+      document.querySelector('p.muted').textContent = getTranslation('pageHint');
+      const labels = document.querySelectorAll('.card label');
+      labels[0].textContent = getTranslation('filterMode');
+      labels[1].textContent = getTranslation('labelSingle');
+      labels[2].textContent = getTranslation('labelRange');
+      const modeOptions = modeSel.options;
+      modeOptions[0].textContent = getTranslation('modeEq');
+      modeOptions[1].textContent = getTranslation('modeGte');
+      modeOptions[2].textContent = getTranslation('modeLte');
+      modeOptions[3].textContent = getTranslation('modeBetween');
+      document.querySelector('.card .muted').textContent = `${getTranslation('collection')}: smartbins`;
+      document.querySelector('.chip').innerHTML = `<span id="count">0</span> ${getTranslation('items')}`;
+      document.querySelectorAll('.card .muted')[1].textContent = getTranslation('sortHint');
+      const ths = document.querySelectorAll('table th');
+      ths[0].textContent = getTranslation('tableId');
+      ths[1].textContent = getTranslation('tableName');
+      ths[2].textContent = getTranslation('tableRfid');
+      ths[3].textContent = getTranslation('tableFill');
+      ths[4].textContent = getTranslation('tableCoords');
+      ths[5].textContent = getTranslation('tableWhen');
+      emptyNote.textContent = getTranslation('emptyResult');
+
+      buildQuery(); // Re-run query to apply new text if needed
+    }
 
     function buildQuery(){
       const mode=modeSel.value;
@@ -291,15 +436,19 @@ input:focus, select:focus{
             <td class="muted">${when}</td>`;
           rows.appendChild(tr);
         });
-        countEl.textContent=arr.length;
+        // Re-query countEl as innerHTML was replaced
+        document.getElementById('count').textContent = arr.length;
         emptyNote.style.display=arr.length?'none':'block';
       },err=>{
-        status.textContent='เกิดข้อผิดพลาด: '+err.message;
+        status.textContent= getTranslation('error') + err.message;
       });
     }
 
-    buildQuery();
+    function toggleMenu(){document.getElementById('sidebar').classList.toggle('show');}
+
     [modeSel,levelSel,minSel,maxSel].forEach(el=>el.addEventListener('change',buildQuery));
+    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+    changeLanguage(currentLang); // Initial load
   </script>
 </body>
 </html>
