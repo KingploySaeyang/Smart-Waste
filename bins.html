@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>Smart Waste - รายการถังขยะ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Firebase v8 SDKs (App + Firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
+
+    body{
+      display:flex;
+      min-height:100vh;
+      background:#f5f6fa;
+      flex-direction:row;
+    }
+
+    .sidebar{
+      width:250px;
+      background:#2f3640;
+      color:#f5f6fa;
+      display:flex;
+      flex-direction:column;
+      padding-top:20px;
+      transition:all .3s ease;
+    }
+    .sidebar h2{
+      text-align:center;
+      color:#00a8ff;
+      margin-bottom:25px;
+    }
+    .menu a{
+      display:block;
+      color:#f5f6fa;
+      padding:14px 20px;
+      text-decoration:none;
+      border-left:4px solid transparent;
+      transition:.3s;
+    }
+    .menu a:hover,
+    .menu a.active{
+      background:#353b48;
+      border-left:4px solid #00a8ff;
+    }
+
+    .toggle-btn{
+      display:none;
+      position:fixed;
+      top:14px;
+      left:14px;
+      background:#00a8ff;
+      color:#fff;
+      border:none;
+      padding:8px 12px;
+      border-radius:6px;
+      cursor:pointer;
+      z-index:1000;
+    }
+
+    main{
+      flex:1;
+      padding:30px;
+      overflow-y:auto;
+    }
+    h1{
+      color:#2f3640;
+      margin-bottom:16px;
+    }
+    .content{
+      background:#fff;
+      padding:24px;
+      border-radius:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+    }
+
+    .muted{color:#6b7280;font-size:12px;}
+    .ok{color:#16a34a;}
+    .err{color:#dc2626;}
+
+    .filters{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-bottom:12px;
+      align-items:center;
+    }
+    .filters select{
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid #d4d4d8;
+      font-size:14px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:8px;
+      overflow-x:auto;
+      display:block;
+    }
+    th,td{
+      border-bottom:1px solid #eee;
+      padding:8px 10px;
+      text-align:left;
+      white-space:nowrap;
+      font-size:13px;
+    }
+    th{background:#fafafa;}
+
+    button{
+      padding:6px 10px;
+      border-radius:8px;
+      border:0;
+      cursor:pointer;
+      font-size:12px;
+    }
+    .primary{background:#2563eb;color:#fff;}
+    .ghost{background:#f4f4f5;}
+    .danger{background:#ef4444;color:#fff;}
+
+    .actions{display:flex;gap:6px;}
+
+    .thumb{
+      width:56px;
+      height:56px;
+      object-fit:cover;
+      border-radius:8px;
+      border:1px solid #e5e7eb;
+      cursor:pointer;
+    }
+    .thumb.empty{
+      background:#f3f4f6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      color:#9ca3af;
+      border-style:dashed;
+      cursor:default;
+    }
+
+    /* Modal แก้ไข */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:1500;
+    }
+    .modal-backdrop.show{display:flex;}
+    .modal{
+      background:#fff;
+      border-radius:16px;
+      padding:18px 18px 14px;
+      max-width:620px;
+      width:100%;
+      box-shadow:0 20px 40px rgba(15,23,42,.35);
+      max-height:90vh;
+      overflow-y:auto;
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .modal-title{
+      font-size:18px;
+      font-weight:600;
+      color:#111827;
+    }
+    .modal-close{
+      border:none;
+      background:transparent;
+      font-size:20px;
+      cursor:pointer;
+      line-height:1;
+      padding:4px 8px;
+    }
+    .modal .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .modal .row>div{
+      flex:1 1 240px;
+    }
+    .modal label{
+      font-size:14px;
+      margin:10px 0 6px;
+      display:block;
+    }
+    .modal input,
+    .modal textarea{
+      width:100%;
+      padding:9px 10px;
+      border-radius:10px;
+      border:1px solid #d4d4d8;
+      font-size:14px;
+      box-sizing:border-box;
+    }
+    .modal textarea{
+      min-height:60px;
+      white-space:pre-wrap;
+    }
+    .modal .preview-edit{
+      width:100%;
+      max-width:220px;
+      border-radius:10px;
+      border:1px solid #e5e7eb;
+      object-fit:cover;
+      margin-top:6px;
+      cursor:default; /* ห้ามกดดูรูปในหน้าแก้ไข */
+    }
+
+    .modal-footer{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    /* Photo viewer overlay */
+    .photo-viewer-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.8);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:1700;
+    }
+    .photo-viewer-backdrop.show{display:flex;}
+    .photo-viewer{
+      position:relative;
+      max-width:90vw;
+      max-height:90vh;
+    }
+    .photo-viewer img{
+      max-width:100%;
+      max-height:100%;
+      border-radius:12px;
+      box-shadow:0 20px 40px rgba(0,0,0,.6);
+    }
+    .photo-viewer-close{
+      position:absolute;
+      top:-10px;
+      right:-10px;
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      border:none;
+      background:#111827;
+      color:#f9fafb;
+      cursor:pointer;
+      font-size:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 2px 6px rgba(0,0,0,.5);
+    }
+
+    @media (max-width: 900px){
+      body{flex-direction:column;}
+      .sidebar{
+        position:fixed;
+        left:-250px;
+        top:0;
+        height:100%;
+        z-index:999;
+      }
+      .sidebar.show{left:0;}
+      .toggle-btn{display:block;}
+      main{
+        padding:70px 16px 20px;
+      }
+      table{font-size:12px;}
+      th,td{padding:6px 8px;}
+      .modal{
+        max-width:100%;
+        margin:0 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu">
+      <a href="home.html">หน้าหลัก</a>
+      <a href="register.html">ลงทะเบียน</a>
+      <a href="capacity.html">ความจุถังขยะ</a>
+      <a href="truck.html">ตำแหน่งรถเก็บขยะ</a>
+      <a href="report.html">รายงานย้อนหลัง</a>
+      <a href="bins.html" class="active">รายการถังขยะ</a>
+    </nav>
+  </aside>
+
+  <main>
+    <h1>รายการถังขยะ</h1>
+    <div class="content">
+      <p class="muted">
+        ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>
+        ฟิลด์: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>
+      </p>
+
+      <div class="filters">
+        <div>
+          <span class="muted">เขตพื้นที่:</span>
+          <select id="filterZone">
+            <option value="">ทั้งหมด</option>
+          </select>
+        </div>
+        <span id="status" class="muted"></span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>เขต</th>
+            <th>BIN</th>
+            <th>RFID</th>
+            <th>พิกัด (lat,lng)</th>
+            <th>DMS</th>
+            <th>รายละเอียด</th>
+            <th>รูป</th>
+            <th>อัปเดตเมื่อ</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal แก้ไขถัง -->
+  <div class="modal-backdrop" id="editModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">แก้ไขข้อมูลถังขยะ</div>
+        <button type="button" class="modal-close" id="btnEditClose">✕</button>
+      </div>
+
+      <form id="editForm" autocomplete="off">
+        <input type="hidden" id="editDocZone">
+        <input type="hidden" id="editDocBinId">
+
+        <div class="row">
+          <div>
+            <label>เขตพื้นที่</label>
+            <input id="editZoneDisplay" type="text" readonly />
+          </div>
+          <div>
+            <label>ชื่อถัง (BIN)</label>
+            <input id="editBinIdDisplay" type="text" readonly />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>RFID Tag</label>
+            <input id="editRfid" type="text" />
+          </div>
+        </div>
+
+        <label>ตำแหน่ง</label>
+        <div class="row">
+          <div>
+            <input id="editLng" type="number" step="any" placeholder="ลองจิจูด (longitude)" />
+          </div>
+          <div>
+            <input id="editLat" type="number" step="any" placeholder="ละติจูด (latitude)" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <div>
+            <textarea id="editPosDms" placeholder="ตำแหน่ง (DMS)"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <div style="flex:1 1 100%">
+            <label>รายละเอียดเพิ่มเติม</label>
+            <textarea id="editDetails"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <div style="flex:1 1 240px">
+            <label>รูปปัจจุบัน</label>
+            <img id="editPreview" class="preview-edit" style="display:none" alt="รูปถัง" />
+            <div id="editPhotoNote" class="muted" style="margin-top:4px"></div>
+          </div>
+          <div style="flex:1 1 240px">
+            <label>เปลี่ยนรูปถังขยะ</label>
+            <input id="editPhoto" type="file" accept=".jpg,.jpeg,.png" />
+            <div class="muted">
+              รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <span id="editMsg" class="muted"></span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="ghost" id="editCancel">ยกเลิก</button>
+            <button type="submit" class="primary">บันทึกการแก้ไข</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Photo viewer overlay -->
+  <div class="photo-viewer-backdrop" id="photoViewerBackdrop">
+    <div class="photo-viewer">
+      <button class="photo-viewer-close" id="photoViewerClose">✕</button>
+      <img id="photoViewerImg" src="" alt="รูปถัง" />
+    </div>
+  </div>
+
+  <script>
+    // ---------- Firebase ----------
+    var firebaseConfig = {
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const zonesCol = db.collection("zones");
+
+    // ---------- DOM ----------
+    const $ = id => document.getElementById(id);
+
+    const statusEl   = $("status");
+    const filterZone = $("filterZone");
+    const rowsEl     = $("rows");
+
+    // edit modal DOM
+    const editModalBackdrop = $("editModalBackdrop");
+    const editForm      = $("editForm");
+    const editDocZone   = $("editDocZone");
+    const editDocBinId  = $("editDocBinId");
+    const editZoneDisplay   = $("editZoneDisplay");
+    const editBinIdDisplay  = $("editBinIdDisplay");
+    const editRfid      = $("editRfid");
+    const editLat       = $("editLat");
+    const editLng       = $("editLng");
+    const editPosDms    = $("editPosDms");
+    const editDetails   = $("editDetails");
+    const editPreview   = $("editPreview");
+    const editPhoto     = $("editPhoto");
+    const editPhotoNote = $("editPhotoNote");
+    const editMsg       = $("editMsg");
+    const btnEditClose  = $("btnEditClose");
+    const btnEditCancel = $("editCancel");
+
+    // photo viewer
+    const photoViewerBackdrop = $("photoViewerBackdrop");
+    const photoViewerImg      = $("photoViewerImg");
+    const photoViewerClose    = $("photoViewerClose");
+
+    function setStatus(text, type){
+      statusEl.textContent = text || "";
+      statusEl.className = "muted" + (type==="ok" ? " ok" : type==="err" ? " err" : "");
+    }
+    function setEditMsg(text, type){
+      editMsg.textContent = text || "";
+      editMsg.className = "muted" + (type==="ok" ? " ok" : type==="err" ? " err" : "");
+    }
+    function errStr(e){
+      return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
+    }
+
+    // ---------- Zones & filter ----------
+    let zones = []; // [{id,name}]
+    let zoneUnsubMap = {}; // zone => unsubscribe listener
+    let bins = [];  // [{zone, binId, data, createdAtMs}]
+
+    function renderZoneFilter(){
+      const current = filterZone.value;
+      filterZone.innerHTML = "";
+      const optAll = document.createElement("option");
+      optAll.value = "";
+      optAll.textContent = "ทั้งหมด";
+      filterZone.appendChild(optAll);
+      zones.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.id;
+        opt.textContent = z.name;
+        filterZone.appendChild(opt);
+      });
+      if(current) filterZone.value = current;
+    }
+
+    zonesCol.orderBy("name").onSnapshot(snap => {
+      zones = [];
+      // ยกเลิก listener เดิม
+      Object.values(zoneUnsubMap).forEach(fn => fn && fn());
+      zoneUnsubMap = {};
+      bins = [];
+
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        zones.push({ id: doc.id, name: d.name || doc.id });
+      });
+
+      renderZoneFilter();
+      setStatus("กำลังโหลดข้อมูลถังขยะ...","");
+
+      // subscribe แต่ละเขต
+      zones.forEach(z => {
+        const col = db.collection("smartbins")
+                      .doc("bins")
+                      .collection(z.id);
+        const unsub = col.onSnapshot(zoneSnap => {
+          // ลบของเขตนี้ออกก่อนแล้วเติมใหม่
+          bins = bins.filter(b => b.zone !== z.id);
+          zoneSnap.forEach(doc => {
+            const d = doc.data() || {};
+            const createdAt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+            const updatedAt = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : null;
+            bins.push({
+              zone: z.id,
+              binId: doc.id,
+              data: d,
+              createdAtMs: createdAt ? createdAt.getTime() : 0,
+              updatedAt: updatedAt
+            });
+          });
+          renderTable();
+        });
+
+        zoneUnsubMap[z.id] = unsub;
+      });
+    });
+
+    filterZone.addEventListener("change", () => {
+      renderTable();
+    });
+
+    function renderTable(){
+      const zoneFilter = filterZone.value;
+      rowsEl.innerHTML = "";
+      let filtered = bins.slice();
+
+      if(zoneFilter){
+        filtered = filtered.filter(b => b.zone === zoneFilter);
+      }
+
+      // เรียงตาม createdAt ใหม่สุดก่อน
+      filtered.sort((a,b) => b.createdAtMs - a.createdAtMs);
+
+      if(!filtered.length){
+        rowsEl.innerHTML = `<tr><td colspan="9" class="muted">ยังไม่มีข้อมูลถังขยะ</td></tr>`;
+        setStatus("","");
+        return;
+      }
+
+      filtered.forEach(item => {
+        const d = item.data || {};
+        const zone = d.zone || item.zone;
+        const binId = d.binId || item.binId;
+        const rfid  = d.rfid || "—";
+        const lat   = (d.lat !== undefined && d.lat !== null) ? d.lat : "—";
+        const lng   = (d.lng !== undefined && d.lng !== null) ? d.lng : "—";
+        const pos   = d.positionDms || "—";
+        const det   = d.details || "—";
+        const photoData = d.photoData || null;
+        const updatedAt = item.updatedAt ? item.updatedAt.toLocaleString() : "—";
+
+        let photoCell;
+        if(photoData){
+          photoCell = `<img src="${photoData}" class="thumb" onclick="openPhotoViewer('${encodeURIComponent(photoData)}')" alt="รูปถัง" />`;
+        }else{
+          photoCell = `<div class="thumb empty">ไม่มีรูป</div>`;
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${zone}</td>
+          <td><code>${binId}</code></td>
+          <td>${rfid}</td>
+          <td>${lat}, ${lng}</td>
+          <td>${pos}</td>
+          <td>${det}</td>
+          <td>${photoCell}</td>
+          <td class="muted">${updatedAt}</td>
+          <td>
+            <div class="actions">
+              <button class="ghost" onclick="editBin('${zone}','${binId}')">แก้ไข</button>
+              <button class="danger" onclick="deleteBin('${zone}','${binId}')">ลบ</button>
+            </div>
+          </td>
+        `;
+        rowsEl.appendChild(tr);
+      });
+
+      setStatus("แสดงถังขยะทั้งหมด " + filtered.length + " รายการ","ok");
+    }
+
+    // ---------- Photo viewer ----------
+    window.openPhotoViewer = function(dataUrlEncoded){
+      const dataUrl = decodeURIComponent(dataUrlEncoded);
+      photoViewerImg.src = dataUrl;
+      photoViewerBackdrop.classList.add("show");
+    };
+
+    function closePhotoViewer(){
+      photoViewerBackdrop.classList.remove("show");
+      photoViewerImg.src = "";
+    }
+
+    photoViewerBackdrop.addEventListener("click", (e) => {
+      if(e.target === photoViewerBackdrop){
+        closePhotoViewer();
+      }
+    });
+    photoViewerClose.addEventListener("click", closePhotoViewer);
+
+    // ---------- DMS helper ----------
+    function toDMSCoord(dec, isLat){
+      if(dec == null || isNaN(dec)) return "";
+      const hemi = dec >= 0 ? (isLat ? "N" : "E") : (isLat ? "S" : "W");
+      const abs = Math.abs(dec);
+      const deg = Math.floor(abs);
+      const minFloat = (abs - deg) * 60;
+      const min = Math.floor(minFloat);
+      const sec = (minFloat - min) * 60;
+      return `${deg}°${min}'${sec.toFixed(1)}"${hemi}`;
+    }
+    function syncEditDmsFromLatLng(){
+      if(editLat.value && editLng.value){
+        const la = Number(editLat.value);
+        const lo = Number(editLng.value);
+        if(!isNaN(la) && !isNaN(lo)){
+          editPosDms.value = `${toDMSCoord(la,true)} ${toDMSCoord(lo,false)}`;
+        }
+      }
+    }
+    editLat.addEventListener("change", syncEditDmsFromLatLng);
+    editLng.addEventListener("change", syncEditDmsFromLatLng);
+
+    // ---------- Edit modal ----------
+    let currentEditPhotoFileName = null;
+    let currentEditPhotoDataUrl  = null;
+    let newEditPhotoFileName     = null;
+    let newEditPhotoDataUrl      = null;
+
+    function openEditModal(){
+      editModalBackdrop.classList.add("show");
+    }
+    function closeEditModal(){
+      editModalBackdrop.classList.remove("show");
+      editForm.reset();
+      editPreview.style.display = "none";
+      editPreview.src = "";
+      editPhotoNote.textContent = "";
+      currentEditPhotoFileName = null;
+      currentEditPhotoDataUrl  = null;
+      newEditPhotoFileName     = null;
+      newEditPhotoDataUrl      = null;
+      setEditMsg("","");
+      editPhoto.value = "";
+    }
+
+    btnEditClose.addEventListener("click", closeEditModal);
+    btnEditCancel.addEventListener("click", closeEditModal);
+
+    window.editBin = async function(zone, binId){
+      try{
+        const docRef = db.collection("smartbins")
+                         .doc("bins")
+                         .collection(zone)
+                         .doc(binId);
+        const snap = await docRef.get();
+        if(!snap.exists){
+          setStatus("ไม่พบข้อมูลถัง "+binId,"err");
+          return;
+        }
+        const d = snap.data() || {};
+
+        editDocZone.value   = zone;
+        editDocBinId.value  = binId;
+        editZoneDisplay.value  = zone;
+        editBinIdDisplay.value = binId;
+
+        editRfid.value    = d.rfid || "";
+        editLat.value     = d.lat !== undefined && d.lat !== null ? d.lat : "";
+        editLng.value     = d.lng !== undefined && d.lng !== null ? d.lng : "";
+        editPosDms.value  = d.positionDms || "";
+        editDetails.value = d.details || "";
+
+        currentEditPhotoFileName = d.photoFile || null;
+        currentEditPhotoDataUrl  = d.photoData || null;
+
+        if(currentEditPhotoDataUrl){
+          editPreview.src = currentEditPhotoDataUrl;
+          editPreview.style.display = "block";
+          editPhotoNote.textContent = currentEditPhotoFileName || "";
+        }else{
+          editPreview.style.display = "none";
+          editPhotoNote.textContent = "ยังไม่มีรูป";
+        }
+
+        openEditModal();
+      }catch(e){
+        setStatus("อ่านข้อมูลไม่สำเร็จ: " + errStr(e),"err");
+      }
+    };
+
+    // รูปในหน้าแก้ไข (ไม่ให้กดดู แต่ให้เปลี่ยนได้)
+    editPhoto.addEventListener("change", () => {
+      newEditPhotoFileName = null;
+      newEditPhotoDataUrl  = null;
+
+      const file = editPhoto.files[0];
+      if(!file) return;
+
+      const lower = (file.name || "").toLowerCase();
+      if(!(/\.(jpg|jpeg|png)$/i.test(lower))){
+        setEditMsg("กรุณาอัปโหลดไฟล์ .jpg, .jpeg หรือ .png เท่านั้น","err");
+        editPhoto.value = "";
+        return;
+      }
+
+      const maxBytes = 350 * 1024;
+      if(file.size > maxBytes){
+        const kb = Math.round(file.size / 1024);
+        setEditMsg("ไฟล์รูปใหญ่เกิน 350KB ("+kb+"KB)","err");
+        editPhoto.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        newEditPhotoFileName = file.name;
+        newEditPhotoDataUrl  = e.target.result;
+        editPreview.src = newEditPhotoDataUrl;
+        editPreview.style.display = "block";
+        editPhotoNote.textContent = newEditPhotoFileName + " (รูปใหม่)";
+        setEditMsg("เตรียมรูปใหม่เรียบร้อย","ok");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try{
+        const zone  = editDocZone.value;
+        const binId = editDocBinId.value;
+        if(!zone || !binId){
+          setEditMsg("ข้อมูลไม่ครบ ไม่สามารถบันทึกได้","err");
+          return;
+        }
+
+        const rfid = editRfid.value.trim() || null;
+        const lng  = editLng.value ? Number(editLng.value) : null;
+        const lat  = editLat.value ? Number(editLat.value) : null;
+        const pos  = editPosDms.value.trim() || null;
+        const det  = editDetails.value.trim() || null;
+
+        let photoFile = currentEditPhotoFileName;
+        let photoData = currentEditPhotoDataUrl;
+
+        if(newEditPhotoDataUrl){
+          photoFile = newEditPhotoFileName;
+          photoData = newEditPhotoDataUrl;
+        }
+
+        const data = {
+          rfid       : rfid,
+          lng        : lng,
+          lat        : lat,
+          positionDms: pos,
+          details    : det,
+          photoFile  : photoFile || null,
+          photoData  : photoData || null,
+          updatedAt  : firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        setEditMsg("กำลังบันทึกการแก้ไข...","");
+        const docRef = db.collection("smartbins")
+                         .doc("bins")
+                         .collection(zone)
+                         .doc(binId);
+        await docRef.set(data, { merge:true });
+        setEditMsg("✅ บันทึกการแก้ไขสำเร็จ","ok");
+        setStatus("บันทึกการแก้ไขของ "+binId+" สำเร็จ","ok");
+        setTimeout(closeEditModal, 600);
+      }catch(e){
+        setEditMsg("❌ บันทึกไม่สำเร็จ: " + errStr(e),"err");
+      }
+    });
+
+    // ---------- Delete ----------
+    window.deleteBin = async function(zone, binId){
+      if(!confirm("แน่ใจหรือไม่ว่าต้องการลบถัง "+binId+" ในเขต "+zone+" ?")) return;
+      try{
+        await db.collection("smartbins")
+                .doc("bins")
+                .collection(zone)
+                .doc(binId)
+                .delete();
+        setStatus("ลบถัง "+binId+" สำเร็จ","ok");
+      }catch(e){
+        setStatus("ลบถังไม่สำเร็จ: " + errStr(e),"err");
+      }
+    };
+  </script>
+</body>
+</html>

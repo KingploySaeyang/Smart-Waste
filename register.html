@@ -1,56 +1,251 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
   <title>Smart Waste - ลงทะเบียนถังขยะ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Firebase SDK -->
+  <!-- Firebase v8 SDKs (App + Firestore) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <style> 
+  <style>
     *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
-    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row}
-    .sidebar{width:250px;background:#2f3640;color:#f5f6fa;display:flex;flex-direction:column;padding-top:20px;transition:all .3s ease;}
-    .sidebar h2{text-align:center;color:#00a8ff;margin-bottom:25px}
-    .menu a{display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;border-left:4px solid transparent;transition:.3s}
-    .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
-    .toggle-btn{display:none;position:fixed;top:14px;left:14px;background:#00a8ff;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;z-index:1000}
-    main{flex:1;padding:30px;overflow-y:auto}
-    h1{color:#2f3640;margin-bottom:16px}
-    .content{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-    fieldset{border:1px solid #e3e3e3;border-radius:12px;margin:16px 0;padding:16px}
-    legend{font-weight:bold}
-    label{display:block;margin:10px 0 6px}
-    input[type="text"],input[type="number"],select{width:100%;padding:10px;border:1px solid #d7d7d7;border-radius:10px}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .row>div{flex:1 1 240px}
-    button{padding:10px 14px;border:0;border-radius:10px;cursor:pointer}
-    .primary{background:#2563eb;color:#fff}
-    .ghost{background:#f4f4f5}
-    .danger{background:#ef4444;color:#fff}
-    table{width:100%;border-collapse:collapse;margin-top:12px;overflow-x:auto;display:block}
-    th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:left;white-space:nowrap}
-    th{background:#fafafa}
-    .muted{color:#6b7280;font-size:12px}
-    .ok{color:#16a34a}.err{color:#dc2626}
-    .actions{display:flex;gap:8px}
-    @media (max-width: 900px){
-      body{flex-direction:column}
-      .sidebar{position:fixed;left:-250px;top:0;height:100%;z-index:999;}
-      .sidebar.show{left:0}
-      .toggle-btn{display:block}
-      main{padding:70px 16px 20px}
-      .row>div{flex:1 1 100%}
-      input,select,button{font-size:16px}
-      h1{text-align:center}
+
+    body{
+      display:flex;
+      min-height:100vh;
+      background:#f5f6fa;
+      flex-direction:row;
     }
 
-    /* Language switcher */
-    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
-    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;width:auto;}
-    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
+    .sidebar{
+      width:250px;
+      background:#2f3640;
+      color:#f5f6fa;
+      display:flex;
+      flex-direction:column;
+      padding-top:20px;
+      transition:all .3s ease;
+    }
+    .sidebar h2{
+      text-align:center;
+      color:#00a8ff;
+      margin-bottom:25px;
+    }
+    .menu a{
+      display:block;
+      color:#f5f6fa;
+      padding:14px 20px;
+      text-decoration:none;
+      border-left:4px solid transparent;
+      transition:.3s;
+    }
+    .menu a:hover,
+    .menu a.active{
+      background:#353b48;
+      border-left:4px solid #00a8ff;
+    }
+
+    .toggle-btn{
+      display:none;
+      position:fixed;
+      top:14px;
+      left:14px;
+      background:#00a8ff;
+      color:#fff;
+      border:none;
+      padding:8px 12px;
+      border-radius:6px;
+      cursor:pointer;
+      z-index:1000;
+    }
+
+    main{
+      flex:1;
+      padding:30px;
+      overflow-y:auto;
+    }
+    h1{
+      color:#2f3640;
+      margin-bottom:16px;
+    }
+    .content{
+      background:#fff;
+      padding:24px;
+      border-radius:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+    }
+
+    fieldset{
+      border:1px solid #e3e3e3;
+      border-radius:12px;
+      margin:16px 0;
+      padding:16px;
+    }
+    legend{
+      font-weight:bold;
+    }
+
+    label{
+      display:block;
+      margin:10px 0 6px;
+      font-size:14px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="file"],
+    select,
+    textarea{
+      width:100%;
+      padding:10px;
+      border:1px solid #d7d7d7;
+      border-radius:10px;
+      box-sizing:border-box;
+      font-size:16px;
+    }
+    textarea{
+      min-height:60px;
+      white-space:pre-wrap;
+    }
+    #posDms{ resize:none; }
+
+    .row{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:flex-start;
+    }
+    .row>div{
+      flex:1 1 240px;
+    }
+
+    button{
+      padding:10px 14px;
+      border:0;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:14px;
+    }
+    .primary{background:#2563eb;color:#fff;}
+    .ghost{background:#f4f4f5;}
+
+    .muted{color:#6b7280;font-size:12px;}
+    .ok{color:#16a34a;}
+    .err{color:#dc2626;}
+    .error{border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.15);}
+
+    .actions{display:flex;gap:8px;}
+    .gps-actions{margin-top:8px;text-align:right;}
+    .gps-actions>button{width:100%;}
+
+    .preview{
+      display:block;
+      margin-top:8px;
+      max-width:100%;
+      width:100%;
+      height:auto;
+      border-radius:10px;
+      border:1px solid #e5e7eb;
+    }
+
+    /* Modal zones */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:1500;
+    }
+    .modal-backdrop.show{display:flex;}
+    .modal{
+      background:#fff;
+      border-radius:16px;
+      padding:18px 18px 12px;
+      max-width:520px;
+      width:100%;
+      box-shadow:0 20px 40px rgba(15,23,42,.35);
+      max-height:90vh;
+      overflow-y:auto;
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .modal-title{
+      font-size:18px;
+      font-weight:600;
+      color:#111827;
+    }
+    .modal-close{
+      border:none;
+      background:transparent;
+      font-size:20px;
+      cursor:pointer;
+      line-height:1;
+      padding:4px 8px;
+    }
+    .zone-row{
+      display:flex;
+      gap:8px;
+      margin-bottom:8px;
+    }
+    .zone-row input{
+      flex:1;
+      padding:7px 10px;
+      font-size:14px;
+      border-radius:10px;
+      border:1px solid #d4d4d8;
+    }
+    .zone-row button{
+      font-size:12px;
+      padding:6px 9px;
+      border-radius:8px;
+    }
+    .zone-row .danger{
+      background:#ef4444;
+      color:#fff;
+    }
+    .zone-row .primary{
+      background:#2563eb;
+      color:#fff;
+    }
+    .modal-footer{
+      margin-top:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    @media (max-width: 900px){
+      body{flex-direction:column;}
+      .sidebar{
+        position:fixed;
+        left:-250px;
+        top:0;
+        height:100%;
+        z-index:999;
+      }
+      .sidebar.show{left:0;}
+      .toggle-btn{display:block;}
+      main{
+        padding:70px 16px 20px;
+      }
+      .row>div{flex:1 1 100%;}
+      input,select,button,textarea{font-size:16px;}
+      h1{text-align:center;}
+      .modal{
+        max-width:100%;
+        margin:0 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -64,81 +259,118 @@
       <a href="capacity.html">ความจุถังขยะ</a>
       <a href="truck.html">ตำแหน่งรถเก็บขยะ</a>
       <a href="report.html">รายงานย้อนหลัง</a>
+      <a href="bins.html">รายการถังขยะ</a>
     </nav>
   </aside>
 
   <main>
     <h1>ลงทะเบียนถังขยะ</h1>
     <div class="content">
-      <div class="lang-switcher">
-        <select id="langSelect">
-          <option value="th">ไทย</option>
-          <option value="en">English</option>
-          <option value="ms">Bahasa Melayu</option>
-        </select>
-      </div>
 
       <fieldset>
-        <legend id="formLegend">เพิ่มข้อมูลถังขยะ</legend>
+        <legend>เพิ่มข้อมูลถังขยะ</legend>
         <p class="muted">
-          ถ้าใส่ <b>Custom ID</b> ระบบจะใช้ ID นั้น; ถ้าเว้นว่าง ระบบจะสร้าง ID ให้อัตโนมัติ<br>
-          <b>regLat/regLng</b> คือพิกัดลงทะเบียน (ตำแหน่งเดิมตลอดไป) และถูกแยกจากพิกัดตอนเทถัง (<code>lastEmptiedLat/Lng</code>)
+          บันทึกใน Firestore ที่ <code>smartbins / bins / [เขต] / [BINID]</code><br>
+          โครงสร้าง: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>
         </p>
 
-        <div class="row">
-          <div><label>Custom ID</label><input id="docId" type="text" placeholder="เช่น BIN-0001" /></div>
-          <div>
-            <label>เขตพื้นที่</label>
-            <select id="zone">
-              <option value="">-- เลือกเขต --</option>
-              <option value="เมือง">เมือง</option>
-              <option value="เขต1">เขต1</option>
-              <option value="เขต2">เขต2</option>
-              <option value="เขต3">เขต3</option>
-              <option value="เขต4">เขต4</option>
-            </select>
+        <form id="binForm" autocomplete="off">
+
+          <div class="row">
+            <div style="flex:1 1 260px">
+              <label>เขตพื้นที่</label>
+              <select id="zone">
+                <option value="">-- ยังไม่มีเขต --</option>
+              </select>
+            </div>
+
+            <div>
+              <label>ชื่อถัง (อัตโนมัติ: BIN + เลขรัน 3 หลักตามเขต)</label>
+              <input id="binId" type="text" readonly placeholder="เลือกเขตก่อน ระบบจะสร้าง BINxxx ให้" />
+            </div>
           </div>
-          <div><label>ชื่อถัง / ชื่อจุด</label><input id="name" type="text" placeholder="เช่น ถังหน้าอาคาร A" /></div>
-          <div><label>RFID Tag</label><input id="rfid" type="text" placeholder="เช่น 04A1B2C3D4" /></div>
-          <div><label>ระดับความเต็ม (%)</label><input id="fillLevel" type="number" min="0" max="100" /></div>
-          <div><label>ละติจูด (พิกัดลงทะเบียน)</label><input id="lat" type="number" step="any" placeholder="6.46007" /></div>
-          <div><label>ลองจิจูด (พิกัดลงทะเบียน)</label><input id="lng" type="number" step="any" placeholder="100.35933" /></div>
-          <div style="flex-basis:100%"><label>ที่อยู่/รายละเอียดตำแหน่ง</label><input id="address" type="text" placeholder="เช่น หน้าอาคารวิทย์ คณะ..." /></div>
-        </div>
 
-        <div class="row" style="align-items:center;margin-top:8px">
-          <label style="display:flex;gap:8px;align-items:center">
-            <input id="updateRegCoords" type="checkbox">
-            อัปเดตพิกัดลงทะเบียน (regLat/regLng) เมื่อแก้ไข
+          <div class="row">
+            <div>
+              <label>RFID Tag</label>
+              <input id="rfid" type="text" placeholder="เช่น 04A1B2C3D4" />
+            </div>
+          </div>
+
+          <label>ตำแหน่ง</label>
+          <div class="row">
+            <div>
+              <input id="lng" type="number" step="any" placeholder="ลองจิจูด (longitude)" />
+            </div>
+            <div>
+              <input id="lat" type="number" step="any" placeholder="ละติจูด (latitude)" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <div>
+              <textarea id="posDms" placeholder="ตำแหน่ง (DMS)"></textarea>
+            </div>
+          </div>
+
+          <div class="gps-actions">
+            <button type="button" id="btnGetPos" class="primary">ดึงพิกัดจาก GPS</button>
+          </div>
+
+          <div class="row">
+            <div style="flex:1 1 100%">
+              <label>รายละเอียดเพิ่มเติม</label>
+              <textarea id="details" placeholder="เช่น หน้าอาคารวิทย์ คณะ..."></textarea>
+            </div>
+          </div>
+
+          <label>แนบรูปถังขยะ
+            <input id="photo" type="file" accept=".jpg,.jpeg,.png" />
+            <div class="muted">
+              รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB
+            </div>
+            <img id="preview" class="preview" style="display:none" alt="ตัวอย่างรูป" />
           </label>
-        </div>
 
-        <div style="margin-top:12px" class="actions">
-          <button class="primary" id="btnSave">บันทึก</button>
-          <button class="ghost" id="btnCancel" type="button" style="display:none">ยกเลิกแก้ไข</button>
-          <button class="ghost" id="btnReset" type="button">เคลียร์ฟอร์ม</button>
-          <span id="msg" style="margin-left:10px"></span>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>รายการถังขยะ</legend>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th><th>เขต</th><th>name</th><th>rfid</th><th>fillLevel</th>
-              <th>(regLat,regLng)</th><th>อัปเดตเมื่อ</th><th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
+          <div style="margin-top:12px" class="row">
+            <div class="actions">
+              <button type="submit" class="primary" id="btnSave">บันทึก</button>
+              <button type="button" class="ghost" id="btnReset">เคลียร์ฟอร์ม</button>
+            </div>
+            <span id="msg" class="muted" style="margin-left:10px"></span>
+          </div>
+        </form>
       </fieldset>
     </div>
   </main>
 
+  <!-- Modal จัดการเขต -->
+  <div class="modal-backdrop" id="zoneModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">จัดการเขตพื้นที่</div>
+        <button type="button" class="modal-close" id="btnCloseZoneModal">✕</button>
+      </div>
+
+      <div id="zoneList"></div>
+
+      <hr style="margin:10px 0">
+
+      <div class="zone-row">
+        <input type="text" id="newZoneName" placeholder="ชื่อเขตใหม่ เช่น เมือง, เขต1">
+        <button type="button" class="primary" id="btnAddZone">เพิ่มเขต</button>
+      </div>
+
+      <div class="modal-footer">
+        <span class="muted" id="zoneModalMsg"></span>
+        <button type="button" class="ghost" id="btnZoneDone">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ---------- Firebase ----------
-    var firebaseConfig={
+    var firebaseConfig = {
       apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
       authDomain:"smart-waste-a2bf4.firebaseapp.com",
       projectId:"smart-waste-a2bf4",
@@ -147,348 +379,405 @@
       appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
     };
     firebase.initializeApp(firebaseConfig);
-    const db=firebase.firestore(),col=db.collection("smartbins");
+    const db = firebase.firestore();
+    const zonesCol = db.collection("zones");
 
-    // ---------- Helpers ----------
-    const $=id=>document.getElementById(id);
-    const msg=$("msg"), rows=$("rows");
-    let editingId=null; // เก็บ ID ที่กำลังแก้ไข
+    // ---------- DOM ----------
+    const $ = id => document.getElementById(id);
 
-    /* ===== i18n ===== */
-    const translations = {
-      th: {
-        pageTitle: "Smart Waste - ลงทะเบียนถังขยะ",
-        menuBtn: "☰ เมนู",
-        navHome: "หน้าหลัก",
-        navRegister: "ลงทะเบียน",
-        navCapacity: "ความจุถังขยะ",
-        navTruck: "ตำแหน่งรถเก็บขยะ",
-        navReport: "รายงานย้อนหลัง",
-        mainTitle: "ลงทะเบียนถังขยะ",
-        formLegendAdd: "เพิ่มข้อมูลถังขยะ",
-        formLegendEdit: "แก้ไขข้อมูลถังขยะ",
-        formHint: "ถ้าใส่ <b>Custom ID</b> ระบบจะใช้ ID นั้น; ถ้าเว้นว่าง ระบบจะสร้าง ID ให้อัตโนมัติ<br><b>regLat/regLng</b> คือพิกัดลงทะเบียน (ตำแหน่งเดิมตลอดไป) และถูกแยกจากพิกัดตอนเทถัง (<code>lastEmptiedLat/Lng</code>)",
-        labelCustomId: "Custom ID",
-        labelZone: "เขตพื้นที่",
-        labelName: "ชื่อถัง / ชื่อจุด",
-        labelRfid: "RFID Tag",
-        labelFill: "ระดับความเต็ม (%)",
-        labelLat: "ละติจูด (พิกัดลงทะเบียน)",
-        labelLng: "ลองจิจูด (พิกัดลงทะเบียน)",
-        labelAddress: "ที่อยู่/รายละเอียดตำแหน่ง",
-        labelUpdateCoords: "อัปเดตพิกัดลงทะเบียน (regLat/regLng) เมื่อแก้ไข",
-        placeholderId: "เช่น BIN-0001",
-        zoneDefault: "-- เลือกเขต --",
-        zoneCity: "เมือง",
-        placeholderName: "เช่น ถังหน้าอาคาร A",
-        placeholderAddress: "เช่น หน้าอาคารวิทย์ คณะ...",
-        placeholderRfid: "เช่น 04A1B2C3D4",
-        btnSave: "บันทึก",
-        btnSaveEdit: "บันทึกการแก้ไข",
-        btnCancel: "ยกเลิกแก้ไข",
-        btnReset: "เคลียร์ฟอร์ม",
-        listTitle: "รายการถังขยะ",
-        tableId: "ID",
-        tableZone: "เขต",
-        tableName: "name",
-        tableRfid: "rfid",
-        tableFill: "fillLevel",
-        tableCoords: "(regLat,regLng)",
-        tableUpdated: "อัปเดตเมื่อ",
-        tableManage: "จัดการ",
-        btnEdit: "แก้ไข",
-        btnDelete: "ลบ",
-        msgSaving: "กำลังบันทึก...",
-        msgSaveOk: "✅ บันทึกสำเร็จ",
-        msgSaveErr: "❌ บันทึกล้มเหลว: ",
-        msgEditing: "กำลังแก้ไขเอกสาร: ",
-        msgReadErr: "อ่านข้อมูลไม่สำเร็จ: ",
-        confirmDelete: "ลบเอกสารนี้หรือไม่? ",
-      },
-      en: {
-        pageTitle: "Smart Waste - Register Bin",
-        menuBtn: "☰ Menu",
-        navHome: "Home",
-        navRegister: "Register",
-        navCapacity: "Bin Capacity",
-        navTruck: "Truck Location",
-        navReport: "Historical Report",
-        mainTitle: "Register Bin",
-        formLegendAdd: "Add Bin Information",
-        formLegendEdit: "Edit Bin Information",
-        formHint: "If <b>Custom ID</b> is provided, the system will use it; if left blank, an ID will be generated automatically.<br><b>regLat/regLng</b> are the registration coordinates (permanent location) and are separate from the emptying coordinates (<code>lastEmptiedLat/Lng</code>).",
-        labelCustomId: "Custom ID",
-        labelZone: "Zone Area",
-        labelName: "Bin Name / Location Name",
-        labelRfid: "RFID Tag",
-        labelFill: "Fill Level (%)",
-        labelLat: "Latitude (Registration)",
-        labelLng: "Longitude (Registration)",
-        labelAddress: "Address/Location Details",
-        labelUpdateCoords: "Update registration coordinates (regLat/regLng) on edit",
-        placeholderId: "e.g., BIN-0001",
-        zoneDefault: "-- Select Zone --",
-        zoneCity: "City",
-        placeholderName: "e.g., Bin in front of Building A",
-        placeholderAddress: "e.g., In front of Science Building, Faculty of...",
-        placeholderRfid: "e.g., 04A1B2C3D4",
-        btnSave: "Save",
-        btnSaveEdit: "Save Changes",
-        btnCancel: "Cancel Edit",
-        btnReset: "Clear Form",
-        listTitle: "List of Bins",
-        tableId: "ID",
-        tableZone: "Zone",
-        tableName: "name",
-        tableRfid: "rfid",
-        tableFill: "fillLevel",
-        tableCoords: "(regLat,regLng)",
-        tableUpdated: "Updated At",
-        tableManage: "Manage",
-        btnEdit: "Edit",
-        btnDelete: "Delete",
-        msgSaving: "Saving...",
-        msgSaveOk: "✅ Saved successfully",
-        msgSaveErr: "❌ Save failed: ",
-        msgEditing: "Editing document: ",
-        msgReadErr: "Failed to read data: ",
-        confirmDelete: "Delete this document? ",
-      },
-      ms: {
-        pageTitle: "Smart Waste - Daftar Tong",
-        menuBtn: "☰ Menu",
-        navHome: "Halaman Utama",
-        navRegister: "Daftar",
-        navCapacity: "Kapasiti Tong",
-        navTruck: "Lokasi Lori",
-        navReport: "Laporan Sejarah",
-        mainTitle: "Daftar Tong",
-        formLegendAdd: "Tambah Maklumat Tong",
-        formLegendEdit: "Edit Maklumat Tong",
-        formHint: "Jika <b>ID Tersuai</b> diberikan, sistem akan menggunakannya; jika dibiarkan kosong, ID akan dijana secara automatik.<br><b>regLat/regLng</b> ialah koordinat pendaftaran (lokasi tetap) dan berasingan daripada koordinat pengosongan (<code>lastEmptiedLat/Lng</code>).",
-        labelCustomId: "ID Tersuai",
-        labelZone: "Kawasan Zon",
-        labelName: "Nama Tong / Nama Lokasi",
-        labelRfid: "Tag RFID",
-        labelFill: "Tahap Isian (%)",
-        labelLat: "Latitud (Pendaftaran)",
-        labelLng: "Longitud (Pendaftaran)",
-        labelAddress: "Butiran Alamat/Lokasi",
-        labelUpdateCoords: "Kemas kini koordinat pendaftaran (regLat/regLng) semasa mengedit",
-        placeholderId: "cth., BIN-0001",
-        zoneDefault: "-- Pilih Zon --",
-        zoneCity: "Bandar",
-        placeholderName: "cth., Tong di hadapan Bangunan A",
-        placeholderAddress: "cth., Di hadapan Bangunan Sains, Fakulti...",
-        placeholderRfid: "cth., 04A1B2C3D4",
-        btnSave: "Simpan",
-        btnSaveEdit: "Simpan Perubahan",
-        btnCancel: "Batal Edit",
-        btnReset: "Kosongkan Borang",
-        listTitle: "Senarai Tong",
-        tableId: "ID",
-        tableZone: "Zon",
-        tableName: "nama",
-        tableRfid: "rfid",
-        tableFill: "tahapIsian",
-        tableCoords: "(regLat,regLng)",
-        tableUpdated: "Dikemas kini pada",
-        tableManage: "Urus",
-        btnEdit: "Edit",
-        btnDelete: "Padam",
-        msgSaving: "Menyimpan...",
-        msgSaveOk: "✅ Berjaya disimpan",
-        msgSaveErr: "❌ Gagal menyimpan: ",
-        msgEditing: "Mengedit dokumen: ",
-        msgReadErr: "Gagal membaca data: ",
-        confirmDelete: "Padamkan dokumen ini? ",
-      }
-    };
-    let currentLang = localStorage.getItem('sw_lang') || 'th';
-    const langSelect = document.getElementById('langSelect');
-    let listUnsubscribe = null;
+    const binForm   = $("binForm");
+    const binIdEl   = $("binId");
+    const zoneEl    = $("zone");
+    const rfidEl    = $("rfid");
+    const latEl     = $("lat");
+    const lngEl     = $("lng");
+    const posDmsEl  = $("posDms");
+    const detailsEl = $("details");
+    const photoEl   = $("photo");
+    const previewEl = $("preview");
+    const msg       = $("msg");
+    const btnReset  = $("btnReset");
+    const btnGetPos = $("btnGetPos");
 
-    function getTranslation(key) { return translations[currentLang][key] || key; }
+    // zone modal
+    const zoneModalBackdrop = $("zoneModalBackdrop");
+    const zoneListEl        = $("zoneList");
+    const newZoneNameEl     = $("newZoneName");
+    const btnAddZone        = $("btnAddZone");
+    const btnCloseZoneModal = $("btnCloseZoneModal");
+    const btnZoneDone       = $("btnZoneDone");
+    const zoneModalMsg      = $("zoneModalMsg");
 
-    function changeLanguage(lang) {
-      if (!translations[lang]) return;
-      currentLang = lang;
-      localStorage.setItem('sw_lang', lang);
-      langSelect.value = lang;
+    let photoFileName = null;
+    let photoDataUrl  = null;
 
-      // Update static text
-      document.title = getTranslation('pageTitle');
-      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
-      const navLinks = document.querySelectorAll('.menu a');
-      navLinks[0].textContent = getTranslation('navHome');
-      navLinks[1].textContent = getTranslation('navRegister');
-      navLinks[2].textContent = getTranslation('navCapacity');
-      navLinks[3].textContent = getTranslation('navTruck');
-      navLinks[4].textContent = getTranslation('navReport');
-      document.querySelector('h1').textContent = getTranslation('mainTitle');
-      document.querySelector('fieldset p.muted').innerHTML = getTranslation('formHint');
-      const labels = document.querySelectorAll('div.row label');
-      labels[0].textContent = getTranslation('labelCustomId');
-      labels[1].textContent = getTranslation('labelZone');
-      labels[2].textContent = getTranslation('labelName');
-      labels[3].textContent = getTranslation('labelRfid');
-      labels[4].textContent = getTranslation('labelFill');
-      labels[5].textContent = getTranslation('labelLat');
-      labels[6].textContent = getTranslation('labelLng');
-      labels[7].textContent = getTranslation('labelAddress');
-      labels[8].childNodes[1].textContent = ` ${getTranslation('labelUpdateCoords')}`;
-      const zoneOptions = $('zone').options;
-      zoneOptions[0].textContent = getTranslation('zoneDefault');
-      zoneOptions[1].textContent = getTranslation('zoneCity');
-      $('docId').placeholder = getTranslation('placeholderId');
-      $('name').placeholder = getTranslation('placeholderName');
-      $('rfid').placeholder = getTranslation('placeholderRfid');
-      $('address').placeholder = getTranslation('placeholderAddress');
-      $('btnCancel').textContent = getTranslation('btnCancel');
-      $('btnReset').textContent = getTranslation('btnReset');
-      document.querySelectorAll('fieldset legend')[1].textContent = getTranslation('listTitle');
-      const ths = document.querySelectorAll('table th');
-      ths[0].textContent = getTranslation('tableId');
-      ths[1].textContent = getTranslation('tableZone');
-      ths[2].textContent = getTranslation('tableName');
-      ths[3].textContent = getTranslation('tableRfid');
-      ths[4].textContent = getTranslation('tableFill');
-      ths[5].textContent = getTranslation('tableCoords');
-      ths[6].textContent = getTranslation('tableUpdated');
-      ths[7].textContent = getTranslation('tableManage');
-
-      // Update dynamic text (form legend, save button)
-      clearForm();
-      // Re-attach listener to re-render list with new language
-      if (typeof listUnsubscribe === 'function') listUnsubscribe();
-      attachListListener();
+    function setStatus(text, type){
+      msg.textContent = text || "";
+      msg.className = "muted" + (type==="ok" ? " ok" : type==="err" ? " err" : "");
+    }
+    function errStr(e){
+      return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
     }
 
-    function clearForm(){
-      ["docId","zone","name","address","rfid","fillLevel","lat","lng"].forEach(i=>$(i).value="");
-      $("updateRegCoords").checked=false;
-      $("btnSave").textContent = getTranslation('btnSave');
-      $("btnCancel").style.display="none";
-      $("formLegend").textContent = getTranslation('formLegendAdd');
-      editingId=null;
-      msg.textContent=""; msg.className="";
+    // --------- จัดการเขต (zones collection) ----------
+    let zones = []; // [{id,name}]
+
+    function renderZoneSelect(){
+      const selected = zoneEl.value;
+
+      zoneEl.innerHTML = "";
+
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = zones.length ? "-- เลือกเขต --" : "-- ยังไม่มีเขต --";
+      zoneEl.appendChild(opt0);
+
+      zones.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.id;      // ใช้ docId เป็นชื่อเขต
+        opt.textContent = z.name;
+        zoneEl.appendChild(opt);
+      });
+
+      const addOpt = document.createElement("option");
+      addOpt.value = "__add_zone__";
+      addOpt.textContent = "+ เพิ่มเขตใหม่…";
+      zoneEl.appendChild(addOpt);
+
+      if(selected) zoneEl.value = selected;
     }
 
-    // ---------- Save / Update ----------
-    $("btnSave").addEventListener("click", async ()=>{
-      msg.textContent = getTranslation('msgSaving'); msg.className="";
-
-      try{
-        const regLat = $("lat").value ? Number($("lat").value) : null;
-        const regLng = $("lng").value ? Number($("lng").value) : null;
-
-        const basePayload = {
-          zone: $("zone").value.trim()||null,
-          name: $("name").value.trim()||null,
-          address: $("address").value.trim()||null,
-          rfid: $("rfid").value.trim()||null,
-          fillLevel: $("fillLevel").value ? Number($("fillLevel").value) : 0,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        const explicitId = $("docId").value.trim();
-        const isCreate = !editingId;
-
-        if(isCreate){
-          // สร้างใหม่: ตั้ง regLat/regLng + lat/lng ครั้งแรก
-          const payload = {
-            ...basePayload,
-            regLat, regLng,
-            lat: regLat, lng: regLng,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          };
-          if(explicitId){
-            await col.doc(explicitId).set(payload, {merge:true});
-          }else{
-            await col.add(payload);
-          }
-        }else{
-          // แก้ไข: ไม่แตะ regLat/regLng เว้นแต่ติ๊ก checkbox
-          const payload = { ...basePayload };
-          if ($("updateRegCoords").checked){
-            payload.regLat = regLat;
-            payload.regLng = regLng;
-            // ไม่ไปแตะ lastEmptiedLat/Lng และไม่บังคับ set lat/lng ปัจจุบัน
-          }
-          await col.doc(editingId).set(payload, {merge:true});
-        }
-
-        msg.textContent = getTranslation('msgSaveOk'); msg.className="ok";
-        clearForm();
-      }catch(e){
-        msg.textContent = `${getTranslation('msgSaveErr')}${e.message}`; msg.className="err";
+    function renderZoneList(){
+      zoneListEl.innerHTML = "";
+      if(!zones.length){
+        zoneListEl.innerHTML = `<p class="muted">ยังไม่มีเขตพื้นที่ ให้เพิ่มเขตใหม่ด้านล่าง</p>`;
+        return;
       }
-    });
 
-    $("btnReset").addEventListener("click", clearForm);
-    $("btnCancel").addEventListener("click", clearForm);
+      zones.forEach(z => {
+        const row = document.createElement("div");
+        row.className = "zone-row";
 
-    // ---------- List & actions ----------
-    function attachListListener() {
-      listUnsubscribe = col.orderBy("createdAt","desc").onSnapshot(snap=>{
-        rows.innerHTML="";
-        snap.forEach(doc=>{
-          const d=doc.data()||{};
-          const when=d.updatedAt?.toDate ? d.updatedAt.toDate().toLocaleString() : "—";
-          const regPair = `${(d.regLat??"—")}, ${(d.regLng??"—")}`;
-          rows.innerHTML += `
-            <tr>
-              <td><code>${doc.id}</code></td>
-              <td>${d.zone??"—"}</td>
-              <td>${d.name??"—"}</td>
-              <td>${d.rfid??"—"}</td>
-              <td>${d.fillLevel??"—"}</td>
-              <td>${regPair}</td>
-              <td class="muted">${when}</td>
-              <td class="actions">
-                <button class="ghost" onclick="editDoc('${doc.id}')">${getTranslation('btnEdit')}</button>
-                <button class="danger" onclick="deleteDoc('${doc.id}')">${getTranslation('btnDelete')}</button>
-              </td>
-            </tr>`;
+        const input = document.createElement("input");
+        input.value = z.name;
+        input.dataset.oldId = z.id;
+
+        const btnSaveZone = document.createElement("button");
+        btnSaveZone.type = "button";
+        btnSaveZone.className = "primary";
+        btnSaveZone.textContent = "บันทึก";
+
+        const btnDeleteZone = document.createElement("button");
+        btnDeleteZone.type = "button";
+        btnDeleteZone.className = "danger";
+        btnDeleteZone.textContent = "ลบ";
+
+        btnSaveZone.addEventListener("click", async () => {
+          const oldId = input.dataset.oldId;
+          const newName = input.value.trim();
+          if(!newName){
+            zoneModalMsg.textContent = "ชื่อเขตห้ามว่าง";
+            zoneModalMsg.className = "muted err";
+            return;
+          }
+          if(oldId === newName){
+            zoneModalMsg.textContent = "ไม่มีการเปลี่ยนแปลง";
+            zoneModalMsg.className = "muted";
+            return;
+          }
+
+          try{
+            const binsSnap = await db.collection("smartbins")
+                                     .doc("bins")
+                                     .collection(oldId)
+                                     .limit(1).get();
+            if(!binsSnap.empty){
+              zoneModalMsg.textContent = "ไม่สามารถเปลี่ยนชื่อเขตที่มีถังอยู่แล้ว";
+              zoneModalMsg.className = "muted err";
+              return;
+            }
+
+            const oldDoc = zonesCol.doc(oldId);
+            const newDoc = zonesCol.doc(newName);
+            const oldData = (await oldDoc.get()).data() || {};
+            await newDoc.set({
+              name: newName,
+              createdAt: oldData.createdAt || firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await oldDoc.delete();
+
+            zoneModalMsg.textContent = "บันทึกชื่อเขตใหม่สำเร็จ";
+            zoneModalMsg.className = "muted ok";
+          }catch(e){
+            zoneModalMsg.textContent = "เกิดข้อผิดพลาด: " + (e.message || e);
+            zoneModalMsg.className = "muted err";
+          }
         });
+
+        btnDeleteZone.addEventListener("click", async () => {
+          const id = input.dataset.oldId;
+          if(!confirm("ลบเขต \""+id+"\" ?")) return;
+          try{
+            const binsSnap = await db.collection("smartbins")
+                                     .doc("bins")
+                                     .collection(id)
+                                     .limit(1).get();
+            if(!binsSnap.empty){
+              zoneModalMsg.textContent = "ไม่สามารถลบเขตที่มีถังอยู่แล้ว";
+              zoneModalMsg.className = "muted err";
+              return;
+            }
+            await zonesCol.doc(id).delete();
+            zoneModalMsg.textContent = "ลบเขตสำเร็จ";
+            zoneModalMsg.className = "muted ok";
+          }catch(e){
+            zoneModalMsg.textContent = "ลบเขตไม่สำเร็จ: " + (e.message || e);
+            zoneModalMsg.className = "muted err";
+          }
+        });
+
+        row.appendChild(input);
+        row.appendChild(btnSaveZone);
+        row.appendChild(btnDeleteZone);
+        zoneListEl.appendChild(row);
       });
     }
 
-    // These need to be global for the inline onclick handlers
-    window.editDoc = async (id)=>{
+    zonesCol.orderBy("name").onSnapshot(snap => {
+      zones = [];
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        zones.push({ id: doc.id, name: d.name || doc.id });
+      });
+      renderZoneSelect();
+      renderZoneList();
+    });
+
+    function openZoneModal(){
+      zoneModalMsg.textContent = "";
+      zoneModalMsg.className = "muted";
+      newZoneNameEl.value = "";
+      zoneModalBackdrop.classList.add("show");
+    }
+    function closeZoneModal(){
+      zoneModalBackdrop.classList.remove("show");
+    }
+
+    btnCloseZoneModal.addEventListener("click", closeZoneModal);
+    btnZoneDone.addEventListener("click", closeZoneModal);
+
+    btnAddZone.addEventListener("click", async () => {
+      const name = newZoneNameEl.value.trim();
+      if(!name){
+        zoneModalMsg.textContent = "กรุณากรอกชื่อเขต";
+        zoneModalMsg.className = "muted err";
+        return;
+      }
       try{
-        const snap = await col.doc(id).get();
-        if(!snap.exists) return;
-        const d = snap.data()||{};
-        // เติมฟอร์ม
-        $("docId").value = id;          // ให้เห็น ID ปัจจุบัน (แก้/ไม่แก้ก็ได้)
-        $("zone").value = d.zone ?? "";
-        $("name").value = d.name ?? "";
-        $("address").value = d.address ?? "";
-        $("rfid").value = d.rfid ?? "";
-        $("fillLevel").value = d.fillLevel ?? 0;
-        $("lat").value = (d.regLat ?? "");   // โชว์พิกัดลงทะเบียน (ถ้าจะอัปเดตต้องติ๊ก checkbox)
-        $("lng").value = (d.regLng ?? "");
-
-        editingId = id;
-        $("btnSave").textContent = getTranslation('btnSaveEdit');
-        $("btnCancel").style.display = "inline-block";
-        $("formLegend").textContent = getTranslation('formLegendEdit');
-        msg.textContent = `${getTranslation('msgEditing')}${id}`; msg.className="muted";
+        const docRef = zonesCol.doc(name);
+        const snap = await docRef.get();
+        if(snap.exists){
+          zoneModalMsg.textContent = "มีเขตนี้อยู่แล้ว";
+          zoneModalMsg.className = "muted err";
+          return;
+        }
+        await docRef.set({
+          name,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        newZoneNameEl.value = "";
+        zoneModalMsg.textContent = "เพิ่มเขตสำเร็จ";
+        zoneModalMsg.className = "muted ok";
       }catch(e){
-        msg.textContent = `${getTranslation('msgReadErr')}${e.message}`; msg.className="err";
+        zoneModalMsg.textContent = "เพิ่มเขตไม่สำเร็จ: " + (e.message || e);
+        zoneModalMsg.className = "muted err";
       }
-    };
+    });
 
-    window.deleteDoc = async (id)=>{
-      if(confirm(`${getTranslation('confirmDelete')}(${id})`)){
-        await col.doc(id).delete();
-        if(editingId===id) clearForm();
+    // --------- สร้าง BINxxx ต่อเขต ----------
+    function pad3(n){ return n.toString().padStart(3,"0"); }
+
+    async function assignBinIdForZone(zoneName){
+      if(!zoneName) return;
+      const col = db.collection("smartbins").doc("bins").collection(zoneName);
+      const snap = await col.orderBy("binId","desc").limit(1).get();
+      let next = 1;
+      if(!snap.empty){
+        const last = snap.docs[0].data().binId || snap.docs[0].id;
+        const m = /(\d+)$/.exec(last);
+        if(m) next = Number(m[1]) + 1;
       }
-    };
+      const binId = "BIN" + pad3(next);
+      binIdEl.value = binId;
+      return binId;
+    }
 
-    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
-    changeLanguage(currentLang); // Initial load
+    zoneEl.addEventListener("change", () => {
+      const z = zoneEl.value;
+
+      if(z === "__add_zone__"){
+        zoneEl.value = "";
+        binIdEl.value = "";
+        openZoneModal();
+        return;
+      }
+
+      if(!z){
+        binIdEl.value = "";
+        setStatus("กรุณาเลือกเขตพื้นที่","");
+        return;
+      }
+
+      assignBinIdForZone(z);
+    });
+
+    // ---------- DMS helper ----------
+    function toDMSCoord(dec, isLat){
+      if(dec == null || isNaN(dec)) return "";
+      const hemi = dec >= 0 ? (isLat ? "N" : "E") : (isLat ? "S" : "W");
+      const abs = Math.abs(dec);
+      const deg = Math.floor(abs);
+      const minFloat = (abs - deg) * 60;
+      const min = Math.floor(minFloat);
+      const sec = (minFloat - min) * 60;
+      return `${deg}°${min}'${sec.toFixed(1)}"${hemi}`;
+    }
+
+    function syncDmsFromLatLng(){
+      if(latEl.value && lngEl.value){
+        const la = Number(latEl.value);
+        const lo = Number(lngEl.value);
+        if(!isNaN(la) && !isNaN(lo)){
+          posDmsEl.value = `${toDMSCoord(la,true)} ${toDMSCoord(lo,false)}`;
+        }
+      }
+    }
+
+    latEl.addEventListener("change", syncDmsFromLatLng);
+    lngEl.addEventListener("change", syncDmsFromLatLng);
+
+    // ---------- GPS ----------
+    btnGetPos.addEventListener("click", () => {
+      if(!navigator.geolocation){
+        setStatus("อุปกรณ์ไม่รองรับการดึงตำแหน่ง","err");
+        return;
+      }
+      setStatus("กำลังดึงตำแหน่ง...","");
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const { latitude, longitude } = pos.coords;
+        latEl.value = latitude.toFixed(6);
+        lngEl.value = longitude.toFixed(6);
+        posDmsEl.value = `${toDMSCoord(latitude,true)} ${toDMSCoord(longitude,false)}`;
+        setStatus("ดึงตำแหน่งสำเร็จ","ok");
+      }, err=>{
+        setStatus("ดึงตำแหน่งไม่สำเร็จ: " + err.message,"err");
+      }, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
+    });
+
+    // ---------- รูป ----------
+    photoEl.addEventListener("change", () => {
+      previewEl.style.display = "none";
+      previewEl.src = "";
+      photoFileName = null;
+      photoDataUrl  = null;
+
+      const file = photoEl.files[0];
+      if(!file) return;
+
+      const lower = (file.name || "").toLowerCase();
+      if(!(/\.(jpg|jpeg|png)$/i.test(lower))){
+        setStatus("กรุณาอัปโหลดไฟล์ .jpg, .jpeg หรือ .png เท่านั้น","err");
+        photoEl.value = "";
+        return;
+      }
+
+      const maxBytes = 350 * 1024;
+      if(file.size > maxBytes){
+        const kb = Math.round(file.size / 1024);
+        setStatus("ไฟล์รูปใหญ่เกิน 350KB ("+kb+"KB)","err");
+        photoEl.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        photoFileName = file.name;
+        photoDataUrl  = e.target.result;
+        previewEl.src = photoDataUrl;
+        previewEl.style.display = "block";
+        setStatus("เตรียมรูปเรียบร้อย","ok");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // ---------- เคลียร์ฟอร์ม ----------
+    function clearForm(){
+      binForm.reset();
+      binIdEl.value = "";
+      previewEl.style.display = "none";
+      previewEl.src = "";
+      photoFileName = null;
+      photoDataUrl  = null;
+      setStatus("","");
+    }
+
+    btnReset.addEventListener("click", clearForm);
+
+    // ---------- Submit ----------
+    binForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try{
+        const zone = zoneEl.value.trim();
+        if(!zone){
+          zoneEl.classList.add("error");
+          setStatus("กรุณาเลือกเขตพื้นที่","err");
+          return;
+        }else{
+          zoneEl.classList.remove("error");
+        }
+
+        let binId = binIdEl.value.trim();
+        if(!binId){
+          binId = await assignBinIdForZone(zone);
+        }
+
+        const rfid = rfidEl.value.trim() || null;
+        const lng  = lngEl.value ? Number(lngEl.value) : null;
+        const lat  = latEl.value ? Number(latEl.value) : null;
+        const positionDms = posDmsEl.value.trim() || null;
+        const details     = detailsEl.value.trim() || null;
+        const photoFile   = photoFileName || null;
+        const photoData   = photoDataUrl  || null;
+
+        const data = {
+          createdAt : firebase.firestore.FieldValue.serverTimestamp(),
+          zone      : zone,
+          binId     : binId,
+          rfid      : rfid,
+          lng       : lng,
+          lat       : lat,
+          positionDms : positionDms,
+          details     : details,
+          photoFile   : photoFile,
+          photoData   : photoData,
+          updatedAt   : firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        setStatus("กำลังบันทึกข้อมูล...","");
+        const docRef = db.collection("smartbins")
+                         .doc("bins")
+                         .collection(zone)
+                         .doc(binId);
+
+        await docRef.set(data, { merge:false });
+
+        setStatus("✅ บันทึกถังขยะสำเร็จ ("+binId+")","ok");
+        clearForm();
+      }catch(err){
+        console.error(err);
+        setStatus("❌ บันทึกไม่สำเร็จ: " + errStr(err),"err");
+      }
+    });
   </script>
 </body>
 </html>

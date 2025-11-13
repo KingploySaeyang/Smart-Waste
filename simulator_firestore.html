@@ -11,7 +11,7 @@
 <style> 
 :root{--radius:12px;--gap:12px;--pad:16px;--fg:#0f172a;--muted:#6b7280;--line:#e5e7eb;--brand:#2563eb}
 *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Arial}
-body{max-width:980px;margin:28px auto;padding:0 16px;color:var(--fg)}
+body{max-width:980px;margin:28px auto;padding:0 16px;color:var(--fg);background:#f5f6fa}
 h1{font-size:22px;margin:0 0 14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
 box-shadow:0 2px 6px rgba(0,0,0,.06);padding:var(--pad);margin:14px 0}
@@ -19,8 +19,10 @@ button{padding:10px 14px;border-radius:10px;cursor:pointer;border:none}
 .primary{background:var(--brand);color:#fff}
 .ghost{background:#f3f4f6}
 .danger{background:#ef4444;color:#fff}
-.muted{color:var(--muted);font-size:13px}
 .ok{color:#16a34a}.err{color:#dc2626}
+.muted{color:var(--muted);font-size:13px}
+label{display:block;margin:10px 0 6px;font-size:14px}
+select,input{padding:8px 10px;border-radius:10px;border:1px solid var(--line);min-width:180px}
 </style>
 </head>
 <body>
@@ -29,14 +31,25 @@ button{padding:10px 14px;border-radius:10px;cursor:pointer;border:none}
 <!-- 🔹 ถังขยะ -->
 <div class="card">
   <h2>1) ถังขยะ</h2>
-  <label>เลือกถัง</label>
-  <select id="binSelect"><option>Loading...</option></select>
+
+  <label>1. เลือกเขต</label>
+  <select id="zoneSelect">
+    <option value="">กำลังโหลดเขต...</option>
+  </select>
+
+  <label style="margin-top:10px;">2. เลือกถัง</label>
+  <select id="binSelect" disabled>
+    <option value="">-- เลือกเขตก่อน --</option>
+  </select>
+
   <p id="binInfo" class="muted">(ยังไม่ได้เลือกถัง)</p>
+
   <label>ระดับความเต็ม (%)</label>
   <input id="fillShown" type="number" min="0" max="100" readonly>
+
   <div style="margin-top:8px">
     <button class="primary" id="btnFillUp">+5%</button>
-    <button class="ghost" id="btnFillDown">-5%</button>
+    <button class="ghost"  id="btnFillDown">-5%</button>
     <button class="danger" id="btnEmpty">เทถัง</button>
   </div>
   <p id="binMsg" class="muted"></p>
@@ -46,12 +59,13 @@ button{padding:10px 14px;border-radius:10px;cursor:pointer;border:none}
 <div class="card">
   <h2>2) รถเก็บขยะ</h2>
   <label>เลือกรถ</label>
-  <select id="truckSelect"><option>Loading...</option></select>
+  <select id="truckSelect"><option value="">กำลังโหลด...</option></select>
   <p id="truckInfo" class="muted">(ยังไม่ได้เลือกรถ)</p>
   <button class="primary" id="btnCreateTruck">+ สร้างรถใหม่</button>
+
   <div style="margin-top:10px">
     <button class="primary" id="btnStart">เริ่มส่งพิกัด</button>
-    <button class="ghost" id="btnStop" disabled>หยุด</button>
+    <button class="ghost"  id="btnStop" disabled>หยุด</button>
   </div>
   <p id="truckMsg" class="muted"></p>
 </div>
@@ -73,145 +87,348 @@ function pad2(n){return String(n).padStart(2,'0');}
 function stampLocal(now=new Date()){
   return `${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
 }
+function clamp(v){return Math.max(0,Math.min(100,v));}
 
-/* ========== Load bins ========== */
-const binSel=document.getElementById('binSelect');
-const binInfo=document.getElementById('binInfo');
-const fillShown=document.getElementById('fillShown');
-const binMsg=document.getElementById('binMsg');
-let binRef=null,binData=null;
+/* DOM ตัวแปรถัง */
+const zoneSel   = document.getElementById('zoneSelect');
+const binSel    = document.getElementById('binSelect');
+const binInfo   = document.getElementById('binInfo');
+const fillShown = document.getElementById('fillShown');
+const binMsg    = document.getElementById('binMsg');
 
-async function loadBins(){
-  const snap=await db.collection('smartbins').get();
-  binSel.innerHTML='<option value="">-- เลือกถัง --</option>';
-  snap.forEach(d=>{
-    const data=d.data();const opt=document.createElement('option');
-    opt.value=d.id;opt.textContent=d.id+' • '+(data.name||'-');
-    binSel.appendChild(opt);
-  });
+let binRef      = null;   // smartbins/bins/{zone}/{binId}
+let binData     = null;
+let levelBinRef = null;   // bin_level/{zone}/bins/{binId}
+
+/* 🔹 โหลดเขตจาก collection zones แล้วเช็คว่ามีถังจริงใน smartbins/bins/{zone} ไหม */
+async function loadZones() {
+  zoneSel.innerHTML = `<option value="">กำลังโหลดเขต...</option>`;
+  binSel.disabled = true;
+  binSel.innerHTML = `<option value="">-- เลือกเขตก่อน --</option>`;
+  binInfo.textContent = "(ยังไม่ได้เลือกถัง)";
+  fillShown.value = "";
+  binMsg.textContent = "";
+  binMsg.className = "muted";
+
+  try {
+    const zonesSnap = await db.collection("zones").get();
+    if (zonesSnap.empty) {
+      zoneSel.innerHTML = `<option value="">(ยังไม่มีเขตในระบบ)</option>`;
+      return;
+    }
+
+    const zonesWithBins = [];
+
+    // วิ่งทีละเขตใน zones แล้วไปดูว่าที่ smartbins/bins/{zoneId} มีถังไหม
+    for (const doc of zonesSnap.docs) {
+      const zoneId   = doc.id;               // เช่น "Arau"
+      const zoneData = doc.data() || {};
+      const zoneName = zoneData.name || zoneId;
+
+      const binsSnap = await db
+        .collection("smartbins")
+        .doc("bins")
+        .collection(zoneId)
+        .limit(1)
+        .get();
+
+      if (!binsSnap.empty) {
+        zonesWithBins.push({ id: zoneId, name: zoneName });
+      }
+    }
+
+    if (zonesWithBins.length === 0) {
+      zoneSel.innerHTML = `<option value="">(ยังไม่มีเขตที่มีถังขยะ)</option>`;
+      return;
+    }
+
+    zoneSel.innerHTML = `<option value="">-- เลือกเขต --</option>`;
+    zonesWithBins.forEach(z => {
+      const opt = document.createElement("option");
+      opt.value = z.id;      // จะใช้ id เป็นชื่อ zone สำหรับ path smartbins/bins/{zoneId}
+      opt.textContent = z.name;
+      zoneSel.appendChild(opt);
+    });
+  } catch (err) {
+    console.error(err);
+    zoneSel.innerHTML = `<option value="">โหลดเขตไม่สำเร็จ</option>`;
+    binMsg.textContent = "❌ โหลดเขตไม่สำเร็จ: " + (err.message || err);
+    binMsg.className = "err";
+  }
 }
-loadBins();
 
-binSel.onchange=async()=>{
-  const id=binSel.value;
-  if(!id){binInfo.textContent='(ยังไม่ได้เลือกถัง)';return;}
-  binRef=db.collection('smartbins').doc(id);
-  const doc=await binRef.get();
-  if(!doc.exists){binInfo.textContent='ไม่พบถัง';return;}
-  binData=doc.data();
-  fillShown.value=binData.fillLevel||0;
-  binInfo.textContent=`${id} • ${binData.name||''}`;
+/* 🔹 โหลดถังในเขตที่เลือก จาก smartbins/bins/{zone}/{binId} */
+async function loadBinsInZone(zone){
+  binSel.disabled = true;
+  binSel.innerHTML = `<option value="">กำลังโหลด...</option>`;
+  binInfo.textContent="(ยังไม่ได้เลือกถัง)";
+  fillShown.value="";
+
+  try {
+    const snap = await db.collection("smartbins")
+      .doc("bins")
+      .collection(zone)
+      .orderBy("binId")
+      .get();
+
+    if (snap.empty){
+      binSel.innerHTML = `<option value="">(ไม่มีถังในเขตนี้)</option>`;
+      return;
+    }
+
+    binSel.innerHTML = `<option value="">-- เลือกถัง --</option>`;
+    snap.forEach(doc=>{
+      const d = doc.data();
+      const opt = document.createElement("option");
+      opt.value = doc.id;  // binId เช่น BIN001
+      opt.textContent = d.binId + (d.details ? " • "+d.details : "");
+      binSel.appendChild(opt);
+    });
+
+    binSel.disabled = false;
+  } catch (err) {
+    console.error(err);
+    binSel.innerHTML = `<option value="">โหลดถังไม่สำเร็จ</option>`;
+    binMsg.textContent = "❌ โหลดถังไม่สำเร็จ: " + (err.message || err);
+    binMsg.className = "err";
+  }
+}
+
+/* 👉 เมื่อเปลี่ยนเขต */
+zoneSel.onchange = ()=>{
+  const z = zoneSel.value;
+  binRef=null; binData=null; levelBinRef=null;
+  binMsg.textContent="";
+  binMsg.className="muted";
+
+  if(z){
+    loadBinsInZone(z);
+  }else{
+    binSel.disabled = true;
+    binSel.innerHTML = `<option value="">-- เลือกเขตก่อน --</option>`;
+    binInfo.textContent="(ยังไม่ได้เลือกถัง)";
+    fillShown.value="";
+  }
 };
 
-function clamp(v){return Math.max(0,Math.min(100,v));}
-async function setFill(v){
-  if(!binRef)return;
-  v=clamp(v);
-  await binRef.update({fillLevel:v,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  fillShown.value=v;
-  binMsg.textContent='อัปเดตแล้ว';binMsg.className='ok';
-}
-document.getElementById('btnFillUp').onclick=()=>setFill((+fillShown.value)+5);
-document.getElementById('btnFillDown').onclick=()=>setFill((+fillShown.value)-5);
+/* 👉 เมื่อเลือกถัง */
+binSel.onchange = async ()=>{
+  const zone = zoneSel.value;
+  const binId = binSel.value;
 
-/* ========== Load trucks ========== */
-const truckSel=document.getElementById('truckSelect');
-const truckInfo=document.getElementById('truckInfo');
-const truckMsg=document.getElementById('truckMsg');
-let truckRef=null,currentTruckId=null,posWatcherId=null;
+  binMsg.textContent="";
+  binMsg.className="muted";
+
+  if(!zone || !binId){
+    binRef=null; binData=null; levelBinRef=null;
+    binInfo.textContent="(ยังไม่ได้เลือกถัง)";
+    fillShown.value="";
+    return;
+  }
+
+  // smartbins/bins/{zone}/{binId}
+  binRef = db.collection("smartbins")
+    .doc("bins")
+    .collection(zone)
+    .doc(binId);
+
+  const doc = await binRef.get();
+  if(!doc.exists){
+    binInfo.textContent="ไม่พบถังขยะนี้ในฐานข้อมูล";
+    binRef=null; binData=null; levelBinRef=null;
+    fillShown.value="";
+    return;
+  }
+
+  binData = doc.data();
+  binInfo.textContent = (binData.binId || binId) + (binData.details ? " • "+binData.details : "");
+
+  // 🔸 ระดับขยะ: bin_level/{zone}/bins/{binId}
+  levelBinRef = db.collection("bin_level")
+    .doc(zone)
+    .collection("bins")
+    .doc(binId);
+
+  const levelDoc = await levelBinRef.get();
+  const level = (levelDoc.exists ? (levelDoc.data().fillLevel || 0) : 0);
+  fillShown.value = level;
+};
+
+/* 🔹 อัปเดตระดับขยะ -> bin_level/{zone}/bins/{binId} */
+async function setFill(v){
+  if(!levelBinRef || !binData){
+    binMsg.textContent="กรุณาเลือกเขตและถังขยะก่อน";
+    binMsg.className="err";
+    return;
+  }
+
+  v = clamp(Number(v) || 0);
+
+  await levelBinRef.set({
+    fillLevel: v,
+    zone: binData.zone || zoneSel.value,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge:true});
+
+  fillShown.value = v;
+  binMsg.textContent = "อัปเดตระดับขยะเรียบร้อย";
+  binMsg.className = "ok";
+}
+
+document.getElementById("btnFillUp").onclick   = ()=>setFill((+fillShown.value || 0)+5);
+document.getElementById("btnFillDown").onclick = ()=>setFill((+fillShown.value || 0)-5);
+
+/* 🔹 เทถัง (บันทึกใน bin_level/{zone}/bins/{binId}/trashEmptyingList) */
+document.getElementById("btnEmpty").onclick = async ()=>{
+  if(!levelBinRef || !binRef){
+    binMsg.textContent="กรุณาเลือกถังก่อน";
+    binMsg.className="err";
+    return;
+  }
+  if(!currentTruckId){
+    binMsg.textContent="ยังไม่ได้เลือกรถ";
+    binMsg.className="err";
+    return;
+  }
+
+  const tdoc = await db.collection("trucks").doc(currentTruckId).get();
+  const t = tdoc.data() || {};
+  const eLat = t.lat ?? null;
+  const eLng = t.lng ?? null;
+
+  const emptyColl = levelBinRef.collection("trashEmptyingList");
+  const snap = await emptyColl.get();
+  const next = snap.size + 1;
+  const logId = `Item${String(next).padStart(2,'0')}_${stampLocal()}`;
+
+  await emptyColl.doc(logId).set({
+    ts: firebase.firestore.FieldValue.serverTimestamp(),
+    lat: eLat,
+    lng: eLng,
+    truckId: currentTruckId,
+    note: "Emptied via simulator"
+  });
+
+  await levelBinRef.set({
+    fillLevel: 0,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge:true});
+
+  fillShown.value = 0;
+  binMsg.textContent = "✅ เทถังแล้ว และบันทึกประวัติเรียบร้อย";
+  binMsg.className = "ok";
+};
+
+/* 🔹 รถเก็บขยะ */
+const truckSel   = document.getElementById("truckSelect");
+const truckInfo  = document.getElementById("truckInfo");
+const truckMsg   = document.getElementById("truckMsg");
+let truckRef     = null;
+let currentTruckId = null;
+let posWatcherId = null;
 
 async function loadTrucks(){
-  const snap=await db.collection('trucks').get();
-  truckSel.innerHTML='<option value="">-- เลือกรถ --</option>';
+  const snap = await db.collection("trucks").get();
+  truckSel.innerHTML=`<option value="">-- เลือกรถ --</option>`;
   snap.forEach(d=>{
-    const data=d.data();const opt=document.createElement('option');
-    opt.value=d.id;opt.textContent=d.id+' • '+(data.name||'-');
+    const data = d.data();
+    const opt=document.createElement("option");
+    opt.value=d.id;
+    opt.textContent=d.id + " • " + (data.name || "-");
     truckSel.appendChild(opt);
   });
 }
-loadTrucks();
 
-truckSel.onchange=async()=>{
-  const id=truckSel.value;
-  if(!id){truckInfo.textContent='(ยังไม่ได้เลือกรถ)';return;}
+truckSel.onchange = async ()=>{
+  const id = truckSel.value;
+  if(!id){
+    truckRef=null; currentTruckId=null;
+    truckInfo.textContent="(ยังไม่ได้เลือกรถ)";
+    return;
+  }
   currentTruckId=id;
-  truckRef=db.collection('trucks').doc(id);
-  const doc=await truckRef.get();
+  truckRef=db.collection("trucks").doc(id);
+  const doc = await truckRef.get();
   if(doc.exists){
-    const d=doc.data();
-    truckInfo.textContent=`${id} • ${d.name||'-'}`;
+    const d = doc.data();
+    truckInfo.textContent = `${id} • ${d.name || "-"}`;
+  }else{
+    truckInfo.textContent="ไม่พบข้อมูลรถ";
   }
 };
 
 /* สร้างรถใหม่ */
-document.getElementById('btnCreateTruck').onclick=async()=>{
-  const id=prompt("Truck ID:","TRUCK01");if(!id)return;
-  const name=prompt("ชื่อรถ:","รถเขตเมือง");
-  await db.collection('trucks').doc(id).set({name,createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+document.getElementById("btnCreateTruck").onclick = async ()=>{
+  const id = prompt("Truck ID:","TRUCK01");
+  if(!id) return;
+  const name = prompt("ชื่อรถ:","รถเขตเมือง");
+  await db.collection("trucks").doc(id).set({
+    name,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge:true});
   await loadTrucks();
-  truckSel.value=id;truckSel.dispatchEvent(new Event('change'));
+  truckSel.value=id;
+  truckSel.dispatchEvent(new Event("change"));
 };
 
-/* ส่งพิกัดจำลอง */
-document.getElementById('btnStart').onclick = () => {
-  if (!truckRef) {
-    truckMsg.textContent = 'เลือกรถก่อน';
-    truckMsg.className = 'err';
+/* เริ่มส่งพิกัดจริง */
+document.getElementById("btnStart").onclick = ()=>{
+  if(!truckRef){
+    truckMsg.textContent="เลือกรถก่อน";
+    truckMsg.className="err";
     return;
   }
-  if (!navigator.geolocation) {
-    truckMsg.textContent = 'เบราว์เซอร์ของคุณไม่รองรับ Geolocation';
-    truckMsg.className = 'err';
+  if(!navigator.geolocation){
+    truckMsg.textContent="อุปกรณ์ไม่รองรับ GPS";
+    truckMsg.className="err";
     return;
   }
 
-  truckMsg.textContent = 'กำลังรอรับสัญญาณตำแหน่ง...';
-  truckMsg.className = 'muted';
+  truckMsg.textContent="กำลังส่งตำแหน่ง...";
+  truckMsg.className="muted";
 
-  const successCallback = async (position) => {
-    const { latitude, longitude } = position.coords;
-    await truckRef.set({ lat: latitude, lng: longitude, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    await truckRef.collection('positions').add({ lat: latitude, lng: longitude, ts: firebase.firestore.FieldValue.serverTimestamp() });
-    truckMsg.textContent = `ส่งพิกัดจริงแล้ว (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`;
-    truckMsg.className = 'ok';
-  };
+  posWatcherId = navigator.geolocation.watchPosition(async pos=>{
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
 
-  const errorCallback = (error) => {
-    truckMsg.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
-    truckMsg.className = 'err';
-  };
+    await truckRef.set({
+      lat, lng,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge:true});
 
-  posWatcherId = navigator.geolocation.watchPosition(successCallback, errorCallback, { enableHighAccuracy: true });
+    await truckRef.collection("positions").add({
+      lat, lng,
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-  document.getElementById('btnStart').disabled=true;
-  document.getElementById('btnStop').disabled=false;
+    truckMsg.textContent=`ส่งแล้ว (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+    truckMsg.className="ok";
+  },
+  err=>{
+    truckMsg.textContent="GPS Error: " + err.message;
+    truckMsg.className="err";
+  },
+  {enableHighAccuracy:true});
+
+  document.getElementById("btnStart").disabled=true;
+  document.getElementById("btnStop").disabled=false;
 };
-document.getElementById('btnStop').onclick=()=>{
-  if (posWatcherId) navigator.geolocation.clearWatch(posWatcherId);
-  posWatcherId = null;
-  document.getElementById('btnStart').disabled=false;
-  document.getElementById('btnStop').disabled=true;
-  truckMsg.textContent='หยุดส่งแล้ว';truckMsg.className='muted';
+
+/* หยุดส่งพิกัด */
+document.getElementById("btnStop").onclick = ()=>{
+  if(posWatcherId) navigator.geolocation.clearWatch(posWatcherId);
+  posWatcherId=null;
+  document.getElementById("btnStart").disabled=false;
+  document.getElementById("btnStop").disabled=true;
+  truckMsg.textContent="หยุดส่งแล้ว";
+  truckMsg.className="muted";
 };
 
-/* เทถัง */
-document.getElementById('btnEmpty').onclick=async()=>{
-  if(!binRef){binMsg.textContent='ยังไม่ได้เลือกถัง';binMsg.className='err';return;}
-  if(!currentTruckId){binMsg.textContent='ยังไม่ได้เลือกรถ';binMsg.className='err';return;}
-  const tdoc=await db.collection('trucks').doc(currentTruckId).get();
-  const t=tdoc.data()||{};
-  const eLat=t.lat??null,eLng=t.lng??null;
-  const listSnap=await binRef.collection('trashEmptyingList').get();
-  const next=listSnap.size+1;
-  const logId=`Item${String(next).padStart(2,'0')}_${stampLocal()}`;
-  await binRef.collection('trashEmptyingList').doc(logId).set({
-    ts:firebase.firestore.FieldValue.serverTimestamp(),
-    truckId:currentTruckId,
-    lat:eLat,lng:eLng,note:'Emptied via simulator'
-  });
-  await binRef.update({fillLevel:0,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  binMsg.textContent='✅ บันทึกการเทถังแล้ว';binMsg.className='ok';
-};
+/* start */
+document.addEventListener("DOMContentLoaded", ()=>{
+  loadZones();
+  loadTrucks();
+});
 </script>
 </body>
 </html>

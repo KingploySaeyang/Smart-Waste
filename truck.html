@@ -68,7 +68,7 @@
   </aside>
 
   <main>
-    <h1>ตำแหน่งรถเก็บขยะ (RTDB Live)</h1>
+    <h1>ตำแหน่งรถเก็บขยะ</h1>
     <div class="content">
       <div class="lang-switcher">
         <select id="langSelect">
@@ -159,11 +159,9 @@
         selectTruckDefault: "-- เลือกรถ --",
         createTruckBtn: "+ สร้างรถใหม่",
         noTruckSelected: "(ยังไม่ได้เลือกรถ)",
-        truckNotFound: "ไม่พบรถนี้ใน Firestore",
-        liveCoordsLabel: "พิกัด RTDB สด",
+        truckNotFound: "ไม่พบรถนี้ใน Firestore", // Keep this
         focusBtn: "โฟกัสหมุด",
-        truckInfoText: "ID: <b>%id%</b> • ชื่อ: %name% • อัปเดตล่าสุด (FS): %updatedAt%",
-        rtdbHint: "อ่านจาก trucks_live/<truckId> (Realtime Database)",
+        truckInfoText: "ID: <b>%id%</b> • ชื่อ: %name% • อัปเดตล่าสุด (FS): %updatedAt%", // Keep this
         mapPopup: "ตำแหน่งรถ",
         latestUpdateTitle: "อัปเดตล่าสุด",
         historyHeaderTime: "เวลา",
@@ -187,11 +185,9 @@
         selectTruckDefault: "-- Select a truck --",
         createTruckBtn: "+ Create New Truck",
         noTruckSelected: "(No truck selected)",
-        truckNotFound: "This truck was not found in Firestore",
-        liveCoordsLabel: "Live RTDB Coordinates",
+        truckNotFound: "This truck was not found in Firestore", // Keep this
         focusBtn: "Focus Marker",
-        truckInfoText: "ID: <b>%id%</b> • Name: %name% • Last Updated (FS): %updatedAt%",
-        rtdbHint: "Read from trucks_live/<truckId> (Realtime Database)",
+        truckInfoText: "ID: <b>%id%</b> • Name: %name% • Last Updated (FS): %updatedAt%", // Keep this
         mapPopup: "Truck Location",
         latestUpdateTitle: "Latest Updates",
         historyHeaderTime: "Time",
@@ -215,11 +211,9 @@
         selectTruckDefault: "-- Pilih lori --",
         createTruckBtn: "+ Cipta Lori Baharu",
         noTruckSelected: "(Tiada lori dipilih)",
-        truckNotFound: "Lori ini tidak ditemui dalam Firestore",
-        liveCoordsLabel: "Koordinat RTDB Langsung",
+        truckNotFound: "Lori ini tidak ditemui dalam Firestore", // Keep this
         focusBtn: "Fokus Penanda",
-        truckInfoText: "ID: <b>%id%</b> • Nama: %name% • Terakhir Dikemas Kini (FS): %updatedAt%",
-        rtdbHint: "Baca dari trucks_live/<truckId> (Realtime Database)",
+        truckInfoText: "ID: <b>%id%</b> • Nama: %name% • Terakhir Dikemas Kini (FS): %updatedAt%", // Keep this
         mapPopup: "Lokasi Lori",
         latestUpdateTitle: "Kemas Kini Terkini",
         historyHeaderTime: "Masa",
@@ -249,12 +243,9 @@
       navLinks[3].textContent = getTranslation('navTruck');
       navLinks[4].textContent = getTranslation('navReport');
       document.querySelector('h1').textContent = getTranslation('mainTitle');
-      const labels = document.querySelectorAll('label');
-      labels[0].textContent = getTranslation('selectTruckLabel');
-      labels[1].textContent = getTranslation('liveCoordsLabel');
+      document.querySelector('label').textContent = getTranslation('selectTruckLabel'); // Only one label left
       btnCreate.textContent = getTranslation('createTruckBtn');
       btnCenter.textContent = getTranslation('focusBtn');
-      document.querySelectorAll('.muted')[1].textContent = getTranslation('rtdbHint');
       document.querySelector('.card h3').textContent = getTranslation('latestUpdateTitle');
       marker.bindPopup(getTranslation('mapPopup'));
 

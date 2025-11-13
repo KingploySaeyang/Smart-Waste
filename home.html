@@ -294,22 +294,29 @@ input:focus, select:focus{
     const midEl=document.getElementById("midBins");
     const lowEl=document.getElementById("lowBins");
 
-    function updateDashboard(){
-      db.collection("smartbins").onSnapshot(snap=>{
-        let total=0,full=0,mid=0,low=0;
-        snap.forEach(doc=>{
-          const d=doc.data();
-          if(d.fillLevel!==undefined && d.fillLevel!==null){
-            total++;
-            if(d.fillLevel>=80) full++;
-            else if(d.fillLevel>=50) mid++;
+    async function updateDashboard(){
+      // 1. ฟังการเปลี่ยนแปลงจากทุก document ใน collection group 'bins'
+      db.collectionGroup("bins").onSnapshot(async (binsLevelSnap) => {
+        let full = 0, mid = 0, low = 0;
+
+        // 2. วนลูปข้อมูลระดับขยะที่ได้มาเพื่อนับ
+        binsLevelSnap.forEach(doc => {
+          const fillLevel = doc.data().fillLevel;
+          if (fillLevel !== undefined && fillLevel !== null) {
+            if (fillLevel >= 80) full++;
+            else if (fillLevel >= 50) mid++;
             else low++;
           }
         });
-        totalEl.textContent=total;
-        fullEl.textContent=full;
-        midEl.textContent=mid;
-        lowEl.textContent=low;
+
+        // 3. ดึงจำนวนถังทั้งหมดจาก smartbins (ข้อมูลหลัก)
+        const binsSnap = await db.collection("smartbins").get();
+        const totalBins = binsSnap.size;
+
+        totalEl.textContent = totalBins;
+        fullEl.textContent = full;
+        midEl.textContent = mid;
+        lowEl.textContent = totalBins - full - mid; // คำนวณถังว่าง
       });
     }
 

@@ -202,7 +202,7 @@ input:focus, select:focus{
             <select id="minLevel"></select> –
             <select id="maxLevel"></select>
           </div>
-          <div class="muted">คอลเลกชัน: <code>smartbins</code></div>
+          <div class="muted" id="collectionHint">คอลเลกชัน: <code>smartbins</code></div>
         </div>
         <p id="status" class="muted" style="margin-top:6px"></p>
       </div>
@@ -392,7 +392,7 @@ input:focus, select:focus{
       modeOptions[1].textContent = getTranslation('modeGte');
       modeOptions[2].textContent = getTranslation('modeLte');
       modeOptions[3].textContent = getTranslation('modeBetween');
-      document.querySelector('.card .muted').textContent = `${getTranslation('collection')}: smartbins`;
+      document.getElementById('collectionHint').innerHTML = `${getTranslation('collection')}: <code>smartbins</code> (${getTranslation('mainData')}) + <code>bin_levels</code> (${getTranslation('fillLevelData')})`;
       document.querySelector('.chip').innerHTML = `<span id="count">0</span> ${getTranslation('items')}`;
       document.querySelectorAll('.card .muted')[1].textContent = getTranslation('sortHint');
       const ths = document.querySelectorAll('table th');
@@ -404,41 +404,80 @@ input:focus, select:focus{
       ths[5].textContent = getTranslation('tableWhen');
       emptyNote.textContent = getTranslation('emptyResult');
 
+      // Add new translation keys for collection hint
+      translations.th.mainData = "ข้อมูลหลัก";
+      translations.th.fillLevelData = "ระดับขยะ";
+      translations.en.mainData = "main data";
+      translations.en.fillLevelData = "fill level data";
+      translations.ms.mainData = "data utama";
+      translations.ms.fillLevelData = "data tahap isian";
+
       buildQuery(); // Re-run query to apply new text if needed
     }
 
-    function buildQuery(){
+    async function buildQuery(){
       const mode=modeSel.value;
       if(typeof unsubscribe==='function')unsubscribe();
 
       singleBox.style.display=(mode==='between')?'none':'';
       rangeBox.style.display=(mode==='between')?'':'none';
 
-      let q=col;
-      if(mode==='eq'){const n=+levelSel.value;status.textContent=`fillLevel == ${n}`;q=q.where('fillLevel','==',n);}
-      else if(mode==='gte'){const n=+levelSel.value;status.textContent=`fillLevel >= ${n}`;q=q.where('fillLevel','>=',n);}
-      else if(mode==='lte'){const n=+levelSel.value;status.textContent=`fillLevel <= ${n}`;q=q.where('fillLevel','<=',n);}
-      else if(mode==='between'){const a=+minSel.value,b=+maxSel.value;const lo=Math.min(a,b),hi=Math.max(a,b);status.textContent=`${lo} <= fillLevel <= ${hi}`;q=q.where('fillLevel','>=',lo).where('fillLevel','<=',hi);}
+      // สร้าง query สำหรับ collection group 'bins' ตามเงื่อนไข
+      let levelQuery = db.collectionGroup('bins');
+      if(mode==='eq'){const n=+levelSel.value;status.textContent=`fillLevel == ${n}`;levelQuery=levelQuery.where('fillLevel','==',n);}
+      else if(mode==='gte'){const n=+levelSel.value;status.textContent=`fillLevel >= ${n}`;levelQuery=levelQuery.where('fillLevel','>=',n);}
+      else if(mode==='lte'){const n=+levelSel.value;status.textContent=`fillLevel <= ${n}`;levelQuery=levelQuery.where('fillLevel','<=',n);}
+      else if(mode==='between'){const a=+minSel.value,b=+maxSel.value;const lo=Math.min(a,b),hi=Math.max(a,b);status.textContent=`${lo} <= fillLevel <= ${hi}`;levelQuery=levelQuery.where('fillLevel','>=',lo).where('fillLevel','<=',hi);}
 
-      unsubscribe=q.onSnapshot(snap=>{
-        const arr=[];snap.forEach(doc=>{const d=doc.data()||{};arr.push({...d,id:doc.id,_ts:d.createdAt?.toMillis?d.createdAt.toMillis():0});});
-        arr.sort((a,b)=>b._ts-a._ts);
-        rows.innerHTML='';
-        arr.forEach(d=>{
-          const when=d.createdAt?.toDate?d.createdAt.toDate().toLocaleString():'—';
-          const tr=document.createElement('tr');
-          tr.innerHTML=`
+      // ฟังการเปลี่ยนแปลงจาก collection group 'bins' ที่ผ่านเงื่อนไข
+      unsubscribe = levelQuery.onSnapshot(async (levelsSnap) => {
+        if (levelsSnap.empty) {
+          rows.innerHTML = '';
+          document.getElementById('count').textContent = 0;
+          emptyNote.style.display = 'block';
+          return;
+        }
+
+        // ดึง ID และข้อมูลระดับของถังที่ผ่านเงื่อนไขทั้งหมด
+        const matchingBinIds = levelsSnap.docs.map(doc => doc.id);
+        const levelsMap = new Map(levelsSnap.docs.map(doc => [doc.id, doc.data()]));
+
+        if (matchingBinIds.length > 0) {
+          // ดึงข้อมูลหลักของถังเหล่านั้นจาก smartbins
+          const binsSnap = await db.collection('smartbins').where(firebase.firestore.FieldPath.documentId(), 'in', matchingBinIds).get();
+          const binsMap = new Map(binsSnap.docs.map(doc => [doc.id, doc.data()]));
+          
+          const results = [];
+          levelsMap.forEach((levelData, binId) => {
+            const binData = binsMap.get(binId) || {};
+            results.push({
+              id: binId,
+              ...binData,
+              fillLevel: levelData.fillLevel,
+              // ใช้ updatedAt จาก levelData เพื่อการเรียงลำดับที่ถูกต้อง
+              _ts: levelData.updatedAt?.toMillis() || 0
+            });
+          });
+
+          results.sort((a, b) => b._ts - a._ts); // เรียงตามเวลาอัปเดตล่าสุด
+
+          rows.innerHTML = '';
+          results.forEach(d => {
+            const when = new Date(d._ts).toLocaleString();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
             <td><code>${d.id}</code></td>
-            <td>${d.name??'—'}</td>
-            <td>${d.rfid??'—'}</td>
-            <td>${d.fillLevel??'—'}</td>
-            <td>${(d.lat??'—')}, ${(d.lng??'—')}</td>
+            <td>${d.name ?? '—'}</td>
+            <td>${d.rfid ?? '—'}</td>
+            <td>${d.fillLevel ?? '—'}</td>
+            <td>${(d.lat ?? '—')}, ${(d.lng ?? '—')}</td>
             <td class="muted">${when}</td>`;
           rows.appendChild(tr);
-        });
-        // Re-query countEl as innerHTML was replaced
-        document.getElementById('count').textContent = arr.length;
-        emptyNote.style.display=arr.length?'none':'block';
+          });
+
+          document.getElementById('count').textContent = results.length;
+          emptyNote.style.display = results.length ? 'none' : 'block';
+        }
       },err=>{
         status.textContent= getTranslation('error') + err.message;
       });

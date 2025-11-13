@@ -283,8 +283,12 @@
 
     // นับเอกสารทั้งหมดใน subcollection การเท ของถัง 1 ใบ
     async function countEmptyForBin(binId){
-      const sub = await db.collection('smartbins').doc(binId).collection(LOG_COLLECTION).get();
-      return sub.size; // จำนวนครั้งที่เททั้งหมดของถังนี้
+      // เนื่องจากเราไม่รู้ zone จากแค่ binId, เราต้องใช้ collectionGroup query
+      // นี่อาจจะช้าถ้ามีข้อมูลเยอะมาก แต่เป็นวิธีที่ตรงไปตรงมาที่สุดสำหรับโครงสร้างนี้
+      const querySnapshot = await db.collectionGroup(LOG_COLLECTION).where(firebase.firestore.FieldPath.documentId(), '>=', `bin_levels/`).get();
+      let count = 0;
+      querySnapshot.forEach(doc => { if (doc.ref.parent.parent.id === binId) { count++; } });
+      return count;
     }
 
     // โหลดสรุปต่อ "เขต"
@@ -303,13 +307,15 @@
       }
 
       // นับการเทแยกถัง แล้วรวมต่อเขต
-      for(const [zone, list] of zoneToBins.entries()){
-        // ใช้ Promise.all เพื่อรอให้การนับของทุกถังในเขตนี้เสร็จก่อน
-        const counts = await Promise.all(
-          list.map(bin => countEmptyForBin(bin.id))
-        );
-        // รวมผลลัพธ์ทั้งหมด
-        const zoneTotal = counts.reduce((sum, current) => sum + current, 0);
+      for(const [zone, binsInZone] of zoneToBins.entries()){
+        let zoneTotal = 0;
+        // สำหรับแต่ละเขต, เราสามารถ query ได้ตรงๆ ซึ่งเร็วกว่า
+        const binsCollectionRef = db.collection('bin_levels').doc(zone).collection('bins');
+        for (const bin of binsInZone) {
+          const emptyingListRef = binsCollectionRef.doc(bin.id).collection(LOG_COLLECTION);
+          const emptyingSnap = await emptyingListRef.get();
+          zoneTotal += emptyingSnap.size;
+        }
         zoneToCount.set(zone, zoneTotal);
       }
 
@@ -343,11 +349,12 @@
       loadingEl.style.display = 'inline';
       // นับต่อถัง
       const labels = [];
-      const data   = [];
+      const data = [];
+      const binsCollectionRef = db.collection('bin_levels').doc(zoneName).collection('bins');
       for(const b of binsInZone){
-        const c = await countEmptyForBin(b.id);
+        const emptyingSnap = await binsCollectionRef.doc(b.id).collection(LOG_COLLECTION).get();
         labels.push(b.name);
-        data.push(c);
+        data.push(emptyingSnap.size);
       }
       chartTitle.textContent = `${getTranslation('detailTitle')}${zoneName}`;
       renderChart(labels, data, getTranslation('chartLabel'));
