@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,221 +11,574 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
   <style>
-    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
-    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row
+    }
 
     /* ---------- ตัวแปรพื้นฐานสำหรับปุ่ม/ฟอร์ม ---------- */
-    :root{
-      --btn-min-h:44px;
-      --btn-pad-x:16px;
-      --btn-pad-y:10px;
-      --btn-radius:12px;
-      --btn-font:16px;
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
     }
 
     /* ---------- Sidebar ---------- */
-    .sidebar{
-      width:250px;background:#2f3640;color:#f5f6fa;
-      display:flex;flex-direction:column;padding-top:20px;
-      transition:.3s;
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      transition: .3s;
     }
-    .sidebar h2{text-align:center;color:#00a8ff;margin-bottom:25px}
-    .menu a{
-      display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;
-      border-left:4px solid transparent;transition:.3s;
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px
     }
-    .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff
+    }
 
     /* ---------- ปุ่ม ☰ สำหรับมือถือ ---------- */
-    .toggle-btn{
-      position:fixed;top:14px;left:14px;z-index:1000;
-      background:#00a8ff;color:#fff;border:none;
-      min-height:var(--btn-min-h);
-      padding:var(--btn-pad-y) var(--btn-pad-x);
-      border-radius:var(--btn-radius);
-      font-size:var(--btn-font);
-      display:none; /* desktop ซ่อน */
-      align-items:center;justify-content:center;
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
-      cursor:pointer;
+    .toggle-btn {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 1000;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      display: none;
+      /* desktop ซ่อน */
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+      cursor: pointer;
     }
 
     /* ---------- Main ---------- */
-    main{flex:1;padding:30px;overflow-y:auto}
-    h1{color:#2f3640;margin:0 0 16px;line-height:1.25}
-    .content{
-      background:#fff;padding:24px;border-radius:12px;
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
-      position:relative;
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto
     }
 
-    .muted{color:#6b7280;font-size:12px}
-    .ok{color:#16a34a}
-    .err{color:#dc2626}
+    h1 {
+      color: #2f3640;
+      margin: 0 0 16px;
+      line-height: 1.25
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+      position: static;
+    }
+
+
+    .muted {
+      color: #6b7280;
+      font-size: 12px
+    }
+
+    .ok {
+      color: #16a34a
+    }
+
+    .err {
+      color: #dc2626
+    }
 
     /* ---------- language switcher ---------- */
-    .lang-switcher{
-      position:absolute;top:16px;right:16px;z-index:100;
+    .lang-switcher {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
     }
-    .lang-switcher select{
-      padding:4px 10px;border-radius:8px;border:1px solid #d4d4d8;
-      font-size:14px;min-height:32px;
+
+    .lang-switcher select {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      min-height: unset;
+      width: auto;
     }
 
     /* ---------- Dashboard cards ---------- */
-    .cards{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0 8px}
-    .card{
-      flex:1 1 220px;background:#f9fafb;padding:20px;
-      border-radius:12px;border:1px solid #e5e7eb;text-align:center;
-      box-shadow:0 2px 4px rgba(0,0,0,.05);transition:.2s;
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin: 16px 0 8px
     }
-    .card:hover{background:#e0f2fe;transform:translateY(-2px)}
-    .card h3{font-size:18px;color:#2f3640;margin:0 0 6px}
-    .card p{font-size:22px;font-weight:bold;color:#00a8ff;margin:0}
+
+    .card {
+      flex: 1 1 220px;
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+      transition: .2s;
+    }
+
+    .card:hover {
+      background: #e0f2fe;
+      transform: translateY(-2px)
+    }
+
+    .card h3 {
+      font-size: 18px;
+      color: #2f3640;
+      margin: 0 0 6px
+    }
+
+    .card p {
+      font-size: 22px;
+      font-weight: bold;
+      color: #00a8ff;
+      margin: 0
+    }
 
     /* ---------- ปุ่มพื้นฐาน ---------- */
     button,
-    .btn{
-      min-height:var(--btn-min-h);
-      padding:var(--btn-pad-y) var(--btn-pad-x);
-      border-radius:var(--btn-radius);
-      font-size:var(--btn-font);
-      border:0;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      cursor:pointer;
-      transition:transform .06s ease,box-shadow .2s ease,background-color .2s ease,filter .2s;
+    .btn {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      border: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, filter .2s;
     }
-    .primary{background:#2563eb;color:#fff}
-    .primary:hover{filter:brightness(1.05)}
-    .primary:active{transform:translateY(1px)}
-    .ghost{background:#f4f4f5;color:#111827}
-    .ghost:hover{filter:brightness(0.98)}
-    .ghost:active{transform:translateY(1px)}
-    .danger{background:#ef4444;color:#fff}
-    .danger:hover{filter:brightness(0.98)}
 
-    button:focus,input:focus,select:focus,textarea:focus{
-      outline:3px solid #93c5fd;outline-offset:2px;
+    .primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .primary:hover {
+      filter: brightness(1.05)
+    }
+
+    .primary:active {
+      transform: translateY(1px)
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827
+    }
+
+    .ghost:hover {
+      filter: brightness(0.98)
+    }
+
+    .ghost:active {
+      transform: translateY(1px)
+    }
+
+    .danger {
+      background: #ef4444;
+      color: #fff
+    }
+
+    .danger:hover {
+      filter: brightness(0.98)
+    }
+
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
     }
 
     /* ---------- ตารางถังขยะ ---------- */
-    .section-title{margin-top:24px;font-size:18px;font-weight:600;color:#111827}
-    .section-hint{margin:4px 0 10px}
-
-    .filters{
-      display:flex;flex-wrap:wrap;gap:12px;
-      margin-bottom:8px;align-items:center;
-    }
-    .filters select{
-      padding:8px 10px;border-radius:10px;border:1px solid #d4d4d8;
-      font-size:14px;
+    .section-title {
+      margin-top: 24px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827
     }
 
-    table{
-      width:100%;border-collapse:collapse;
-      margin-top:6px;overflow-x:auto;display:block;
+    .section-hint {
+      margin: 4px 0 10px
     }
-    th,td{
-      border-bottom:1px solid #eee;padding:8px 10px;
-      text-align:left;white-space:nowrap;font-size:13px;
-    }
-    th{background:#fafafa}
 
-    .actions{display:flex;gap:6px}
-
-    .thumb{
-      width:56px;height:56px;object-fit:cover;
-      border-radius:8px;border:1px solid #e5e7eb;cursor:pointer;
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 8px;
+      align-items: center;
     }
-    .thumb.empty{
-      background:#f3f4f6;display:flex;align-items:center;justify-content:center;
-      font-size:11px;color:#9ca3af;border-style:dashed;cursor:default;
+
+    .filters select {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #d4d4d8;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      overflow-x: auto;
+      display: block;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 8px 10px;
+      text-align: left;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    th {
+      background: #fafafa
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px
+    }
+
+    .thumb {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+
+    .thumb.empty {
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #9ca3af;
+      border-style: dashed;
+      cursor: default;
     }
 
     /* ---------- Modal edit ---------- */
-    .modal-backdrop{
-      position:fixed;inset:0;background:rgba(15,23,42,.45);
-      display:none;align-items:center;justify-content:center;z-index:1500;
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
     }
-    .modal-backdrop.show{display:flex}
-    .modal{
-      background:#fff;border-radius:16px;padding:18px 18px 14px;
-      max-width:620px;width:100%;box-shadow:0 20px 40px rgba(15,23,42,.35);
-      max-height:90vh;overflow-y:auto;
+
+    .modal-backdrop.show {
+      display: flex
     }
-    .modal-header{
-      display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 14px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, .35);
+      max-height: 90vh;
+      overflow-y: auto;
     }
-    .modal-title{font-size:18px;font-weight:600;color:#111827}
-    .modal-close{
-      border:none;background:transparent;font-size:20px;cursor:pointer;
-      line-height:1;padding:4px 8px;
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
     }
-    .modal .row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
-    .modal .row>div{flex:1 1 240px}
-    .modal label{font-size:14px;margin:10px 0 6px;display:block}
-    .modal input,.modal textarea{
-      width:100%;padding:9px 10px;border-radius:10px;border:1px solid #d4d4d8;
-      font-size:14px;box-sizing:border-box;
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827
     }
-    .modal textarea{min-height:60px;white-space:pre-wrap}
-    .modal .preview-edit{
-      width:100%;max-width:220px;border-radius:10px;border:1px solid #e5e7eb;
-      object-fit:cover;margin-top:6px;cursor:default;
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
     }
-    .modal-footer{
-      display:flex;justify-content:space-between;align-items:center;
-      gap:8px;flex-wrap:wrap;margin-top:12px;
+
+    .modal .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-start
+    }
+
+    .modal .row>div {
+      flex: 1 1 240px
+    }
+
+    .modal label {
+      font-size: 14px;
+      margin: 10px 0 6px;
+      display: block
+    }
+
+    .modal input,
+    .modal textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid #d4d4d8;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .modal textarea {
+      min-height: 60px;
+      white-space: pre-wrap
+    }
+
+    .modal .preview-edit {
+      width: 100%;
+      max-width: 220px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      object-fit: cover;
+      margin-top: 6px;
+      cursor: default;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
     }
 
     /* ---------- Photo viewer ---------- */
-    .photo-viewer-backdrop{
-      position:fixed;inset:0;background:rgba(0,0,0,.8);
-      display:none;align-items:center;justify-content:center;z-index:1700;
+    .photo-viewer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1700;
     }
-    .photo-viewer-backdrop.show{display:flex}
-    .photo-viewer{position:relative;max-width:90vw;max-height:90vh}
-    .photo-viewer img{
-      max-width:100%;max-height:100%;border-radius:12px;
-      box-shadow:0 20px 40px rgba(0,0,0,.6);
+
+    .photo-viewer-backdrop.show {
+      display: flex
     }
-    .photo-viewer-close{
-      position:absolute;top:-10px;right:-10px;width:32px;height:32px;
-      border-radius:999px;border:none;background:#111827;color:#f9fafb;
-      cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 6px rgba(0,0,0,.5);
+
+    .photo-viewer {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh
+    }
+
+    .photo-viewer img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, .6);
+    }
+
+    .photo-viewer-close {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: none;
+      background: #111827;
+      color: #f9fafb;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .5);
     }
 
     /* ---------- Responsive ---------- */
-    @media(max-width:900px){
-      body{flex-direction:column}
-      .sidebar{
-        position:fixed;left:-250px;top:0;height:100%;z-index:999;
+    @media(max-width:900px) {
+      body {
+        flex-direction: column
       }
-      .sidebar.show{left:0}
-      .toggle-btn{display:inline-flex}
-      main{padding:70px 16px 20px}
-      .cards{flex-direction:column}
-      .card{width:100%}
-      table{font-size:12px}
-      th,td{padding:6px 8px}
-      .modal{max-width:100%;margin:0 10px}
 
-      .lang-switcher{
-        position:static;
-        margin-bottom:8px;
-        text-align:right;
+      h1{text-align:center}
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
       }
+
+      .sidebar.show {
+        left: 0
+      }
+
+      .toggle-btn {
+        display: inline-flex
+      }
+
+      main {
+        padding: 70px 16px 20px
+      }
+
+      .cards {
+        flex-direction: column
+      }
+
+      .card {
+        width: 100%
+      }
+
+      table {
+        font-size: 12px
+      }
+
+      th,
+      td {
+        padding: 6px 8px
+      }
+
+      .modal {
+        max-width: 100%;
+        margin: 0 10px
+      }
+
+      .lang-switcher {
+        top: 12px;
+        right: 16px
+      }
+
+      
     }
 
-    @media(min-width:901px){
-      .toggle-btn{display:none !important;} /* desktop ซ่อนแน่นอน */
+    @media(min-width:901px) {
+      .toggle-btn {
+        display: none !important;
+      }
+
+      /* desktop ซ่อนแน่นอน */
+    }
+
+    /* ===== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า ===== */
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      line-height: 1.35;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      line-height: 1.2;
+    }
+
+    button,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+    }
+
+    .primary:hover,
+    .ghost:hover {
+      filter: brightness(1.03);
+    }
+
+    .primary:active,
+    .ghost:active {
+      transform: translateY(1px);
+    }
+
+    button:focus,
+    .toggle-btn:focus,
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
     }
   </style>
 </head>
+
 <body>
 
   <!-- ปุ่ม ☰ แสดงเฉพาะมือถือ -->
@@ -282,7 +636,8 @@
       <div class="section-title" id="binsSectionTitle">รายการถังขยะ</div>
       <p class="muted section-hint" id="binsSectionHint">
         ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>
-        ฟิลด์: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>
+        ฟิลด์:
+        <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>
       </p>
 
       <div class="filters">
@@ -403,19 +758,19 @@
 
   <script>
     /* ----------- ปุ่มเมนูสำหรับมือถือ ----------- */
-    function toggleMenu(force){
+    function toggleMenu(force) {
       const sidebar = document.getElementById('sidebar');
       const btn = document.getElementById('menuToggle');
       let show;
 
-      if(typeof force === 'boolean'){
+      if (typeof force === 'boolean') {
         show = force;
         sidebar.classList.toggle('show', show);
-      }else{
+      } else {
         show = !sidebar.classList.contains('show');
         sidebar.classList.toggle('show');
       }
-      if(window.innerWidth <= 900){
+      if (window.innerWidth <= 900) {
         btn.style.display = show ? 'none' : 'inline-flex';
       }
     }
@@ -424,275 +779,275 @@
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.menu a').forEach(a => {
         a.addEventListener('click', () => {
-          if(window.innerWidth <= 900) toggleMenu(false);
+          if (window.innerWidth <= 900) toggleMenu(false);
         });
       });
     });
 
     window.addEventListener('resize', () => {
       const btn = document.getElementById('menuToggle');
-      if(window.innerWidth > 900){
+      if (window.innerWidth > 900) {
         btn.style.display = 'none';
-      }else{
+      } else {
         const sidebar = document.getElementById('sidebar');
         btn.style.display = sidebar.classList.contains('show') ? 'none' : 'inline-flex';
       }
     });
 
     /* ----------- Firebase ----------- */
-    var firebaseConfig={
-      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
-      authDomain:"smart-waste-a2bf4.firebaseapp.com",
-      projectId:"smart-waste-a2bf4",
-      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
-      messagingSenderId:"522733244689",
-      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
     };
     firebase.initializeApp(firebaseConfig);
-    const db=firebase.firestore();
+    const db = firebase.firestore();
     const zonesCol = db.collection("zones");
 
     const $ = id => document.getElementById(id);
 
     const totalEl = $("totalBins");
-    const fullEl  = $("fullBins");
-    const midEl   = $("midBins");
-    const lowEl   = $("lowBins");
+    const fullEl = $("fullBins");
+    const midEl = $("midBins");
+    const lowEl = $("lowBins");
 
-    const statusEl   = $("status");
+    const statusEl = $("status");
     const filterZone = $("filterZone");
-    const rowsEl     = $("rows");
+    const rowsEl = $("rows");
 
     // Edit modal elements
     const editModalBackdrop = $("editModalBackdrop");
-    const editForm      = $("editForm");
-    const editDocZone   = $("editDocZone");
-    const editDocBinId  = $("editDocBinId");
-    const editZoneDisplay   = $("editZoneDisplay");
-    const editBinIdDisplay  = $("editBinIdDisplay");
-    const editRfid      = $("editRfid");
-    const editLat       = $("editLat");
-    const editLng       = $("editLng");
-    const editPosDms    = $("editPosDms");
-    const editDetails   = $("editDetails");
-    const editPreview   = $("editPreview");
-    const editPhoto     = $("editPhoto");
+    const editForm = $("editForm");
+    const editDocZone = $("editDocZone");
+    const editDocBinId = $("editDocBinId");
+    const editZoneDisplay = $("editZoneDisplay");
+    const editBinIdDisplay = $("editBinIdDisplay");
+    const editRfid = $("editRfid");
+    const editLat = $("editLat");
+    const editLng = $("editLng");
+    const editPosDms = $("editPosDms");
+    const editDetails = $("editDetails");
+    const editPreview = $("editPreview");
+    const editPhoto = $("editPhoto");
     const editPhotoNote = $("editPhotoNote");
-    const editMsg       = $("editMsg");
-    const btnEditClose  = $("btnEditClose");
+    const editMsg = $("editMsg");
+    const btnEditClose = $("btnEditClose");
     const btnEditCancel = $("editCancel");
 
     // Photo viewer
     const photoViewerBackdrop = $("photoViewerBackdrop");
-    const photoViewerImg      = $("photoViewerImg");
-    const photoViewerClose    = $("photoViewerClose");
+    const photoViewerImg = $("photoViewerImg");
+    const photoViewerClose = $("photoViewerClose");
 
     /* ----------- i18n ----------- */
     const translations = {
-      th:{
-        pageTitle:"Smart Waste - หน้าหลักผู้ดูแลระบบ",
-        menuBtn:"☰ เมนู",
-        navHome:"หน้าหลัก",
-        navRegister:"ลงทะเบียน",
-        navCapacity:"ความจุถังขยะ",
-        navTruck:"ตำแหน่งรถเก็บขยะ",
-        navReport:"รายงานย้อนหลัง",
+      th: {
+        pageTitle: "Smart Waste - หน้าหลักผู้ดูแลระบบ",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
 
-        mainTitle:"หน้าหลักผู้ดูแลระบบ",
-        welcome:"ยินดีต้อนรับเข้าสู่ระบบจัดการ <b>Smart Waste</b>",
-        welcomeHint:"เลือกเมนูด้านซ้ายเพื่อเริ่มจัดการข้อมูลได้เลย",
+        mainTitle: "หน้าหลักผู้ดูแลระบบ",
+        welcome: "ยินดีต้อนรับเข้าสู่ระบบจัดการ <b>Smart Waste</b>",
+        welcomeHint: "เลือกเมนูด้านซ้ายเพื่อเริ่มจัดการข้อมูลได้เลย",
 
-        cardTotal:"จำนวนถังทั้งหมด",
-        cardFull:"ถังเต็ม (≥80%)",
-        cardMid:"ถังเกือบเต็ม (50–79%)",
-        cardLow:"ถังว่าง (<50%)",
+        cardTotal: "จำนวนถังทั้งหมด",
+        cardFull: "ถังเต็ม (≥80%)",
+        cardMid: "ถังเกือบเต็ม (50–79%)",
+        cardLow: "ถังว่าง (<50%)",
 
-        binsSectionTitle:"รายการถังขยะ",
-        binsSectionHint:'ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>ฟิลด์: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
+        binsSectionTitle: "รายการถังขยะ",
+        binsSectionHint: 'ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>ฟิลด์: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
 
-        filterZoneLabel:"เขตพื้นที่:",
-        filterZoneAll:"ทั้งหมด",
-        tableHeaderZone:"เขต",
-        tableHeaderBin:"BIN",
-        tableHeaderRfid:"RFID",
-        tableHeaderCoords:"พิกัด (lat,lng)",
-        tableHeaderDms:"DMS",
-        tableHeaderDetails:"รายละเอียด",
-        tableHeaderPhoto:"รูป",
-        tableHeaderUpdated:"อัปเดตเมื่อ",
-        tableHeaderManage:"จัดการ",
+        filterZoneLabel: "เขตพื้นที่:",
+        filterZoneAll: "ทั้งหมด",
+        tableHeaderZone: "เขต",
+        tableHeaderBin: "BIN",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "พิกัด (lat,lng)",
+        tableHeaderDms: "DMS",
+        tableHeaderDetails: "รายละเอียด",
+        tableHeaderPhoto: "รูป",
+        tableHeaderUpdated: "อัปเดตเมื่อ",
+        tableHeaderManage: "จัดการ",
 
-        noPhoto:"ไม่มีรูป",
-        noData:"ยังไม่มีข้อมูลถังขยะ",
-        loading:"กำลังโหลดข้อมูลถังขยะ...",
-        showing:"แสดง",
-        items:"รายการ",
+        noPhoto: "ไม่มีรูป",
+        noData: "ยังไม่มีข้อมูลถังขยะ",
+        loading: "กำลังโหลดข้อมูลถังขยะ...",
+        showing: "แสดง",
+        items: "รายการ",
 
-        btnEdit:"แก้ไข",
-        btnDelete:"ลบ",
-        inZone:"ในเขต",
-        confirmDelete:"แน่ใจหรือไม่ว่าต้องการลบถัง",
-        deleteSuccess:"ลบถังสำเร็จ",
-        deleteError:"ลบถังไม่สำเร็จ:",
+        btnEdit: "แก้ไข",
+        btnDelete: "ลบ",
+        inZone: "ในเขต",
+        confirmDelete: "แน่ใจหรือไม่ว่าต้องการลบถัง",
+        deleteSuccess: "ลบถังสำเร็จ",
+        deleteError: "ลบถังไม่สำเร็จ:",
 
-        editModalTitle:"แก้ไขข้อมูลถังขยะ",
-        editLabelZone:"เขตพื้นที่",
-        editLabelBinId:"ชื่อถัง (BIN)",
-        editLabelRfid:"RFID Tag",
-        editLabelPosition:"ตำแหน่ง",
-        editLabelDetails:"รายละเอียดเพิ่มเติม",
-        editLabelCurrentPhoto:"รูปปัจจุบัน",
-        editLabelChangePhoto:"เปลี่ยนรูปถังขยะ",
-        editPhotoHint:"รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB",
-        editNoPhoto:"ยังไม่มีรูป",
-        editNewPhoto:"(รูปใหม่)",
-        editSaving:"กำลังบันทึกการแก้ไข...",
-        editSaveSuccess:"✅ บันทึกการแก้ไขสำเร็จ",
-        editSaveError:"❌ บันทึกไม่สำเร็จ:",
-        btnCancel:"ยกเลิก",
-        btnSaveChanges:"บันทึกการแก้ไข"
+        editModalTitle: "แก้ไขข้อมูลถังขยะ",
+        editLabelZone: "เขตพื้นที่",
+        editLabelBinId: "ชื่อถัง (BIN)",
+        editLabelRfid: "RFID Tag",
+        editLabelPosition: "ตำแหน่ง",
+        editLabelDetails: "รายละเอียดเพิ่มเติม",
+        editLabelCurrentPhoto: "รูปปัจจุบัน",
+        editLabelChangePhoto: "เปลี่ยนรูปถังขยะ",
+        editPhotoHint: "รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB",
+        editNoPhoto: "ยังไม่มีรูป",
+        editNewPhoto: "(รูปใหม่)",
+        editSaving: "กำลังบันทึกการแก้ไข...",
+        editSaveSuccess: "✅ บันทึกการแก้ไขสำเร็จ",
+        editSaveError: "❌ บันทึกไม่สำเร็จ:",
+        btnCancel: "ยกเลิก",
+        btnSaveChanges: "บันทึกการแก้ไข"
       },
-      en:{
-        pageTitle:"Smart Waste - Admin Dashboard",
-        menuBtn:"☰ Menu",
-        navHome:"Home",
-        navRegister:"Register",
-        navCapacity:"Bin Capacity",
-        navTruck:"Truck Location",
-        navReport:"Historical Report",
+      en: {
+        pageTitle: "Smart Waste - Admin Dashboard",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
 
-        mainTitle:"Admin Dashboard",
-        welcome:"Welcome to the <b>Smart Waste</b> management system",
-        welcomeHint:"Select a menu on the left to start managing data.",
+        mainTitle: "Admin Dashboard",
+        welcome: "Welcome to the <b>Smart Waste</b> management system",
+        welcomeHint: "Select a menu on the left to start managing data.",
 
-        cardTotal:"Total Bins",
-        cardFull:"Full Bins (≥80%)",
-        cardMid:"Near Full Bins (50–79%)",
-        cardLow:"Empty Bins (<50%)",
+        cardTotal: "Total Bins",
+        cardFull: "Full Bins (≥80%)",
+        cardMid: "Near Full Bins (50–79%)",
+        cardLow: "Empty Bins (<50%)",
 
-        binsSectionTitle:"Bin List",
-        binsSectionHint:'Fetching data from <code>smartbins / bins / [zone] / [BINID]</code><br>Fields: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
+        binsSectionTitle: "Bin List",
+        binsSectionHint: 'Fetching data from <code>smartbins / bins / [zone] / [BINID]</code><br>Fields: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
 
-        filterZoneLabel:"Zone:",
-        filterZoneAll:"All",
-        tableHeaderZone:"Zone",
-        tableHeaderBin:"BIN",
-        tableHeaderRfid:"RFID",
-        tableHeaderCoords:"Coords (lat,lng)",
-        tableHeaderDms:"DMS",
-        tableHeaderDetails:"Details",
-        tableHeaderPhoto:"Photo",
-        tableHeaderUpdated:"Updated At",
-        tableHeaderManage:"Manage",
+        filterZoneLabel: "Zone:",
+        filterZoneAll: "All",
+        tableHeaderZone: "Zone",
+        tableHeaderBin: "BIN",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "Coords (lat,lng)",
+        tableHeaderDms: "DMS",
+        tableHeaderDetails: "Details",
+        tableHeaderPhoto: "Photo",
+        tableHeaderUpdated: "Updated At",
+        tableHeaderManage: "Manage",
 
-        noPhoto:"No photo",
-        noData:"No bin data yet",
-        loading:"Loading bin data...",
-        showing:"Showing",
-        items:"items",
+        noPhoto: "No photo",
+        noData: "No bin data yet",
+        loading: "Loading bin data...",
+        showing: "Showing",
+        items: "items",
 
-        btnEdit:"Edit",
-        btnDelete:"Delete",
-        inZone:"in zone",
-        confirmDelete:"Are you sure you want to delete bin",
-        deleteSuccess:"Bin deleted successfully",
-        deleteError:"Failed to delete bin:",
+        btnEdit: "Edit",
+        btnDelete: "Delete",
+        inZone: "in zone",
+        confirmDelete: "Are you sure you want to delete bin",
+        deleteSuccess: "Bin deleted successfully",
+        deleteError: "Failed to delete bin:",
 
-        editModalTitle:"Edit Bin Information",
-        editLabelZone:"Zone Area",
-        editLabelBinId:"Bin Name (BIN)",
-        editLabelRfid:"RFID Tag",
-        editLabelPosition:"Position",
-        editLabelDetails:"Additional Details",
-        editLabelCurrentPhoto:"Current Photo",
-        editLabelChangePhoto:"Change Bin Photo",
-        editPhotoHint:"Supports .jpg, .jpeg, .png files up to 350KB.",
-        editNoPhoto:"No photo yet",
-        editNewPhoto:"(new photo)",
-        editSaving:"Saving changes...",
-        editSaveSuccess:"✅ Changes saved successfully",
-        editSaveError:"❌ Save failed:",
-        btnCancel:"Cancel",
-        btnSaveChanges:"Save Changes"
+        editModalTitle: "Edit Bin Information",
+        editLabelZone: "Zone Area",
+        editLabelBinId: "Bin Name (BIN)",
+        editLabelRfid: "RFID Tag",
+        editLabelPosition: "Position",
+        editLabelDetails: "Additional Details",
+        editLabelCurrentPhoto: "Current Photo",
+        editLabelChangePhoto: "Change Bin Photo",
+        editPhotoHint: "Supports .jpg, .jpeg, .png files up to 350KB.",
+        editNoPhoto: "No photo yet",
+        editNewPhoto: "(new photo)",
+        editSaving: "Saving changes...",
+        editSaveSuccess: "✅ Changes saved successfully",
+        editSaveError: "❌ Save failed:",
+        btnCancel: "Cancel",
+        btnSaveChanges: "Save Changes"
       },
-      ms:{
-        pageTitle:"Smart Waste - Papan Pemuka Pentadbir",
-        menuBtn:"☰ Menu",
-        navHome:"Halaman Utama",
-        navRegister:"Daftar",
-        navCapacity:"Kapasiti Tong",
-        navTruck:"Lokasi Lori",
-        navReport:"Laporan Sejarah",
+      ms: {
+        pageTitle: "Smart Waste - Papan Pemuka Pentadbir",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
 
-        mainTitle:"Papan Pemuka Pentadbir",
-        welcome:"Selamat datang ke sistem pengurusan <b>Smart Waste</b>",
-        welcomeHint:"Pilih menu di sebelah kiri untuk mula mengurus data.",
+        mainTitle: "Papan Pemuka Pentadbir",
+        welcome: "Selamat datang ke sistem pengurusan <b>Smart Waste</b>",
+        welcomeHint: "Pilih menu di sebelah kiri untuk mula mengurus data.",
 
-        cardTotal:"Jumlah Tong",
-        cardFull:"Tong Penuh (≥80%)",
-        cardMid:"Tong Hampir Penuh (50–79%)",
-        cardLow:"Tong Kosong (<50%)",
+        cardTotal: "Jumlah Tong",
+        cardFull: "Tong Penuh (≥80%)",
+        cardMid: "Tong Hampir Penuh (50–79%)",
+        cardLow: "Tong Kosong (<50%)",
 
-        binsSectionTitle:"Senarai Tong",
-        binsSectionHint:'Mengambil data daripada <code>smartbins / bins / [zon] / [BINID]</code><br>Medan: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
+        binsSectionTitle: "Senarai Tong",
+        binsSectionHint: 'Mengambil data daripada <code>smartbins / bins / [zon] / [BINID]</code><br>Medan: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
 
-        filterZoneLabel:"Zon:",
-        filterZoneAll:"Semua",
-        tableHeaderZone:"Zon",
-        tableHeaderBin:"BIN",
-        tableHeaderRfid:"RFID",
-        tableHeaderCoords:"Koordinat (lat,lng)",
-        tableHeaderDms:"DMS",
-        tableHeaderDetails:"Butiran",
-        tableHeaderPhoto:"Gambar",
-        tableHeaderUpdated:"Dikemas Kini",
-        tableHeaderManage:"Tindakan",
+        filterZoneLabel: "Zon:",
+        filterZoneAll: "Semua",
+        tableHeaderZone: "Zon",
+        tableHeaderBin: "BIN",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "Koordinat (lat,lng)",
+        tableHeaderDms: "DMS",
+        tableHeaderDetails: "Butiran",
+        tableHeaderPhoto: "Gambar",
+        tableHeaderUpdated: "Dikemas Kini",
+        tableHeaderManage: "Tindakan",
 
-        noPhoto:"Tiada gambar",
-        noData:"Belum ada data tong",
-        loading:"Memuatkan data tong...",
-        showing:"Menunjukkan",
-        items:"rekod",
+        noPhoto: "Tiada gambar",
+        noData: "Belum ada data tong",
+        loading: "Memuatkan data tong...",
+        showing: "Menunjukkan",
+        items: "rekod",
 
-        btnEdit:"Ubah",
-        btnDelete:"Padam",
-        inZone:"di zon",
-        confirmDelete:"Adakah anda pasti mahu memadam tong",
-        deleteSuccess:"Tong berjaya dipadam",
-        deleteError:"Gagal memadam tong:",
+        btnEdit: "Ubah",
+        btnDelete: "Padam",
+        inZone: "di zon",
+        confirmDelete: "Adakah anda pasti mahu memadam tong",
+        deleteSuccess: "Tong berjaya dipadam",
+        deleteError: "Gagal memadam tong:",
 
-        editModalTitle:"Ubah Maklumat Tong",
-        editLabelZone:"Zon",
-        editLabelBinId:"Nama Tong (BIN)",
-        editLabelRfid:"Tag RFID",
-        editLabelPosition:"Posisi",
-        editLabelDetails:"Butiran Tambahan",
-        editLabelCurrentPhoto:"Gambar Semasa",
-        editLabelChangePhoto:"Tukar Gambar Tong",
-        editPhotoHint:"Menyokong fail .jpg, .jpeg, .png sehingga 350KB.",
-        editNoPhoto:"Belum ada gambar",
-        editNewPhoto:"(gambar baharu)",
-        editSaving:"Menyimpan perubahan...",
-        editSaveSuccess:"✅ Berjaya disimpan",
-        editSaveError:"❌ Gagal menyimpan:",
-        btnCancel:"Batal",
-        btnSaveChanges:"Simpan Perubahan"
+        editModalTitle: "Ubah Maklumat Tong",
+        editLabelZone: "Zon",
+        editLabelBinId: "Nama Tong (BIN)",
+        editLabelRfid: "Tag RFID",
+        editLabelPosition: "Posisi",
+        editLabelDetails: "Butiran Tambahan",
+        editLabelCurrentPhoto: "Gambar Semasa",
+        editLabelChangePhoto: "Tukar Gambar Tong",
+        editPhotoHint: "Menyokong fail .jpg, .jpeg, .png sehingga 350KB.",
+        editNoPhoto: "Belum ada gambar",
+        editNewPhoto: "(gambar baharu)",
+        editSaving: "Menyimpan perubahan...",
+        editSaveSuccess: "✅ Berjaya disimpan",
+        editSaveError: "❌ Gagal menyimpan:",
+        btnCancel: "Batal",
+        btnSaveChanges: "Simpan Perubahan"
       }
     };
 
     let currentLang = localStorage.getItem('sw_lang') || 'th';
     const langSelect = $("langSelect");
-    function t(key){return (translations[currentLang] && translations[currentLang][key]) || key;}
+    function t(key) { return (translations[currentLang] && translations[currentLang][key]) || key; }
 
-    function setStatus(text,type){
+    function setStatus(text, type) {
       statusEl.textContent = text || "";
-      statusEl.className = "muted" + (type==="ok" ? " ok" : type==="err" ? " err" : "");
+      statusEl.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
     }
-    function setEditMsg(text,type){
+    function setEditMsg(text, type) {
       editMsg.textContent = text || "";
-      editMsg.className = "muted" + (type==="ok" ? " ok" : type==="err" ? " err" : "");
+      editMsg.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
     }
-    function errStr(e){
+    function errStr(e) {
       return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
     }
 
@@ -701,53 +1056,53 @@
     let zoneUnsubMap = {};  // zone => unsubscribe
     let bins = [];          // [{zone,binId,data,createdAtMs,updatedAt}]
 
-    function renderZoneFilter(){
+    function renderZoneFilter() {
       const current = filterZone.value;
       filterZone.innerHTML = "";
       const optAll = document.createElement("option");
       optAll.value = "";
       optAll.textContent = t('filterZoneAll');
       filterZone.appendChild(optAll);
-      zones.forEach(z=>{
-        const opt=document.createElement("option");
-        opt.value=z.id;
-        opt.textContent=z.name;
+      zones.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.id;
+        opt.textContent = z.name;
         filterZone.appendChild(opt);
       });
-      if(current) filterZone.value = current;
+      if (current) filterZone.value = current;
     }
 
-    function renderTable(){
+    function renderTable() {
       const zoneFilter = filterZone.value;
       rowsEl.innerHTML = "";
       let filtered = bins.slice();
-      if(zoneFilter){
+      if (zoneFilter) {
         filtered = filtered.filter(b => b.zone === zoneFilter);
       }
-      filtered.sort((a,b)=>b.createdAtMs - a.createdAtMs);
+      filtered.sort((a, b) => b.createdAtMs - a.createdAtMs);
 
-      if(!filtered.length){
+      if (!filtered.length) {
         rowsEl.innerHTML = `<tr><td colspan="9" class="muted">${t('noData')}</td></tr>`;
-        setStatus("","");
+        setStatus("", "");
         return;
       }
 
-      filtered.forEach(item=>{
+      filtered.forEach(item => {
         const d = item.data || {};
         const zone = d.zone || item.zone;
         const binId = d.binId || item.binId;
-        const rfid  = d.rfid || "—";
-        const lat   = (d.lat!==undefined && d.lat!==null)? d.lat : "—";
-        const lng   = (d.lng!==undefined && d.lng!==null)? d.lng : "—";
-        const pos   = d.positionDms || "—";
-        const det   = d.details || "—";
+        const rfid = d.rfid || "—";
+        const lat = (d.lat !== undefined && d.lat !== null) ? d.lat : "—";
+        const lng = (d.lng !== undefined && d.lng !== null) ? d.lng : "—";
+        const pos = d.positionDms || "—";
+        const det = d.details || "—";
         const photoData = d.photoData || null;
         const updatedAt = item.updatedAt ? item.updatedAt.toLocaleString() : "—";
 
         let photoCell;
-        if(photoData){
+        if (photoData) {
           photoCell = `<img src="${photoData}" class="thumb" onclick="openPhotoViewer('${encodeURIComponent(photoData)}')" alt="bin photo" />`;
-        }else{
+        } else {
           photoCell = `<div class="thumb empty">${t('noPhoto')}</div>`;
         }
 
@@ -771,119 +1126,119 @@
         rowsEl.appendChild(tr);
       });
 
-      setStatus(`${t('showing')} ${filtered.length} ${t('items')}`,"ok");
+      setStatus(`${t('showing')} ${filtered.length} ${t('items')}`, "ok");
     }
 
-    zonesCol.orderBy("name").onSnapshot(snap=>{
-      zones=[];
-      Object.values(zoneUnsubMap).forEach(fn=>fn && fn());
-      zoneUnsubMap={};
-      bins=[];
-      snap.forEach(doc=>{
+    zonesCol.orderBy("name").onSnapshot(snap => {
+      zones = [];
+      Object.values(zoneUnsubMap).forEach(fn => fn && fn());
+      zoneUnsubMap = {};
+      bins = [];
+      snap.forEach(doc => {
         const d = doc.data() || {};
-        zones.push({id:doc.id,name:d.name || doc.id});
+        zones.push({ id: doc.id, name: d.name || doc.id });
       });
 
       renderZoneFilter();
-      setStatus(t('loading'),"");
+      setStatus(t('loading'), "");
 
-      zones.forEach(z=>{
+      zones.forEach(z => {
         const col = db.collection("smartbins")
-                      .doc("bins")
-                      .collection(z.id);
-        const unsub = col.onSnapshot(zoneSnap=>{
-          bins = bins.filter(b=>b.zone!==z.id);
-          zoneSnap.forEach(doc=>{
+          .doc("bins")
+          .collection(z.id);
+        const unsub = col.onSnapshot(zoneSnap => {
+          bins = bins.filter(b => b.zone !== z.id);
+          zoneSnap.forEach(doc => {
             const d = doc.data() || {};
             bins.push({
-              zone:z.id,
-              binId:doc.id,
-              data:d,
-              createdAtMs:d.createdAt?.toMillis() || 0,
-              updatedAt:d.updatedAt?.toDate()
+              zone: z.id,
+              binId: doc.id,
+              data: d,
+              createdAtMs: d.createdAt?.toMillis() || 0,
+              updatedAt: d.updatedAt?.toDate()
             });
           });
           renderTable();
         });
-        zoneUnsubMap[z.id]=unsub;
+        zoneUnsubMap[z.id] = unsub;
       });
 
       // หลังโหลด zones แล้ว คำนวณ dashboard ครั้งแรก
       updateDashboard();
     });
 
-    filterZone.addEventListener("change",()=>renderTable());
+    filterZone.addEventListener("change", () => renderTable());
 
     /* ----------- Photo viewer ----------- */
-    window.openPhotoViewer = function(encoded){
+    window.openPhotoViewer = function (encoded) {
       const dataUrl = decodeURIComponent(encoded);
       photoViewerImg.src = dataUrl;
       photoViewerBackdrop.classList.add("show");
     };
-    function closePhotoViewer(){
+    function closePhotoViewer() {
       photoViewerBackdrop.classList.remove("show");
-      photoViewerImg.src="";
+      photoViewerImg.src = "";
     }
-    photoViewerBackdrop.addEventListener("click",e=>{
-      if(e.target===photoViewerBackdrop) closePhotoViewer();
+    photoViewerBackdrop.addEventListener("click", e => {
+      if (e.target === photoViewerBackdrop) closePhotoViewer();
     });
-    photoViewerClose.addEventListener("click",closePhotoViewer);
+    photoViewerClose.addEventListener("click", closePhotoViewer);
 
     /* ----------- DMS helper ----------- */
-    function toDMSCoord(dec,isLat){
-      if(dec==null || isNaN(dec)) return "";
-      const hemi = dec>=0 ? (isLat?"N":"E") : (isLat?"S":"W");
+    function toDMSCoord(dec, isLat) {
+      if (dec == null || isNaN(dec)) return "";
+      const hemi = dec >= 0 ? (isLat ? "N" : "E") : (isLat ? "S" : "W");
       const abs = Math.abs(dec);
       const deg = Math.floor(abs);
-      const minFloat = (abs-deg)*60;
+      const minFloat = (abs - deg) * 60;
       const min = Math.floor(minFloat);
-      const sec = (minFloat-min)*60;
+      const sec = (minFloat - min) * 60;
       return `${deg}°${min}'${sec.toFixed(1)}"${hemi}`;
     }
-    function syncEditDmsFromLatLng(){
-      if(editLat.value && editLng.value){
+    function syncEditDmsFromLatLng() {
+      if (editLat.value && editLng.value) {
         const la = Number(editLat.value);
         const lo = Number(editLng.value);
-        if(!isNaN(la) && !isNaN(lo)){
-          editPosDms.value = `${toDMSCoord(la,true)} ${toDMSCoord(lo,false)}`;
+        if (!isNaN(la) && !isNaN(lo)) {
+          editPosDms.value = `${toDMSCoord(la, true)} ${toDMSCoord(lo, false)}`;
         }
       }
     }
-    editLat.addEventListener("change",syncEditDmsFromLatLng);
-    editLng.addEventListener("change",syncEditDmsFromLatLng);
+    editLat.addEventListener("change", syncEditDmsFromLatLng);
+    editLng.addEventListener("change", syncEditDmsFromLatLng);
 
     /* ----------- Edit modal ----------- */
     let currentEditPhotoFileName = null;
-    let currentEditPhotoDataUrl  = null;
-    let newEditPhotoFileName     = null;
-    let newEditPhotoDataUrl      = null;
+    let currentEditPhotoDataUrl = null;
+    let newEditPhotoFileName = null;
+    let newEditPhotoDataUrl = null;
 
-    function openEditModal(){editModalBackdrop.classList.add("show");}
-    function closeEditModal(){
+    function openEditModal() { editModalBackdrop.classList.add("show"); }
+    function closeEditModal() {
       editModalBackdrop.classList.remove("show");
       editForm.reset();
-      editPreview.style.display="none";
-      editPreview.src="";
-      editPhotoNote.textContent="";
-      currentEditPhotoFileName=null;
-      currentEditPhotoDataUrl=null;
-      newEditPhotoFileName=null;
-      newEditPhotoDataUrl=null;
-      setEditMsg("","");
-      editPhoto.value="";
+      editPreview.style.display = "none";
+      editPreview.src = "";
+      editPhotoNote.textContent = "";
+      currentEditPhotoFileName = null;
+      currentEditPhotoDataUrl = null;
+      newEditPhotoFileName = null;
+      newEditPhotoDataUrl = null;
+      setEditMsg("", "");
+      editPhoto.value = "";
     }
-    btnEditClose.addEventListener("click",closeEditModal);
-    btnEditCancel.addEventListener("click",closeEditModal);
+    btnEditClose.addEventListener("click", closeEditModal);
+    btnEditCancel.addEventListener("click", closeEditModal);
 
-    window.editBin = async function(zone,binId){
-      try{
+    window.editBin = async function (zone, binId) {
+      try {
         const docRef = db.collection("smartbins")
-                         .doc("bins")
-                         .collection(zone)
-                         .doc(binId);
+          .doc("bins")
+          .collection(zone)
+          .doc(binId);
         const snap = await docRef.get();
-        if(!snap.exists){
-          setStatus("ไม่พบข้อมูลถัง "+binId,"err");
+        if (!snap.exists) {
+          setStatus("ไม่พบข้อมูลถัง " + binId, "err");
           return;
         }
         const d = snap.data() || {};
@@ -892,78 +1247,78 @@
         editZoneDisplay.value = zone;
         editBinIdDisplay.value = binId;
 
-        editRfid.value    = d.rfid || "";
-        editLat.value     = d.lat!==undefined && d.lat!==null ? d.lat : "";
-        editLng.value     = d.lng!==undefined && d.lng!==null ? d.lng : "";
-        editPosDms.value  = d.positionDms || "";
+        editRfid.value = d.rfid || "";
+        editLat.value = d.lat !== undefined && d.lat !== null ? d.lat : "";
+        editLng.value = d.lng !== undefined && d.lng !== null ? d.lng : "";
+        editPosDms.value = d.positionDms || "";
         editDetails.value = d.details || "";
 
         currentEditPhotoFileName = d.photoFile || null;
-        currentEditPhotoDataUrl  = d.photoData || null;
+        currentEditPhotoDataUrl = d.photoData || null;
 
-        if(currentEditPhotoDataUrl){
+        if (currentEditPhotoDataUrl) {
           editPreview.src = currentEditPhotoDataUrl;
-          editPreview.style.display="block";
+          editPreview.style.display = "block";
           editPhotoNote.textContent = currentEditPhotoFileName || "";
-        }else{
-          editPreview.style.display="none";
+        } else {
+          editPreview.style.display = "none";
           editPhotoNote.textContent = t('editNoPhoto');
         }
         openEditModal();
-      }catch(e){
-        setStatus("อ่านข้อมูลไม่สำเร็จ: "+errStr(e),"err");
+      } catch (e) {
+        setStatus("อ่านข้อมูลไม่สำเร็จ: " + errStr(e), "err");
       }
     };
 
-    editPhoto.addEventListener("change",()=>{
-      newEditPhotoFileName=null;
-      newEditPhotoDataUrl=null;
+    editPhoto.addEventListener("change", () => {
+      newEditPhotoFileName = null;
+      newEditPhotoDataUrl = null;
       const file = editPhoto.files[0];
-      if(!file) return;
+      if (!file) return;
 
       const lower = (file.name || "").toLowerCase();
-      if(!(/\.(jpg|jpeg|png)$/i.test(lower))){
-        setEditMsg("กรุณาอัปโหลดไฟล์ .jpg, .jpeg หรือ .png เท่านั้น","err");
-        editPhoto.value="";
+      if (!(/\.(jpg|jpeg|png)$/i.test(lower))) {
+        setEditMsg("กรุณาอัปโหลดไฟล์ .jpg, .jpeg หรือ .png เท่านั้น", "err");
+        editPhoto.value = "";
         return;
       }
-      const maxBytes = 350*1024;
-      if(file.size>maxBytes){
-        const kb = Math.round(file.size/1024);
-        setEditMsg("ไฟล์รูปใหญ่เกิน 350KB ("+kb+"KB)","err");
-        editPhoto.value="";
+      const maxBytes = 350 * 1024;
+      if (file.size > maxBytes) {
+        const kb = Math.round(file.size / 1024);
+        setEditMsg("ไฟล์รูปใหญ่เกิน 350KB (" + kb + "KB)", "err");
+        editPhoto.value = "";
         return;
       }
       const reader = new FileReader();
-      reader.onload = e=>{
-        newEditPhotoFileName=file.name;
-        newEditPhotoDataUrl=e.target.result;
-        editPreview.src=newEditPhotoDataUrl;
-        editPreview.style.display="block";
+      reader.onload = e => {
+        newEditPhotoFileName = file.name;
+        newEditPhotoDataUrl = e.target.result;
+        editPreview.src = newEditPhotoDataUrl;
+        editPreview.style.display = "block";
         editPhotoNote.textContent = `${newEditPhotoFileName} ${t('editNewPhoto')}`;
-        setEditMsg("เตรียมรูปใหม่เรียบร้อย","ok");
+        setEditMsg("เตรียมรูปใหม่เรียบร้อย", "ok");
       };
       reader.readAsDataURL(file);
     });
 
-    editForm.addEventListener("submit",async e=>{
+    editForm.addEventListener("submit", async e => {
       e.preventDefault();
-      try{
+      try {
         const zone = editDocZone.value;
-        const binId= editDocBinId.value;
-        if(!zone || !binId){
-          setEditMsg(t('editSaveError'),"err");
+        const binId = editDocBinId.value;
+        if (!zone || !binId) {
+          setEditMsg(t('editSaveError'), "err");
           return;
         }
         const rfid = editRfid.value.trim() || null;
-        const lng  = editLng.value ? Number(editLng.value) : null;
-        const lat  = editLat.value ? Number(editLat.value) : null;
-        const pos  = editPosDms.value.trim() || null;
-        const det  = editDetails.value.trim() || null;
+        const lng = editLng.value ? Number(editLng.value) : null;
+        const lat = editLat.value ? Number(editLat.value) : null;
+        const pos = editPosDms.value.trim() || null;
+        const det = editDetails.value.trim() || null;
 
         let photoFile = currentEditPhotoFileName;
         let photoData = currentEditPhotoDataUrl;
-        if(newEditPhotoDataUrl){
+        if (newEditPhotoDataUrl) {
           photoFile = newEditPhotoFileName;
           photoData = newEditPhotoDataUrl;
         }
@@ -972,60 +1327,60 @@
           rfid,
           lng,
           lat,
-          positionDms:pos,
-          details:det,
-          photoFile:photoFile || null,
-          photoData:photoData || null,
-          updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+          positionDms: pos,
+          details: det,
+          photoFile: photoFile || null,
+          photoData: photoData || null,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        setEditMsg(t('editSaving'),"");
+        setEditMsg(t('editSaving'), "");
         const docRef = db.collection("smartbins")
-                         .doc("bins")
-                         .collection(zone)
-                         .doc(binId);
-        await docRef.set(data,{merge:true});
-        setEditMsg(t('editSaveSuccess'),"ok");
-        setStatus(`${t('editSaveSuccess')} ${binId}`,"ok");
-        setTimeout(closeEditModal,600);
-      }catch(e){
-        setEditMsg(`${t('editSaveError')} ${errStr(e)}`,"err");
+          .doc("bins")
+          .collection(zone)
+          .doc(binId);
+        await docRef.set(data, { merge: true });
+        setEditMsg(t('editSaveSuccess'), "ok");
+        setStatus(`${t('editSaveSuccess')} ${binId}`, "ok");
+        setTimeout(closeEditModal, 600);
+      } catch (e) {
+        setEditMsg(`${t('editSaveError')} ${errStr(e)}`, "err");
       }
     });
 
     /* ----------- Delete bin ----------- */
-    window.deleteBin = async function(zone,binId){
-      if(!confirm(`${t('confirmDelete')} ${binId} ${t('inZone')} ${zone}?`)) return;
-      try{
+    window.deleteBin = async function (zone, binId) {
+      if (!confirm(`${t('confirmDelete')} ${binId} ${t('inZone')} ${zone}?`)) return;
+      try {
         await db.collection("smartbins")
-                .doc("bins")
-                .collection(zone)
-                .doc(binId)
-                .delete();
-        setStatus(`${t('deleteSuccess')} ${binId}`,"ok");
-      }catch(e){
-        setStatus(`${t('deleteError')} ${errStr(e)}`,"err");
+          .doc("bins")
+          .collection(zone)
+          .doc(binId)
+          .delete();
+        setStatus(`${t('deleteSuccess')} ${binId}`, "ok");
+      } catch (e) {
+        setStatus(`${t('deleteError')} ${errStr(e)}`, "err");
       }
     };
 
     /* ----------- Dashboard (นับจำนวนถัง) ----------- */
-    async function updateDashboard(){
+    async function updateDashboard() {
       // 1) ใช้ collectionGroup("bins") เพื่อดูระดับจาก bin_level/{zone}/bins/{binId}
-      db.collectionGroup("bins").onSnapshot(async (binsLevelSnap)=>{
+      db.collectionGroup("bins").onSnapshot(async (binsLevelSnap) => {
         let full = 0, mid = 0;
 
-        binsLevelSnap.forEach(doc=>{
+        binsLevelSnap.forEach(doc => {
           const data = doc.data() || {};
           const fillLevel = data.fillLevel;
-          if(fillLevel===undefined || fillLevel===null) return;
-          if(fillLevel >= 80) full++;
-          else if(fillLevel >= 50) mid++;
+          if (fillLevel === undefined || fillLevel === null) return;
+          if (fillLevel >= 80) full++;
+          else if (fillLevel >= 50) mid++;
         });
 
         // 2) นับจำนวนถังทั้งหมดจาก smartbins / bins / [zone] / [BINID]
         let totalBins = 0;
         const zonesSnap = await db.collection("zones").get();
-        for(const zDoc of zonesSnap.docs){
+        for (const zDoc of zonesSnap.docs) {
           const zoneId = zDoc.id;
           const zoneBinsSnap = await db
             .collection("smartbins")
@@ -1037,14 +1392,14 @@
         const low = Math.max(0, totalBins - full - mid);
 
         totalEl.textContent = totalBins;
-        fullEl.textContent  = full;
-        midEl.textContent   = mid;
-        lowEl.textContent   = low;
+        fullEl.textContent = full;
+        midEl.textContent = mid;
+        lowEl.textContent = low;
       });
     }
 
     /* ----------- เปลี่ยนภาษา ----------- */
-    function applyLanguage(){
+    function applyLanguage() {
       document.title = t('pageTitle');
       $("menuToggle").textContent = t('menuBtn');
 
@@ -1060,57 +1415,58 @@
       $("welcomeHint").innerHTML = t('welcomeHint');
 
       $("cardTotalTitle").textContent = t('cardTotal');
-      $("cardFullTitle").textContent  = t('cardFull');
-      $("cardMidTitle").textContent   = t('cardMid');
-      $("cardLowTitle").textContent   = t('cardLow');
+      $("cardFullTitle").textContent = t('cardFull');
+      $("cardMidTitle").textContent = t('cardMid');
+      $("cardLowTitle").textContent = t('cardLow');
 
       $("binsSectionTitle").textContent = t('binsSectionTitle');
-      $("binsSectionHint").innerHTML   = t('binsSectionHint');
+      $("binsSectionHint").innerHTML = t('binsSectionHint');
 
       $("filterZoneLabel").textContent = t('filterZoneLabel');
 
-      $("thZone").textContent    = t('tableHeaderZone');
-      $("thBin").textContent     = t('tableHeaderBin');
-      $("thRfid").textContent    = t('tableHeaderRfid');
-      $("thCoords").textContent  = t('tableHeaderCoords');
-      $("thDms").textContent     = t('tableHeaderDms');
+      $("thZone").textContent = t('tableHeaderZone');
+      $("thBin").textContent = t('tableHeaderBin');
+      $("thRfid").textContent = t('tableHeaderRfid');
+      $("thCoords").textContent = t('tableHeaderCoords');
+      $("thDms").textContent = t('tableHeaderDms');
       $("thDetails").textContent = t('tableHeaderDetails');
-      $("thPhoto").textContent   = t('tableHeaderPhoto');
+      $("thPhoto").textContent = t('tableHeaderPhoto');
       $("thUpdated").textContent = t('tableHeaderUpdated');
-      $("thManage").textContent  = t('tableHeaderManage');
+      $("thManage").textContent = t('tableHeaderManage');
 
       // Modal labels
-      $("editModalTitle").textContent   = t('editModalTitle');
-      $("editLabelZone").textContent    = t('editLabelZone');
-      $("editLabelBinId").textContent   = t('editLabelBinId');
-      $("editLabelRfid").textContent    = t('editLabelRfid');
-      $("editLabelPosition").textContent= t('editLabelPosition');
+      $("editModalTitle").textContent = t('editModalTitle');
+      $("editLabelZone").textContent = t('editLabelZone');
+      $("editLabelBinId").textContent = t('editLabelBinId');
+      $("editLabelRfid").textContent = t('editLabelRfid');
+      $("editLabelPosition").textContent = t('editLabelPosition');
       $("editLabelDetails").textContent = t('editLabelDetails');
       $("editLabelCurrentPhoto").textContent = t('editLabelCurrentPhoto');
-      $("editLabelChangePhoto").textContent  = t('editLabelChangePhoto');
-      $("editPhotoHint").textContent    = t('editPhotoHint');
-      $("editCancel").textContent       = t('btnCancel');
-      $("btnSaveChanges").textContent   = t('btnSaveChanges');
+      $("editLabelChangePhoto").textContent = t('editLabelChangePhoto');
+      $("editPhotoHint").textContent = t('editPhotoHint');
+      $("editCancel").textContent = t('btnCancel');
+      $("btnSaveChanges").textContent = t('btnSaveChanges');
 
       renderZoneFilter();
       renderTable();
     }
 
-    function changeLanguage(lang){
-      if(!translations[lang]) return;
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
       currentLang = lang;
-      localStorage.setItem('sw_lang',lang);
+      localStorage.setItem('sw_lang', lang);
       langSelect.value = lang;
       applyLanguage();
     }
 
-    langSelect.addEventListener("change",e=>changeLanguage(e.target.value));
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
 
     // initial
-    document.addEventListener("DOMContentLoaded",()=>{
+    document.addEventListener("DOMContentLoaded", () => {
       langSelect.value = currentLang;
       applyLanguage();
     });
   </script>
 </body>
+
 </html>

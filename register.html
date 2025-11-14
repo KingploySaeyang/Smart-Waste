@@ -19,6 +19,7 @@
       flex-direction:row;
     }
 
+    /* ─ Sidebar ─ */
     .sidebar{
       width:250px;
       background:#2f3640;
@@ -47,6 +48,7 @@
       border-left:4px solid #00a8ff;
     }
 
+    /* ─ ปุ่มเปิด/ปิดเมนู (มือถือ) ─ */
     .toggle-btn{
       display:none;
       position:fixed;
@@ -62,9 +64,17 @@
     }
 
     /* Language switcher */
-    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
-    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;width:auto;}
-    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
+    .lang-switcher{
+      position:absolute;top:10px;right:10px;z-index:100;
+    }
+    .lang-switcher select{
+      padding:4px 8px;border-radius:6px;
+      border:1px solid #ccc;font-size:14px;
+      min-height:unset;width:auto;
+    }
+    @media(max-width:900px){
+      .lang-switcher{top:12px;right:16px}
+    }
 
     main{
       flex:1;
@@ -76,11 +86,10 @@
       margin-bottom:16px;
     }
     .content{
-      background:#fff;
-      padding:24px;
-      border-radius:12px;
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
-    }
+  background:#fff;padding:24px;border-radius:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+  position:static;
+}
 
     fieldset{
       border:1px solid #e3e3e3;
@@ -229,6 +238,75 @@
       flex-wrap:wrap;
     }
 
+    /* ========== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า (เหมือน home) ========== */
+    :root{
+      --btn-min-h:44px;
+      --btn-pad-x:16px;
+      --btn-pad-y:10px;
+      --btn-radius:12px;
+      --btn-font:16px;
+    }
+
+    /* หัวข้อ */
+    h1{ margin:0 0 16px; line-height:1.25; }
+    legend{ line-height:1.35; }
+
+    /* ฟอร์ม + ปุ่ม ให้ขนาดเดียวกัน */
+    input[type="text"],
+    input[type="number"],
+    input[type="file"],
+    select,
+    textarea,
+    button{
+      min-height:var(--btn-min-h);
+      padding:var(--btn-pad-y) var(--btn-pad-x);
+      border-radius:var(--btn-radius);
+      font-size:var(--btn-font);
+      line-height:1.2;
+    }
+
+    /* ปุ่มฐาน */
+    button,
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      cursor:pointer;
+      transition:transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+      border:0;
+    }
+    .primary:hover{filter:brightness(1.05);}
+    .primary:active{transform:translateY(1px);}
+    .ghost:hover{filter:brightness(0.98);}
+    .ghost:active{transform:translateY(1px);}
+
+    /* ปุ่ม 3 ขีด แบบเดียวกับ home */
+    .toggle-btn{
+      min-height:var(--btn-min-h);
+      padding:var(--btn-pad-y) var(--btn-pad-x);
+      border-radius:var(--btn-radius);
+      font-size:var(--btn-font);
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+    }
+
+    /* โฟกัสคีย์บอร์ด */
+    button:focus, .toggle-btn:focus,
+    input:focus, select:focus, textarea:focus{
+      outline:3px solid #93c5fd;
+      outline-offset:2px;
+    }
+
+    /* ซ่อนปุ่ม 3 ขีด เมื่อเมนูเปิด (เฉพาะมือถือ) */
+    @media(max-width:900px){
+      .menu-open .toggle-btn{display:none;}
+      .lang-switcher select{
+        min-height:var(--btn-min-h);
+        padding:4px 10px;
+      }
+    }
+
+    /* ─ มือถือ ─ */
     @media (max-width: 900px){
       body{flex-direction:column;}
       .sidebar{
@@ -244,7 +322,6 @@
         padding:70px 16px 20px;
       }
       .row>div{flex:1 1 100%;}
-      input,select,button,textarea{font-size:16px;}
       h1{text-align:center;}
       .modal{
         max-width:100%;
@@ -264,7 +341,7 @@
       <a href="capacity.html">ความจุถังขยะ</a>
       <a href="truck.html">ตำแหน่งรถเก็บขยะ</a>
       <a href="report.html">รายงานย้อนหลัง</a>
-  <a href="#bins-section" id="navBins" style="display:none;">รายการถังขยะ</a>
+      <a href="#bins-section" id="navBins" style="display:none;">รายการถังขยะ</a>
     </nav>
   </aside>
 
@@ -336,7 +413,8 @@
             </div>
           </div>
 
-          <label>แนบรูปถังขยะ
+          <label>
+            แนบรูปถังขยะ
             <input id="photo" type="file" accept=".jpg,.jpeg,.png" />
             <div class="muted">
               รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB
@@ -411,6 +489,7 @@
     const btnReset  = $("btnReset");
     const btnGetPos = $("btnGetPos");
     const menuToggleBtn = $("menuToggleBtn");
+    const sidebarEl = $("sidebar");
 
     const langSelect = $("langSelect");
 
@@ -625,7 +704,7 @@
       return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
     }
 
-    // --------- จัดการเขต (zones collection) ----------
+    // --------- จัดการเขต ----------
     let zones = []; // [{id,name}]
 
     function renderZoneSelect(){
@@ -755,7 +834,7 @@
       });
       renderZoneSelect();
       renderZoneList();
-      changeLanguage(currentLang, true); // re-apply labels without rerender select twice
+      changeLanguage(currentLang, true); // อัปเดตข้อความ (แต่ไม่เรียก render ซ้ำ)
     });
 
     function openZoneModal(){
@@ -799,7 +878,7 @@
       }
     });
 
-    // --------- สร้าง BINxxx ต่อเขต ----------
+    // --------- BIN ID ต่อเขต ----------
     function pad3(n){ return n.toString().padStart(3,"0"); }
 
     async function assignBinIdForZone(zoneName){
@@ -976,7 +1055,7 @@
 
         await docRef.set(data, { merge:false });
 
-        // สร้าง document bin_level/{zone}/bins/{binId} เริ่มต้น fillLevel = 0
+        // bin_level เริ่มต้น
         await db.collection("bin_level")
           .doc(zone)
           .collection("bins")
@@ -1025,8 +1104,11 @@
       labels[2].textContent = getTranslation('labelRfid');
       labels[3].textContent = getTranslation('labelPosition');
       labels[4].textContent = getTranslation('labelDetails');
-      labels[5].firstChild.textContent = getTranslation('labelAttachPhoto');
-      labels[5].querySelector('.muted').textContent = getTranslation('photoHint');
+
+      // label รูป: แก้เฉพาะข้อความตัวแรก + hint
+      const photoLabel = labels[5];
+      photoLabel.childNodes[0].textContent = getTranslation('labelAttachPhoto') + " ";
+      photoLabel.querySelector('.muted').textContent = getTranslation('photoHint');
 
       binIdEl.placeholder = getTranslation('placeholderBinId');
       rfidEl.placeholder = getTranslation('placeholderRfid');
@@ -1053,9 +1135,26 @@
 
     langSelect.addEventListener("change", e => changeLanguage(e.target.value));
 
-    // toggle sidebar mobile
-    menuToggleBtn.addEventListener("click", () => {
-      document.getElementById('sidebar').classList.toggle('show');
+    // ---------- เมนู 3 ขีด เหมือนหน้า home ----------
+    function toggleMenu(){
+      const isOpen = sidebarEl.classList.toggle('show');
+      if(isOpen){
+        document.body.classList.add('menu-open');
+      }else{
+        document.body.classList.remove('menu-open');
+      }
+    }
+
+    menuToggleBtn.addEventListener("click", toggleMenu);
+
+    // ปิดเมนูเมื่อกดลิงก์ (เฉพาะบนมือถือ)
+    document.querySelectorAll('.menu a').forEach(a=>{
+      a.addEventListener('click', ()=>{
+        if(window.innerWidth <= 900){
+          sidebarEl.classList.remove('show');
+          document.body.classList.remove('menu-open');
+        }
+      });
     });
 
     // initial language

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,48 +14,295 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-  <style> 
-    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
-    body{display:flex;min-height:100vh;background:#f5f6fa;flex-direction:row}
-    .sidebar{width:250px;background:#2f3640;color:#f5f6fa;display:flex;flex-direction:column;padding-top:20px;transition:.3s}
-    .sidebar h2{text-align:center;color:#00a8ff;margin-bottom:25px}
-    .menu a{display:block;color:#f5f6fa;padding:14px 20px;text-decoration:none;border-left:4px solid transparent;transition:.3s}
-    .menu a:hover,.menu a.active{background:#353b48;border-left:4px solid #00a8ff}
-    .toggle-btn{display:none;position:fixed;top:14px;left:14px;background:#00a8ff;color:#fff;border:none;padding:10px 16px;border-radius:12px;cursor:pointer;z-index:1000;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-    main{flex:1;padding:30px;overflow-y:auto}
-    h1{color:#2f3640;margin-bottom:16px}
-    .content{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    label{display:block;margin:6px 0 4px}
-    select,button,input{min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid #cbd5e1;font-size:16px}
-    button{cursor:pointer;border:0}
-    .primary{background:#2563eb;color:#fff}
-    .ghost{background:#f4f4f5;color:#111827}
-    .muted{color:#6b7280;font-size:13px}
-    .card{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
-    #map{width:100%;height:460px;border-radius:12px;border:1px solid #e5e7eb}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:left}
-    th{background:#fafafa}
-    @media(max-width:900px){
-      body{flex-direction:column}
-      .sidebar{position:fixed;left:-250px;top:0;height:100%;z-index:999}
-      .sidebar.show{left:0}
-      .toggle-btn{display:block}
-      main{padding:70px 16px 20px}
-      h1{text-align:center}
-      .row{flex-direction:column;align-items:stretch}
-      #map{height:360px}
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
     }
 
-    /* Language switcher */
-    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
-    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;min-height:unset;width:auto;}
-    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff
+    }
+
+    /* ปุ่ม 3 ขีด */
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    /* Main */
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto
+    }
+
+    h1 {
+      color: #2f3640;
+      margin-bottom: 16px
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+      position: static;
+    }
+
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    label {
+      display: block;
+      margin: 6px 0 4px
+    }
+
+    select,
+    button,
+    input {
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0
+    }
+
+    .primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 12px 0
+    }
+
+    #map {
+      width: 100%;
+      height: 460px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 8px 10px;
+      text-align: left
+    }
+
+    th {
+      background: #fafafa
+    }
+
+    /* Responsive */
+    @media(max-width:900px) {
+      body {
+        flex-direction: column
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
+      }
+
+      .sidebar.show {
+        left: 0
+      }
+
+      .toggle-btn {
+        display: block
+      }
+
+      main {
+        padding: 70px 16px 20px
+      }
+
+      h1 {
+        text-align: center
+      }
+
+      .row {
+        flex-direction: column;
+        align-items: stretch
+      }
+
+      .row>div,
+      .row>button {
+        width: 100%;
+      }
+
+      #map {
+        height: 45vh
+      }
+    }
+
+    /* Language switcher: ให้เหมือนหน้าความจุถังขยะ */
+    .lang-switcher {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+    }
+
+    .lang-switcher select {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      min-height: unset;
+      width: auto;
+    }
+
+    @media(max-width:900px) {
+      .lang-switcher {
+        top: 12px;
+        right: 16px
+      }
+    }
+
+    /* ===== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า ===== */
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      line-height: 1.35;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      line-height: 1.2;
+    }
+
+    button,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+    }
+
+    .primary:hover,
+    .ghost:hover {
+      filter: brightness(1.03);
+    }
+
+    .primary:active,
+    .ghost:active {
+      transform: translateY(1px);
+    }
+
+    button:focus,
+    .toggle-btn:focus,
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
   </style>
 </head>
+
 <body>
-  <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ เมนู</button>
+  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
 
   <aside class="sidebar" id="sidebar">
     <h2>Smart Waste</h2>
@@ -77,13 +325,16 @@
           <option value="ms">Bahasa Melayu</option>
         </select>
       </div>
+
       <div class="card">
         <div class="row">
           <div style="flex:1 1 260px">
-            <label>เลือกรถ (จาก Firestore: <code>trucks</code>)</label>
+            <label for="truckSelect">เลือกรถ (จาก Firestore: <code>trucks</code>)</label>
             <div class="row">
-              <select id="truckSelect"><option value="">(กำลังโหลด…)</option></select>
-              <button id="btnCreate" class="primary">+ สร้างรถใหม่</button>
+              <select id="truckSelect">
+                <option value="">(กำลังโหลด…)</option>
+              </select>
+              <button id="btnCreate" class="ghost">+ สร้างรถใหม่</button>
             </div>
             <p id="truckInfo" class="muted" style="margin-top:6px">(ยังไม่ได้เลือกรถ)</p>
           </div>
@@ -112,28 +363,28 @@
       appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
     };
     firebase.initializeApp(firebaseConfig);
-    const fs   = firebase.firestore();
+    const fs = firebase.firestore();
 
     /* Map */
     const start = [6.46007, 100.35933];
     const map = L.map('map').setView(start, 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       { maxZoom: 20, attribution: '&copy; OpenStreetMap' }).addTo(map);
-    let marker = L.marker(start, { draggable:false }).addTo(map).bindPopup('ตำแหน่งรถ').openPopup();
+    let marker = L.marker(start, { draggable: false }).addTo(map).bindPopup('ตำแหน่งรถ').openPopup();
 
     /* UI refs */
     const truckSel = document.getElementById('truckSelect');
-    const truckInfo= document.getElementById('truckInfo');
-    const btnCreate= document.getElementById('btnCreate');
-    const btnCenter= document.getElementById('btnCenter');
-    const feedEl   = document.getElementById('feed');
+    const truckInfo = document.getElementById('truckInfo');
+    const btnCreate = document.getElementById('btnCreate');
+    const btnCenter = document.getElementById('btnCenter');
+    const feedEl = document.getElementById('feed');
     const langSelect = document.getElementById('langSelect');
 
     /* โหลดรายชื่อรถ */
-    async function loadTrucks(){
+    async function loadTrucks() {
       const snap = await fs.collection('trucks').get();
       truckSel.innerHTML = '<option value="">-- เลือกรถ --</option>';
-      snap.forEach(doc=>{
+      snap.forEach(doc => {
         const d = doc.data() || {};
         const opt = document.createElement('option');
         opt.value = doc.id;
@@ -146,22 +397,22 @@
     /* ===== i18n ===== */
     const translations = {
       th: {
-        pageTitle: "Smart Waste - ตำแหน่งรถเก็บขยะ (RTDB Live)",
+        pageTitle: "Smart Waste - ตำแหน่งรถเก็บขยะ",
         menuBtn: "☰ เมนู",
         navHome: "หน้าหลัก",
         navRegister: "ลงทะเบียน",
         navCapacity: "ความจุถังขยะ",
         navTruck: "ตำแหน่งรถเก็บขยะ",
         navReport: "รายงานย้อนหลัง",
-        mainTitle: "ตำแหน่งรถเก็บขยะ (RTDB Live)",
+        mainTitle: "ตำแหน่งรถเก็บขยะ",
         selectTruckLabel: "เลือกรถ (จาก Firestore: trucks)",
         loading: "(กำลังโหลด…)",
         selectTruckDefault: "-- เลือกรถ --",
         createTruckBtn: "+ สร้างรถใหม่",
         noTruckSelected: "(ยังไม่ได้เลือกรถ)",
-        truckNotFound: "ไม่พบรถนี้ใน Firestore", // Keep this
+        truckNotFound: "ไม่พบรถนี้ใน Firestore",
         focusBtn: "โฟกัสหมุด",
-        truckInfoText: "ID: <b>%id%</b> • ชื่อ: %name% • อัปเดตล่าสุด (FS): %updatedAt%", // Keep this
+        truckInfoText: "ID: <b>%id%</b> • ชื่อ: %name% • อัปเดตล่าสุด (FS): %updatedAt%",
         mapPopup: "ตำแหน่งรถ",
         latestUpdateTitle: "อัปเดตล่าสุด",
         historyHeaderTime: "เวลา",
@@ -172,22 +423,22 @@
         defaultTruckName: "รถเขตเมือง",
       },
       en: {
-        pageTitle: "Smart Waste - Truck Location (RTDB Live)",
+        pageTitle: "Smart Waste - Truck Location",
         menuBtn: "☰ Menu",
         navHome: "Home",
         navRegister: "Register",
         navCapacity: "Bin Capacity",
         navTruck: "Truck Location",
         navReport: "Historical Report",
-        mainTitle: "Truck Location (RTDB Live)",
+        mainTitle: "Truck Location",
         selectTruckLabel: "Select Truck (from Firestore: trucks)",
         loading: "(Loading…)",
         selectTruckDefault: "-- Select a truck --",
         createTruckBtn: "+ Create New Truck",
         noTruckSelected: "(No truck selected)",
-        truckNotFound: "This truck was not found in Firestore", // Keep this
+        truckNotFound: "This truck was not found in Firestore",
         focusBtn: "Focus Marker",
-        truckInfoText: "ID: <b>%id%</b> • Name: %name% • Last Updated (FS): %updatedAt%", // Keep this
+        truckInfoText: "ID: <b>%id%</b> • Name: %name% • Last Updated (FS): %updatedAt%",
         mapPopup: "Truck Location",
         latestUpdateTitle: "Latest Updates",
         historyHeaderTime: "Time",
@@ -198,22 +449,22 @@
         defaultTruckName: "City Zone Truck",
       },
       ms: {
-        pageTitle: "Smart Waste - Lokasi Lori (RTDB Live)",
+        pageTitle: "Smart Waste - Lokasi Lori",
         menuBtn: "☰ Menu",
         navHome: "Halaman Utama",
         navRegister: "Daftar",
         navCapacity: "Kapasiti Tong",
         navTruck: "Lokasi Lori",
         navReport: "Laporan Sejarah",
-        mainTitle: "Lokasi Lori (RTDB Live)",
+        mainTitle: "Lokasi Lori",
         selectTruckLabel: "Pilih Lori (dari Firestore: trucks)",
         loading: "(Memuatkan…)",
         selectTruckDefault: "-- Pilih lori --",
         createTruckBtn: "+ Cipta Lori Baharu",
         noTruckSelected: "(Tiada lori dipilih)",
-        truckNotFound: "Lori ini tidak ditemui dalam Firestore", // Keep this
+        truckNotFound: "Lori ini tidak ditemui dalam Firestore",
         focusBtn: "Fokus Penanda",
-        truckInfoText: "ID: <b>%id%</b> • Nama: %name% • Terakhir Dikemas Kini (FS): %updatedAt%", // Keep this
+        truckInfoText: "ID: <b>%id%</b> • Nama: %name% • Terakhir Dikemas Kini (FS): %updatedAt%",
         mapPopup: "Lokasi Lori",
         latestUpdateTitle: "Kemas Kini Terkini",
         historyHeaderTime: "Masa",
@@ -236,85 +487,74 @@
 
       document.title = getTranslation('pageTitle');
       document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
+
       const navLinks = document.querySelectorAll('.menu a');
       navLinks[0].textContent = getTranslation('navHome');
       navLinks[1].textContent = getTranslation('navRegister');
       navLinks[2].textContent = getTranslation('navCapacity');
       navLinks[3].textContent = getTranslation('navTruck');
       navLinks[4].textContent = getTranslation('navReport');
+
       document.querySelector('h1').textContent = getTranslation('mainTitle');
-      document.querySelector('label').textContent = getTranslation('selectTruckLabel'); // Only one label left
+      document.querySelector('label').textContent = getTranslation('selectTruckLabel');
       btnCreate.textContent = getTranslation('createTruckBtn');
       btnCenter.textContent = getTranslation('focusBtn');
       document.querySelector('.card h3').textContent = getTranslation('latestUpdateTitle');
       marker.bindPopup(getTranslation('mapPopup'));
 
-      // Reload truck list and reset view
-      truckSel.innerHTML = `<option value="">${getTranslation('loading')}</option>`;
-      loadTrucks().then(() => {
-        truckSel.innerHTML = `<option value="">${getTranslation('selectTruckDefault')}</option>`;
-        // Re-populate, because loadTrucks doesn't know about translations
-        fs.collection('trucks').get().then(snap => {
-          snap.forEach(doc => {
-            const d = doc.data() || {};
-            const opt = document.createElement('option');
-            opt.value = doc.id;
-            opt.textContent = d.name ? `${doc.id} • ${d.name}` : doc.id;
-            truckSel.appendChild(opt);
-          });
-        });
-      });
-      truckInfo.textContent = getTranslation('noTruckSelected');
-      feedEl.textContent = '—';
-      detach();
+      if (!truckSel.value) {
+        truckInfo.textContent = getTranslation('noTruckSelected');
+      }
+      if (truckSel.options.length === 1 && !truckSel.value) {
+        truckSel.options[0].textContent = getTranslation('loading');
+      }
     }
 
-    /* ตัวแปรสำหรับ detach listeners */
-    let liveUnsub = null;     // Firestore live position unsubscribe
-    let histUnsub = null;     // Firestore onSnapshot unsubscribe
+    langSelect.addEventListener('change', e => changeLanguage(e.target.value));
 
-    function detach(){
-      if(typeof liveUnsub === 'function'){ liveUnsub(); liveUnsub = null; }
-      if(typeof histUnsub === 'function'){ histUnsub(); histUnsub = null; }
+    /* ตัวแปรสำหรับ detach listeners */
+    let liveUnsub = null;
+    let histUnsub = null;
+
+    function detach() {
+      if (typeof liveUnsub === 'function') { liveUnsub(); liveUnsub = null; }
+      if (typeof histUnsub === 'function') { histUnsub(); histUnsub = null; }
     }
 
     /* เปลี่ยนรถที่เลือก */
-    truckSel.addEventListener('change', async ()=>{
+    truckSel.addEventListener('change', async () => {
       detach();
       const id = truckSel.value;
-      if(!id){
+      if (!id) {
         truckInfo.textContent = getTranslation('noTruckSelected');
         feedEl.textContent = '—';
         return;
       }
 
-      /* Firestore live position listener */
       liveUnsub = fs.collection('trucks').doc(id).onSnapshot(doc => {
-        if(!doc.exists){
+        if (!doc.exists) {
           truckInfo.textContent = getTranslation('truckNotFound');
           return;
         }
         const d = doc.data() || {};
-        const truckInfoString = getTranslation('truckInfoText')
+        const info = getTranslation('truckInfoText')
           .replace('%id%', doc.id)
           .replace('%name%', d.name || '—')
           .replace('%updatedAt%', d.updatedAt?.toDate?.().toLocaleString?.() || '—');
-        truckInfo.innerHTML = truckInfoString;
+        truckInfo.innerHTML = info;
 
-        // Update map marker if lat/lng exist
-        if(typeof d.lat === 'number' && typeof d.lng === 'number'){
+        if (typeof d.lat === 'number' && typeof d.lng === 'number') {
           marker.setLatLng([d.lat, d.lng]);
-          map.panTo([d.lat, d.lng], { animate:true });
+          map.panTo([d.lat, d.lng], { animate: true });
         }
       });
 
-      /* Firestore history (ล่าสุด 10 แถว) */
       histUnsub = fs.collection('trucks').doc(id)
-        .collection('positions').orderBy('ts','desc').limit(10)
-        .onSnapshot(sn=>{
-          if(sn.empty){ feedEl.textContent = '—'; return; }
+        .collection('positions').orderBy('ts', 'desc').limit(10)
+        .onSnapshot(sn => {
+          if (sn.empty) { feedEl.textContent = '—'; return; }
           let html = `<table><thead><tr><th>${getTranslation('historyHeaderTime')}</th><th>${getTranslation('historyHeaderLat')}</th><th>${getTranslation('historyHeaderLng')}</th></tr></thead><tbody>`;
-          sn.forEach(row=>{
+          sn.forEach(row => {
             const p = row.data() || {};
             const t = p.ts?.toDate?.()?.toLocaleString?.() || '—';
             html += `<tr><td>${t}</td><td>${p.lat ?? '—'}</td><td>${p.lng ?? '—'}</td></tr>`;
@@ -325,32 +565,68 @@
     });
 
     /* สร้างรถใหม่อย่างง่าย */
-    btnCreate.addEventListener('click', async ()=>{
-      const id = prompt(getTranslation('promptTruckId'),"TRUCK01");
-      if(!id) return;
+    btnCreate.addEventListener('click', async () => {
+      const id = prompt(getTranslation('promptTruckId'), "TRUCK01");
+      if (!id) return;
       const name = prompt(getTranslation('promptTruckName'), getTranslation('defaultTruckName'));
       await fs.collection('trucks').doc(id).set({
         name: name || null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:true });
+      }, { merge: true });
       await loadTrucks();
       truckSel.value = id;
       truckSel.dispatchEvent(new Event('change'));
     });
 
     /* โฟกัสหมุด */
-    btnCenter.addEventListener('click', ()=>{
+    btnCenter.addEventListener('click', () => {
       const currentLatLng = marker.getLatLng();
-      if(currentLatLng){
-        map.setView(currentLatLng, 17, { animate:true });
+      if (currentLatLng) {
+        map.setView(currentLatLng, 17, { animate: true });
       }
     });
 
-    /* เคลียร์ listener เมื่อออกจากหน้า */
     window.addEventListener('beforeunload', detach);
 
-    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
-    changeLanguage(currentLang); // Initial load
+    /* ===== ปุ่มเมนู 3 ขีด ให้ทำงานเหมือนหน้าอื่น ===== */
+    function toggleMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      const isShow = sidebar.classList.toggle('show');
+      if (window.innerWidth <= 900) {
+        btn.style.display = isShow ? 'none' : 'block';
+      }
+    }
+    window.toggleMenu = toggleMenu;
+
+    // คลิกเมนูบนมือถือให้ปิด sidebar และโชว์ปุ่ม 3 ขีดกลับมา
+    document.querySelectorAll('.menu a').forEach(a => {
+      a.addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar');
+        const btn = document.querySelector('.toggle-btn');
+        if (window.innerWidth <= 900) {
+          sidebar.classList.remove('show');
+          btn.style.display = 'block';
+        }
+      });
+    });
+
+    // จัดการตอน resize
+    window.addEventListener('resize', () => {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('show');
+        btn.style.display = 'none';
+      } else {
+        sidebar.classList.remove('show');
+        btn.style.display = 'block';
+      }
+    });
+
+    // initial
+    changeLanguage(currentLang);
   </script>
 </body>
+
 </html>

@@ -68,7 +68,12 @@
     /* Language switcher */
     .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
     .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;}
-    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
+    @media(max-width:900px){
+      .lang-switcher {
+        top: 12px;
+        right: 16px
+      }
+    }
 
   </style>
 </head>
@@ -127,16 +132,20 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const LOG_COLLECTION = 'trashEmptyingList'; // subcollection ของแต่ละถังที่ใช้บันทึกการเท
+    // subcollection ชื่อ trashEmptyingList ใต้ bin_level/{zone}/bins/{BINID}
+    const LOG_COLLECTION = "trashEmptyingList";
 
-    const zonesDiv   = document.getElementById('zones');
-    const chartTitle = document.getElementById('chartTitle');
-    const btnBack    = document.getElementById('btnBack');
-    const loadingEl  = document.getElementById('loading');
-    const langSelect = document.getElementById('langSelect');
+    const zonesDiv   = document.getElementById("zones");
+    const chartTitle = document.getElementById("chartTitle");
+    const btnBack    = document.getElementById("btnBack");
+    const loadingEl  = document.getElementById("loading");
+    const langSelect = document.getElementById("langSelect");
 
-    const ctx = document.getElementById('zoneChart').getContext('2d');
+    const ctx = document.getElementById("zoneChart").getContext("2d");
     let chart = null;
+
+    // เก็บข้อมูลโครงสร้างเขต/ถังไว้ใช้ซ้ำเวลาเปลี่ยนภาษา
+    let cachedZones = []; // [{zoneId, displayName, bins:[{binId, name}]}]
 
     // utility: สร้าง/อัปเดตกราฟ
     function renderChart(labels, data, labelText){
@@ -155,14 +164,14 @@
         options: {
           responsive: true,
           scales: {
-            y: { beginAtZero: true, title: { display: true, text: getTranslation('chartYAxis') } },
+            y: { beginAtZero: true, title: { display: true, text: getTranslation("chartYAxis") } },
             x: { title: { display: true, text: "" } }
           },
           plugins: {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: (ctx) => `${ctx.parsed.y} ${getTranslation('times')}`
+                label: (ctx) => `${ctx.parsed.y} ${getTranslation("times")}`
               }
             }
           }
@@ -237,7 +246,7 @@
       }
     };
 
-    let currentLang = localStorage.getItem('sw_lang') || 'th';
+    let currentLang = localStorage.getItem("sw_lang") || "th";
 
     function getTranslation(key) {
       return translations[currentLang][key] || key;
@@ -246,128 +255,151 @@
     function changeLanguage(lang) {
       if (!translations[lang]) return;
       currentLang = lang;
-      localStorage.setItem('sw_lang', lang);
+      localStorage.setItem("sw_lang", lang);
       langSelect.value = lang;
 
-      // Update all static text elements
-      document.title = getTranslation('pageTitle');
-      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
-      const navLinks = document.querySelectorAll('.menu a');
-      navLinks[0].textContent = getTranslation('navHome');
-      navLinks[1].textContent = getTranslation('navRegister');
-      navLinks[2].textContent = getTranslation('navCapacity');
-      navLinks[3].textContent = getTranslation('navTruck');
-      navLinks[4].textContent = getTranslation('navReport');
-      document.querySelector('h1').textContent = getTranslation('mainTitle');
-      document.querySelector('h3:not(#chartTitle)').textContent = getTranslation('selectZoneTitle');
-      document.getElementById('zonesHint').textContent = getTranslation('selectZoneHint');
-      document.getElementById('btnBack').textContent = getTranslation('backBtn');
-      loadingEl.textContent = getTranslation('loading');
+      document.title = getTranslation("pageTitle");
+      document.querySelector(".toggle-btn").textContent = getTranslation("menuBtn");
+      const navLinks = document.querySelectorAll(".menu a");
+      navLinks[0].textContent = getTranslation("navHome");
+      navLinks[1].textContent = getTranslation("navRegister");
+      navLinks[2].textContent = getTranslation("navCapacity");
+      navLinks[3].textContent = getTranslation("navTruck");
+      navLinks[4].textContent = getTranslation("navReport");
+      document.querySelector("h1").textContent = getTranslation("mainTitle");
+      document.querySelector("h3:not(#chartTitle)").textContent = getTranslation("selectZoneTitle");
+      document.getElementById("zonesHint").textContent = getTranslation("selectZoneHint");
+      btnBack.textContent = getTranslation("backBtn");
+      loadingEl.textContent = getTranslation("loading");
 
-      // Reload data to update dynamic text like chart and zone cards
+      // รีเฟรชกราฟ/การ์ดด้วยภาษาปัจจุบัน
       loadSummaryByZone();
     }
 
-    langSelect.addEventListener('change', (e) => changeLanguage(e.target.value));
+    langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
 
-    // อ่านถังทั้งหมด -> คืน array ของ { id, name, zone }
-    async function getAllBins(){
-      const snap = await db.collection('smartbins').get();
-      const bins = [];
-      snap.forEach(doc=>{
-        const d = doc.data() || {};
-        bins.push({ id: doc.id, name: d.name || doc.id, zone: d.zone || getTranslation('unspecifiedZone') });
-      });
-      return bins;
+    // โหลดโครงสร้างเขต + ถังจาก zones + smartbins/bins/{zone}/{BIN}
+    async function loadZonesAndBins(){
+      const zonesSnap = await db.collection("zones").orderBy("name").get();
+      const zones = [];
+
+      for(const zDoc of zonesSnap.docs){
+        const zoneId = zDoc.id;
+        const zoneName = zDoc.data().name || zoneId;
+
+        const binsSnap = await db
+          .collection("smartbins")
+          .doc("bins")
+          .collection(zoneId)
+          .get();
+
+        const bins = [];
+        binsSnap.forEach(bDoc => {
+          const d = bDoc.data() || {};
+          const binId = d.binId || bDoc.id;
+          const binName = d.name || binId;
+          bins.push({ binId, name: binName });
+        });
+
+        zones.push({ zoneId, displayName: zoneName, bins });
+      }
+      return zones;
     }
 
-    // นับเอกสารทั้งหมดใน subcollection การเท ของถัง 1 ใบ
-    async function countEmptyForBin(binId){
-      // เนื่องจากเราไม่รู้ zone จากแค่ binId, เราต้องใช้ collectionGroup query
-      // นี่อาจจะช้าถ้ามีข้อมูลเยอะมาก แต่เป็นวิธีที่ตรงไปตรงมาที่สุดสำหรับโครงสร้างนี้
-      const querySnapshot = await db.collectionGroup(LOG_COLLECTION).where(firebase.firestore.FieldPath.documentId(), '>=', `bin_levels/`).get();
-      let count = 0;
-      querySnapshot.forEach(doc => { if (doc.ref.parent.parent.id === binId) { count++; } });
-      return count;
-    }
-
-    // โหลดสรุปต่อ "เขต"
+    // โหลดสรุปจำนวนการเทต่อเขต
     async function loadSummaryByZone(){
-      loadingEl.style.display = 'inline';
-      const bins = await getAllBins();
+      loadingEl.style.display = "inline";
 
-      // รวบรวมรายชื่อเขตและคำนวณรวม
-      const zoneToCount = new Map();             // เขต -> จำนวนการเทรวม
-      const zoneToBins  = new Map();             // เขต -> รายการถังในเขตนั้น
-
-      // เตรียมโครง
-      for(const b of bins){
-        if(!zoneToBins.has(b.zone)) zoneToBins.set(b.zone, []);
-        zoneToBins.get(b.zone).push(b);
+      // ถ้ามี cache แล้วใช้ซ้ำ (โครงสร้างถังไม่เปลี่ยนบ่อย)
+      if (!cachedZones.length){
+        cachedZones = await loadZonesAndBins();
       }
 
-      // นับการเทแยกถัง แล้วรวมต่อเขต
-      for(const [zone, binsInZone] of zoneToBins.entries()){
-        let zoneTotal = 0;
-        // สำหรับแต่ละเขต, เราสามารถ query ได้ตรงๆ ซึ่งเร็วกว่า
-        const binsCollectionRef = db.collection('bin_levels').doc(zone).collection('bins');
-        for (const bin of binsInZone) {
-          const emptyingListRef = binsCollectionRef.doc(bin.id).collection(LOG_COLLECTION);
-          const emptyingSnap = await emptyingListRef.get();
-          zoneTotal += emptyingSnap.size;
+      const zoneToCount = new Map();
+
+      // วนแต่ละเขต แล้วนับ trashEmptyingList ของทุกถังในเขตนั้น
+      for(const zone of cachedZones){
+        let total = 0;
+        for(const bin of zone.bins){
+          const logsSnap = await db
+            .collection("bin_level")
+            .doc(zone.zoneId)
+            .collection("bins")
+            .doc(bin.binId)
+            .collection(LOG_COLLECTION)
+            .get();
+          total += logsSnap.size;
         }
-        zoneToCount.set(zone, zoneTotal);
+        zoneToCount.set(zone.zoneId, { total, displayName: zone.displayName });
       }
 
-      // วาดกราฟต่อเขต
-      const labels = Array.from(zoneToCount.keys());
-      const data   = Array.from(zoneToCount.values());
-      chartTitle.textContent = getTranslation('summaryTitle');
-      renderChart(labels, data, getTranslation('chartLabel'));
-      loadingEl.style.display = 'none';
+      const labels = [];
+      const data   = [];
 
-      // ปุ่มเขตด้านล่าง
-      zonesDiv.innerHTML = '';
-      labels.forEach(z=>{
-        const div = document.createElement('div');
-        div.className = 'zone-card';
-        div.textContent = `${z} • ${zoneToCount.get(z)} ${getTranslation('times')}`;
-        div.onclick = ()=>showZoneDetail(z, zoneToBins.get(z));
-        zonesDiv.appendChild(div);
+      zoneToCount.forEach((val, zoneId) => {
+        labels.push(val.displayName || zoneId);
+        data.push(val.total);
       });
-      if(labels.length === 0){
-        zonesDiv.innerHTML = `<p class="muted">${getTranslation('noData')}</p>`;
+
+      chartTitle.textContent = getTranslation("summaryTitle");
+      renderChart(labels, data, getTranslation("chartLabel"));
+      loadingEl.style.display = "none";
+
+      // การ์ดเขตด้านล่าง
+      zonesDiv.innerHTML = "";
+      if(!labels.length){
+        zonesDiv.innerHTML = `<p class="muted">${getTranslation("noData")}</p>`;
+      } else {
+        cachedZones.forEach(z => {
+          const info = zoneToCount.get(z.zoneId) || { total: 0 };
+          const card = document.createElement("div");
+          card.className = "zone-card";
+          card.textContent = `${z.displayName} • ${info.total} ${getTranslation("times")}`;
+          card.onclick = () => showZoneDetail(z.zoneId);
+          zonesDiv.appendChild(card);
+        });
       }
 
-      // โหมด root -> ซ่อนปุ่ม Back
-      btnBack.style.display = 'none';
+      // root mode -> ซ่อนปุ่ม back
+      btnBack.style.display = "none";
       btnBack.onclick = null;
     }
 
-    // แสดงกราฟ “จำนวนการเท” ต่อถัง ในเขตที่เลือก
-    async function showZoneDetail(zoneName, binsInZone){
-      loadingEl.style.display = 'inline';
-      // นับต่อถัง
-      const labels = [];
-      const data = [];
-      const binsCollectionRef = db.collection('bin_levels').doc(zoneName).collection('bins');
-      for(const b of binsInZone){
-        const emptyingSnap = await binsCollectionRef.doc(b.id).collection(LOG_COLLECTION).get();
-        labels.push(b.name);
-        data.push(emptyingSnap.size);
+    // แสดงกราฟต่อถังในเขตที่เลือก
+    async function showZoneDetail(zoneId){
+      const zone = cachedZones.find(z => z.zoneId === zoneId);
+      if(!zone){
+        return;
       }
-      chartTitle.textContent = `${getTranslation('detailTitle')}${zoneName}`;
-      renderChart(labels, data, getTranslation('chartLabel'));
 
-      // ตั้งค่า Back
-      btnBack.style.display = 'inline-flex';
-      btnBack.onclick = ()=>loadSummaryByZone();
+      loadingEl.style.display = "inline";
 
-      loadingEl.style.display = 'none';
+      const labels = [];
+      const data   = [];
+
+      for(const bin of zone.bins){
+        const logsSnap = await db
+          .collection("bin_level")
+          .doc(zone.zoneId)
+          .collection("bins")
+          .doc(bin.binId)
+          .collection(LOG_COLLECTION)
+          .get();
+        labels.push(bin.name);
+        data.push(logsSnap.size);
+      }
+
+      chartTitle.textContent = `${getTranslation("detailTitle")}${zone.displayName}`;
+      renderChart(labels, data, getTranslation("chartLabel"));
+
+      btnBack.style.display = "inline-flex";
+      btnBack.onclick = () => loadSummaryByZone();
+
+      loadingEl.style.display = "none";
     }
 
-    // เริ่มโหลด
-    changeLanguage(currentLang); // Initial load with saved or default language
+    // เริ่มต้นด้วยภาษาใน localStorage แล้วโหลดข้อมูล
+    changeLanguage(currentLang);
   </script>
 </body>
 </html>
