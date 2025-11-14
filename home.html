@@ -22,7 +22,8 @@
       display: flex;
       min-height: 100vh;
       background: #f5f6fa;
-      flex-direction: row
+      flex-direction: row;
+      overflow-x: hidden;
     }
 
     /* ---------- ตัวแปรพื้นฐานสำหรับปุ่ม/ฟอร์ม ---------- */
@@ -91,7 +92,8 @@
     main {
       flex: 1;
       padding: 30px;
-      overflow-y: auto
+      overflow-y: auto;
+      min-width: 0;
     }
 
     h1 {
@@ -100,14 +102,11 @@
       line-height: 1.25
     }
 
-    .content {
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-      position: static;
+    .content{
+      background:#fff;padding:24px;border-radius:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+      position:static;
     }
-
 
     .muted {
       color: #6b7280;
@@ -235,7 +234,7 @@
       outline-offset: 2px;
     }
 
-    /* ---------- ตารางถังขยะ ---------- */
+    /* ---------- ตารางถังขยะ + ตัวกรอง ---------- */
     .section-title {
       margin-top: 24px;
       font-size: 18px;
@@ -252,22 +251,81 @@
       flex-wrap: wrap;
       gap: 12px;
       margin-bottom: 8px;
-      align-items: center;
+      align-items: flex-start;
+      justify-content: space-between;
     }
 
-    .filters select {
-      padding: 8px 10px;
+    .filter-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      align-items: flex-end;
+      width: 100%;
+    }
+
+    .zone-chips-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1 1 auto;
+      min-width: 220px;
+    }
+
+    .zone-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-width: 420px;
+    }
+
+    .zone-chip {
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid #d4d4d8;
+      font-size: 12px;
+      cursor: pointer;
+      background: #fff;
+      color: #374151;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .zone-chip.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+
+    .filter-inputs label {
+      font-size: 12px;
+      color: #4b5563;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .filter-inputs input {
+      padding: 7px 10px;
       border-radius: 10px;
       border: 1px solid #d4d4d8;
-      font-size: 14px;
+      font-size: 13px;
+      min-width: 160px;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 6px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 6px;
-      overflow-x: auto;
-      display: block;
+      min-width: 640px;
     }
 
     th,
@@ -286,26 +344,6 @@
     .actions {
       display: flex;
       gap: 6px
-    }
-
-    .thumb {
-      width: 56px;
-      height: 56px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-      cursor: pointer;
-    }
-
-    .thumb.empty {
-      background: #f3f4f6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      color: #9ca3af;
-      border-style: dashed;
-      cursor: default;
     }
 
     /* ---------- Modal edit ---------- */
@@ -388,16 +426,6 @@
       white-space: pre-wrap
     }
 
-    .modal .preview-edit {
-      width: 100%;
-      max-width: 220px;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      object-fit: cover;
-      margin-top: 6px;
-      cursor: default;
-    }
-
     .modal-footer {
       display: flex;
       justify-content: space-between;
@@ -407,59 +435,15 @@
       margin-top: 12px;
     }
 
-    /* ---------- Photo viewer ---------- */
-    .photo-viewer-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, .8);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1700;
-    }
-
-    .photo-viewer-backdrop.show {
-      display: flex
-    }
-
-    .photo-viewer {
-      position: relative;
-      max-width: 90vw;
-      max-height: 90vh
-    }
-
-    .photo-viewer img {
-      max-width: 100%;
-      max-height: 100%;
-      border-radius: 12px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, .6);
-    }
-
-    .photo-viewer-close {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      width: 32px;
-      height: 32px;
-      border-radius: 999px;
-      border: none;
-      background: #111827;
-      color: #f9fafb;
-      cursor: pointer;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .5);
-    }
-
     /* ---------- Responsive ---------- */
     @media(max-width:900px) {
       body {
         flex-direction: column
       }
 
-      h1{text-align:center}
+      h1 {
+        text-align: center
+      }
 
       .sidebar {
         position: fixed;
@@ -508,26 +492,27 @@
         right: 16px
       }
 
-      
+      .filters {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .filter-inputs {
+        width: 100%;
+      }
+
+      .zone-chips {
+        max-width: 100%;
+      }
     }
 
     @media(min-width:901px) {
       .toggle-btn {
         display: none !important;
       }
-
-      /* desktop ซ่อนแน่นอน */
     }
 
     /* ===== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า ===== */
-    :root {
-      --btn-min-h: 44px;
-      --btn-pad-x: 16px;
-      --btn-pad-y: 10px;
-      --btn-radius: 12px;
-      --btn-font: 16px;
-    }
-
     h1 {
       margin: 0 0 16px;
       line-height: 1.25;
@@ -637,35 +622,42 @@
       <p class="muted section-hint" id="binsSectionHint">
         ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>
         ฟิลด์:
-        <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>
+        <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>
       </p>
 
       <div class="filters">
-        <div>
-          <span class="muted" id="filterZoneLabel">เขตพื้นที่:</span>
-          <select id="filterZone">
-            <option value="">ทั้งหมด</option>
-          </select>
+        <div class="filter-inputs">
+          <div class="zone-chips-wrapper">
+            <span class="muted" id="filterZoneLabel">เขตพื้นที่</span>
+            <div id="zoneChips" class="zone-chips">
+              <!-- zone chips จาก JS -->
+            </div>
+          </div>
+
+          <label>
+            <span id="filterBinLabel">BIN</span>
+            <input id="filterBinText" type="text" placeholder="กรองตาม BIN เช่น BIN001">
+          </label>
         </div>
         <span id="status" class="muted"></span>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th id="thZone">เขต</th>
-            <th id="thBin">BIN</th>
-            <th id="thRfid">RFID</th>
-            <th id="thCoords">พิกัด (lat,lng)</th>
-            <th id="thDms">DMS</th>
-            <th id="thDetails">รายละเอียด</th>
-            <th id="thPhoto">รูป</th>
-            <th id="thUpdated">อัปเดตเมื่อ</th>
-            <th id="thManage">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th id="thZone">เขต</th>
+              <th id="thBin">BIN</th>
+              <th id="thRfid">RFID</th>
+              <th id="thCoords">พิกัด (lat,lng)</th>
+              <th id="thDetails">รายละเอียด</th>
+              <th id="thUpdated">อัปเดตเมื่อ</th>
+              <th id="thManage">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -709,31 +701,10 @@
           </div>
         </div>
 
-        <div class="row" style="margin-top:8px">
-          <div>
-            <textarea id="editPosDms" placeholder="ตำแหน่ง (DMS)"></textarea>
-          </div>
-        </div>
-
         <div class="row">
           <div style="flex:1 1 100%">
             <label id="editLabelDetails">รายละเอียดเพิ่มเติม</label>
             <textarea id="editDetails"></textarea>
-          </div>
-        </div>
-
-        <div class="row">
-          <div style="flex:1 1 240px">
-            <label id="editLabelCurrentPhoto">รูปปัจจุบัน</label>
-            <img id="editPreview" class="preview-edit" style="display:none" alt="รูปถัง" />
-            <div id="editPhotoNote" class="muted" style="margin-top:4px"></div>
-          </div>
-          <div style="flex:1 1 240px">
-            <label id="editLabelChangePhoto">เปลี่ยนรูปถังขยะ</label>
-            <input id="editPhoto" type="file" accept=".jpg,.jpeg,.png" />
-            <div class="muted" id="editPhotoHint">
-              รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB
-            </div>
           </div>
         </div>
 
@@ -745,14 +716,6 @@
           </div>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Photo viewer -->
-  <div class="photo-viewer-backdrop" id="photoViewerBackdrop">
-    <div class="photo-viewer">
-      <button class="photo-viewer-close" id="photoViewerClose">✕</button>
-      <img id="photoViewerImg" src="" alt="รูปถัง" />
     </div>
   </div>
 
@@ -815,8 +778,9 @@
     const lowEl = $("lowBins");
 
     const statusEl = $("status");
-    const filterZone = $("filterZone");
     const rowsEl = $("rows");
+    const zoneChipsEl = $("zoneChips");
+    const filterBinText = $("filterBinText");
 
     // Edit modal elements
     const editModalBackdrop = $("editModalBackdrop");
@@ -828,19 +792,10 @@
     const editRfid = $("editRfid");
     const editLat = $("editLat");
     const editLng = $("editLng");
-    const editPosDms = $("editPosDms");
     const editDetails = $("editDetails");
-    const editPreview = $("editPreview");
-    const editPhoto = $("editPhoto");
-    const editPhotoNote = $("editPhotoNote");
     const editMsg = $("editMsg");
     const btnEditClose = $("btnEditClose");
     const btnEditCancel = $("editCancel");
-
-    // Photo viewer
-    const photoViewerBackdrop = $("photoViewerBackdrop");
-    const photoViewerImg = $("photoViewerImg");
-    const photoViewerClose = $("photoViewerClose");
 
     /* ----------- i18n ----------- */
     const translations = {
@@ -863,22 +818,22 @@
         cardLow: "ถังว่าง (<50%)",
 
         binsSectionTitle: "รายการถังขยะ",
-        binsSectionHint: 'ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>ฟิลด์: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
+        binsSectionHint: 'ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>ฟิลด์: <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>',
 
-        filterZoneLabel: "เขตพื้นที่:",
-        filterZoneAll: "ทั้งหมด",
+        filterZoneLabel: "เขตพื้นที่",
+        filterZoneAll: "เขตทั้งหมด",
+        filterBinLabel: "BIN",
+        filterBinPlaceholder: "กรองตาม BIN เช่น BIN001",
+
         tableHeaderZone: "เขต",
         tableHeaderBin: "BIN",
         tableHeaderRfid: "RFID",
         tableHeaderCoords: "พิกัด (lat,lng)",
-        tableHeaderDms: "DMS",
         tableHeaderDetails: "รายละเอียด",
-        tableHeaderPhoto: "รูป",
         tableHeaderUpdated: "อัปเดตเมื่อ",
         tableHeaderManage: "จัดการ",
 
-        noPhoto: "ไม่มีรูป",
-        noData: "ยังไม่มีข้อมูลถังขยะ",
+        noData: "ไม่พบข้อมูลถังขยะตามเงื่อนไขที่กรอง",
         loading: "กำลังโหลดข้อมูลถังขยะ...",
         showing: "แสดง",
         items: "รายการ",
@@ -896,11 +851,6 @@
         editLabelRfid: "RFID Tag",
         editLabelPosition: "ตำแหน่ง",
         editLabelDetails: "รายละเอียดเพิ่มเติม",
-        editLabelCurrentPhoto: "รูปปัจจุบัน",
-        editLabelChangePhoto: "เปลี่ยนรูปถังขยะ",
-        editPhotoHint: "รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB",
-        editNoPhoto: "ยังไม่มีรูป",
-        editNewPhoto: "(รูปใหม่)",
         editSaving: "กำลังบันทึกการแก้ไข...",
         editSaveSuccess: "✅ บันทึกการแก้ไขสำเร็จ",
         editSaveError: "❌ บันทึกไม่สำเร็จ:",
@@ -926,22 +876,22 @@
         cardLow: "Empty Bins (<50%)",
 
         binsSectionTitle: "Bin List",
-        binsSectionHint: 'Fetching data from <code>smartbins / bins / [zone] / [BINID]</code><br>Fields: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
+        binsSectionHint: 'Fetching data from <code>smartbins / bins / [zone] / [BINID]</code><br>Fields: <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>',
 
-        filterZoneLabel: "Zone:",
-        filterZoneAll: "All",
+        filterZoneLabel: "Zone",
+        filterZoneAll: "All zones",
+        filterBinLabel: "BIN",
+        filterBinPlaceholder: "Filter by BIN, e.g. BIN001",
+
         tableHeaderZone: "Zone",
         tableHeaderBin: "BIN",
         tableHeaderRfid: "RFID",
         tableHeaderCoords: "Coords (lat,lng)",
-        tableHeaderDms: "DMS",
         tableHeaderDetails: "Details",
-        tableHeaderPhoto: "Photo",
         tableHeaderUpdated: "Updated At",
         tableHeaderManage: "Manage",
 
-        noPhoto: "No photo",
-        noData: "No bin data yet",
+        noData: "No bins match the current filters",
         loading: "Loading bin data...",
         showing: "Showing",
         items: "items",
@@ -959,11 +909,6 @@
         editLabelRfid: "RFID Tag",
         editLabelPosition: "Position",
         editLabelDetails: "Additional Details",
-        editLabelCurrentPhoto: "Current Photo",
-        editLabelChangePhoto: "Change Bin Photo",
-        editPhotoHint: "Supports .jpg, .jpeg, .png files up to 350KB.",
-        editNoPhoto: "No photo yet",
-        editNewPhoto: "(new photo)",
         editSaving: "Saving changes...",
         editSaveSuccess: "✅ Changes saved successfully",
         editSaveError: "❌ Save failed:",
@@ -989,22 +934,22 @@
         cardLow: "Tong Kosong (<50%)",
 
         binsSectionTitle: "Senarai Tong",
-        binsSectionHint: 'Mengambil data daripada <code>smartbins / bins / [zon] / [BINID]</code><br>Medan: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>',
+        binsSectionHint: 'Mengambil data daripada <code>smartbins / bins / [zon] / [BINID]</code><br>Medan: <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>',
 
-        filterZoneLabel: "Zon:",
-        filterZoneAll: "Semua",
+        filterZoneLabel: "Zon",
+        filterZoneAll: "Semua zon",
+        filterBinLabel: "BIN",
+        filterBinPlaceholder: "Tapis mengikut BIN, cth. BIN001",
+
         tableHeaderZone: "Zon",
         tableHeaderBin: "BIN",
         tableHeaderRfid: "RFID",
         tableHeaderCoords: "Koordinat (lat,lng)",
-        tableHeaderDms: "DMS",
         tableHeaderDetails: "Butiran",
-        tableHeaderPhoto: "Gambar",
         tableHeaderUpdated: "Dikemas Kini",
         tableHeaderManage: "Tindakan",
 
-        noPhoto: "Tiada gambar",
-        noData: "Belum ada data tong",
+        noData: "Tiada tong yang sepadan dengan penapis semasa",
         loading: "Memuatkan data tong...",
         showing: "Menunjukkan",
         items: "rekod",
@@ -1022,11 +967,6 @@
         editLabelRfid: "Tag RFID",
         editLabelPosition: "Posisi",
         editLabelDetails: "Butiran Tambahan",
-        editLabelCurrentPhoto: "Gambar Semasa",
-        editLabelChangePhoto: "Tukar Gambar Tong",
-        editPhotoHint: "Menyokong fail .jpg, .jpeg, .png sehingga 350KB.",
-        editNoPhoto: "Belum ada gambar",
-        editNewPhoto: "(gambar baharu)",
         editSaving: "Menyimpan perubahan...",
         editSaveSuccess: "✅ Berjaya disimpan",
         editSaveError: "❌ Gagal menyimpan:",
@@ -1051,38 +991,65 @@
       return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
     }
 
-    /* ----------- zones & bins list ----------- */
+    /* ----------- zones & bins list (chips + ช่องกรอง BIN) ----------- */
     let zones = [];         // [{id,name}]
     let zoneUnsubMap = {};  // zone => unsubscribe
     let bins = [];          // [{zone,binId,data,createdAtMs,updatedAt}]
+    let currentZoneFilter = ""; // "" = ทุกเขต
 
-    function renderZoneFilter() {
-      const current = filterZone.value;
-      filterZone.innerHTML = "";
-      const optAll = document.createElement("option");
-      optAll.value = "";
-      optAll.textContent = t('filterZoneAll');
-      filterZone.appendChild(optAll);
+    function renderZoneChips() {
+      zoneChipsEl.innerHTML = "";
+
+      // chip "ทั้งหมด"
+      const allChip = document.createElement("div");
+      allChip.className = "zone-chip" + (currentZoneFilter === "" ? " active" : "");
+      allChip.textContent = t('filterZoneAll');
+      allChip.dataset.zone = "";
+      allChip.onclick = () => {
+        currentZoneFilter = "";
+        renderZoneChips();
+        renderTable();
+      };
+      zoneChipsEl.appendChild(allChip);
+
       zones.forEach(z => {
-        const opt = document.createElement("option");
-        opt.value = z.id;
-        opt.textContent = z.name;
-        filterZone.appendChild(opt);
+        const chip = document.createElement("div");
+        chip.className = "zone-chip" + (currentZoneFilter === z.id ? " active" : "");
+        chip.textContent = z.name;
+        chip.dataset.zone = z.id;
+        chip.onclick = () => {
+          currentZoneFilter = (currentZoneFilter === z.id ? "" : z.id);
+          renderZoneChips();
+          renderTable();
+        };
+        zoneChipsEl.appendChild(chip);
       });
-      if (current) filterZone.value = current;
     }
 
     function renderTable() {
-      const zoneFilter = filterZone.value;
       rowsEl.innerHTML = "";
+
       let filtered = bins.slice();
-      if (zoneFilter) {
-        filtered = filtered.filter(b => b.zone === zoneFilter);
+
+      // filter by zone chip
+      if (currentZoneFilter) {
+        filtered = filtered.filter(item => item.zone === currentZoneFilter);
       }
+
+      // filter by BIN text
+      const binFilter = filterBinText.value.trim().toLowerCase();
+      if (binFilter) {
+        filtered = filtered.filter(item => {
+          const binId = (item.data.binId || item.binId || "").toString().toLowerCase();
+          return binId.includes(binFilter);
+        });
+      }
+
+      // newest first
       filtered.sort((a, b) => b.createdAtMs - a.createdAtMs);
 
       if (!filtered.length) {
-        rowsEl.innerHTML = `<tr><td colspan="9" class="muted">${t('noData')}</td></tr>`;
+        rowsEl.innerHTML = `<tr><td colspan="7" class="muted">${t('noData')}</td></tr>`;
         setStatus("", "");
         return;
       }
@@ -1094,17 +1061,8 @@
         const rfid = d.rfid || "—";
         const lat = (d.lat !== undefined && d.lat !== null) ? d.lat : "—";
         const lng = (d.lng !== undefined && d.lng !== null) ? d.lng : "—";
-        const pos = d.positionDms || "—";
         const det = d.details || "—";
-        const photoData = d.photoData || null;
         const updatedAt = item.updatedAt ? item.updatedAt.toLocaleString() : "—";
-
-        let photoCell;
-        if (photoData) {
-          photoCell = `<img src="${photoData}" class="thumb" onclick="openPhotoViewer('${encodeURIComponent(photoData)}')" alt="bin photo" />`;
-        } else {
-          photoCell = `<div class="thumb empty">${t('noPhoto')}</div>`;
-        }
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -1112,9 +1070,7 @@
           <td><code>${binId}</code></td>
           <td>${rfid}</td>
           <td>${lat}, ${lng}</td>
-          <td>${pos}</td>
           <td>${det}</td>
-          <td>${photoCell}</td>
           <td class="muted">${updatedAt}</td>
           <td>
             <div class="actions">
@@ -1139,7 +1095,7 @@
         zones.push({ id: doc.id, name: d.name || doc.id });
       });
 
-      renderZoneFilter();
+      renderZoneChips();
       setStatus(t('loading'), "");
 
       zones.forEach(z => {
@@ -1150,12 +1106,16 @@
           bins = bins.filter(b => b.zone !== z.id);
           zoneSnap.forEach(doc => {
             const d = doc.data() || {};
+            const createdAt =
+              d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() :
+                (d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().getTime() : 0);
+            const updatedAt = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : null;
             bins.push({
               zone: z.id,
               binId: doc.id,
               data: d,
-              createdAtMs: d.createdAt?.toMillis() || 0,
-              updatedAt: d.updatedAt?.toDate()
+              createdAtMs: createdAt || 0,
+              updatedAt: updatedAt
             });
           });
           renderTable();
@@ -1167,65 +1127,14 @@
       updateDashboard();
     });
 
-    filterZone.addEventListener("change", () => renderTable());
-
-    /* ----------- Photo viewer ----------- */
-    window.openPhotoViewer = function (encoded) {
-      const dataUrl = decodeURIComponent(encoded);
-      photoViewerImg.src = dataUrl;
-      photoViewerBackdrop.classList.add("show");
-    };
-    function closePhotoViewer() {
-      photoViewerBackdrop.classList.remove("show");
-      photoViewerImg.src = "";
-    }
-    photoViewerBackdrop.addEventListener("click", e => {
-      if (e.target === photoViewerBackdrop) closePhotoViewer();
-    });
-    photoViewerClose.addEventListener("click", closePhotoViewer);
-
-    /* ----------- DMS helper ----------- */
-    function toDMSCoord(dec, isLat) {
-      if (dec == null || isNaN(dec)) return "";
-      const hemi = dec >= 0 ? (isLat ? "N" : "E") : (isLat ? "S" : "W");
-      const abs = Math.abs(dec);
-      const deg = Math.floor(abs);
-      const minFloat = (abs - deg) * 60;
-      const min = Math.floor(minFloat);
-      const sec = (minFloat - min) * 60;
-      return `${deg}°${min}'${sec.toFixed(1)}"${hemi}`;
-    }
-    function syncEditDmsFromLatLng() {
-      if (editLat.value && editLng.value) {
-        const la = Number(editLat.value);
-        const lo = Number(editLng.value);
-        if (!isNaN(la) && !isNaN(lo)) {
-          editPosDms.value = `${toDMSCoord(la, true)} ${toDMSCoord(lo, false)}`;
-        }
-      }
-    }
-    editLat.addEventListener("change", syncEditDmsFromLatLng);
-    editLng.addEventListener("change", syncEditDmsFromLatLng);
+    filterBinText.addEventListener("input", renderTable);
 
     /* ----------- Edit modal ----------- */
-    let currentEditPhotoFileName = null;
-    let currentEditPhotoDataUrl = null;
-    let newEditPhotoFileName = null;
-    let newEditPhotoDataUrl = null;
-
     function openEditModal() { editModalBackdrop.classList.add("show"); }
     function closeEditModal() {
       editModalBackdrop.classList.remove("show");
       editForm.reset();
-      editPreview.style.display = "none";
-      editPreview.src = "";
-      editPhotoNote.textContent = "";
-      currentEditPhotoFileName = null;
-      currentEditPhotoDataUrl = null;
-      newEditPhotoFileName = null;
-      newEditPhotoDataUrl = null;
       setEditMsg("", "");
-      editPhoto.value = "";
     }
     btnEditClose.addEventListener("click", closeEditModal);
     btnEditCancel.addEventListener("click", closeEditModal);
@@ -1250,56 +1159,13 @@
         editRfid.value = d.rfid || "";
         editLat.value = d.lat !== undefined && d.lat !== null ? d.lat : "";
         editLng.value = d.lng !== undefined && d.lng !== null ? d.lng : "";
-        editPosDms.value = d.positionDms || "";
         editDetails.value = d.details || "";
 
-        currentEditPhotoFileName = d.photoFile || null;
-        currentEditPhotoDataUrl = d.photoData || null;
-
-        if (currentEditPhotoDataUrl) {
-          editPreview.src = currentEditPhotoDataUrl;
-          editPreview.style.display = "block";
-          editPhotoNote.textContent = currentEditPhotoFileName || "";
-        } else {
-          editPreview.style.display = "none";
-          editPhotoNote.textContent = t('editNoPhoto');
-        }
         openEditModal();
       } catch (e) {
         setStatus("อ่านข้อมูลไม่สำเร็จ: " + errStr(e), "err");
       }
     };
-
-    editPhoto.addEventListener("change", () => {
-      newEditPhotoFileName = null;
-      newEditPhotoDataUrl = null;
-      const file = editPhoto.files[0];
-      if (!file) return;
-
-      const lower = (file.name || "").toLowerCase();
-      if (!(/\.(jpg|jpeg|png)$/i.test(lower))) {
-        setEditMsg("กรุณาอัปโหลดไฟล์ .jpg, .jpeg หรือ .png เท่านั้น", "err");
-        editPhoto.value = "";
-        return;
-      }
-      const maxBytes = 350 * 1024;
-      if (file.size > maxBytes) {
-        const kb = Math.round(file.size / 1024);
-        setEditMsg("ไฟล์รูปใหญ่เกิน 350KB (" + kb + "KB)", "err");
-        editPhoto.value = "";
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = e => {
-        newEditPhotoFileName = file.name;
-        newEditPhotoDataUrl = e.target.result;
-        editPreview.src = newEditPhotoDataUrl;
-        editPreview.style.display = "block";
-        editPhotoNote.textContent = `${newEditPhotoFileName} ${t('editNewPhoto')}`;
-        setEditMsg("เตรียมรูปใหม่เรียบร้อย", "ok");
-      };
-      reader.readAsDataURL(file);
-    });
 
     editForm.addEventListener("submit", async e => {
       e.preventDefault();
@@ -1313,24 +1179,13 @@
         const rfid = editRfid.value.trim() || null;
         const lng = editLng.value ? Number(editLng.value) : null;
         const lat = editLat.value ? Number(editLat.value) : null;
-        const pos = editPosDms.value.trim() || null;
         const det = editDetails.value.trim() || null;
-
-        let photoFile = currentEditPhotoFileName;
-        let photoData = currentEditPhotoDataUrl;
-        if (newEditPhotoDataUrl) {
-          photoFile = newEditPhotoFileName;
-          photoData = newEditPhotoDataUrl;
-        }
 
         const data = {
           rfid,
           lng,
           lat,
-          positionDms: pos,
           details: det,
-          photoFile: photoFile || null,
-          photoData: photoData || null,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
@@ -1423,14 +1278,14 @@
       $("binsSectionHint").innerHTML = t('binsSectionHint');
 
       $("filterZoneLabel").textContent = t('filterZoneLabel');
+      $("filterBinLabel").textContent = t('filterBinLabel');
+      $("filterBinText").placeholder = t('filterBinPlaceholder');
 
       $("thZone").textContent = t('tableHeaderZone');
       $("thBin").textContent = t('tableHeaderBin');
       $("thRfid").textContent = t('tableHeaderRfid');
       $("thCoords").textContent = t('tableHeaderCoords');
-      $("thDms").textContent = t('tableHeaderDms');
       $("thDetails").textContent = t('tableHeaderDetails');
-      $("thPhoto").textContent = t('tableHeaderPhoto');
       $("thUpdated").textContent = t('tableHeaderUpdated');
       $("thManage").textContent = t('tableHeaderManage');
 
@@ -1441,13 +1296,10 @@
       $("editLabelRfid").textContent = t('editLabelRfid');
       $("editLabelPosition").textContent = t('editLabelPosition');
       $("editLabelDetails").textContent = t('editLabelDetails');
-      $("editLabelCurrentPhoto").textContent = t('editLabelCurrentPhoto');
-      $("editLabelChangePhoto").textContent = t('editLabelChangePhoto');
-      $("editPhotoHint").textContent = t('editPhotoHint');
       $("editCancel").textContent = t('btnCancel');
       $("btnSaveChanges").textContent = t('btnSaveChanges');
 
-      renderZoneFilter();
+      renderZoneChips();
       renderTable();
     }
 

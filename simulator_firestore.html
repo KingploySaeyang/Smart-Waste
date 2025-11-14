@@ -23,28 +23,56 @@ button{padding:10px 14px;border-radius:10px;cursor:pointer;border:none}
 .muted{color:var(--muted);font-size:13px}
 label{display:block;margin:10px 0 6px;font-size:14px}
 select,input{padding:8px 10px;border-radius:10px;border:1px solid var(--line);min-width:180px}
+
+/* language switcher */
+.lang-switcher{
+  position:absolute;
+  top:10px;
+  right:16px;
+  z-index:100;
+}
+.lang-switcher select{
+  padding:4px 8px;
+  border-radius:6px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+@media(max-width:600px){
+  .lang-switcher{
+    top:8px;
+    right:12px;
+  }
+}
 </style>
 </head>
 <body>
-<h1>Smart Waste – Sensor Simulator (Firestore only)</h1>
+<div class="lang-switcher">
+  <select id="langSelect">
+    <option value="th">ไทย</option>
+    <option value="en">English</option>
+    <option value="ms">Bahasa Melayu</option>
+  </select>
+</div>
+
+<h1 id="pageTitleH1">Smart Waste – Sensor Simulator (Firestore only)</h1>
 
 <!-- 🔹 ถังขยะ -->
 <div class="card">
-  <h2>1) ถังขยะ</h2>
+  <h2 id="binSectionTitle">1) ถังขยะ</h2>
 
-  <label>1. เลือกเขต</label>
+  <label id="labelZone">1. เลือกเขต</label>
   <select id="zoneSelect">
     <option value="">กำลังโหลดเขต...</option>
   </select>
 
-  <label style="margin-top:10px;">2. เลือกถัง</label>
+  <label id="labelBin" style="margin-top:10px;">2. เลือกถัง</label>
   <select id="binSelect" disabled>
     <option value="">-- เลือกเขตก่อน --</option>
   </select>
 
   <p id="binInfo" class="muted">(ยังไม่ได้เลือกถัง)</p>
 
-  <label>ระดับความเต็ม (%)</label>
+  <label id="labelFill">ระดับความเต็ม (%)</label>
   <input id="fillShown" type="number" min="0" max="100" readonly>
 
   <div style="margin-top:8px">
@@ -57,8 +85,8 @@ select,input{padding:8px 10px;border-radius:10px;border:1px solid var(--line);mi
 
 <!-- 🔹 รถเก็บขยะ -->
 <div class="card">
-  <h2>2) รถเก็บขยะ</h2>
-  <label>เลือกรถ</label>
+  <h2 id="truckSectionTitle">2) รถเก็บขยะ</h2>
+  <label id="labelTruck">เลือกรถ</label>
   <select id="truckSelect"><option value="">กำลังโหลด...</option></select>
   <p id="truckInfo" class="muted">(ยังไม่ได้เลือกรถ)</p>
   <button class="primary" id="btnCreateTruck">+ สร้างรถใหม่</button>
@@ -82,6 +110,221 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
+/* ===== i18n ===== */
+const translations = {
+  th:{
+    pageTitle:"Smart Waste – Sensor Simulator (Firestore only)",
+    h1:"Smart Waste – Sensor Simulator (Firestore only)",
+    binSectionTitle:"1) ถังขยะ",
+    truckSectionTitle:"2) รถเก็บขยะ",
+    labelZone:"1. เลือกเขต",
+    labelBin:"2. เลือกถัง",
+    labelFill:"ระดับความเต็ม (%)",
+    labelTruck:"เลือกรถ",
+    btnFillUp:"+5%",
+    btnFillDown:"-5%",
+    btnEmpty:"เทถัง",
+    btnCreateTruck:"+ สร้างรถใหม่",
+    btnStart:"เริ่มส่งพิกัด",
+    btnStop:"หยุด",
+
+    binInfoDefault:"(ยังไม่ได้เลือกถัง)",
+    truckInfoDefault:"(ยังไม่ได้เลือกรถ)",
+
+    zonesLoading:"กำลังโหลดเขต...",
+    zonesNone:"(ยังไม่มีเขตในระบบ)",
+    zonesNoBins:"(ยังไม่มีเขตที่มีถังขยะ)",
+    zonesSelectPrompt:"-- เลือกเขต --",
+
+    binsLoading:"กำลังโหลด...",
+    binsNone:"(ไม่มีถังในเขตนี้)",
+    binsSelectPrompt:"-- เลือกถัง --",
+    binsSelectZoneFirst:"-- เลือกเขตก่อน --",
+
+    zonesLoadError:"❌ โหลดเขตไม่สำเร็จ: ",
+    binsLoadError:"❌ โหลดถังไม่สำเร็จ: ",
+
+    binNotSelected:"(ยังไม่ได้เลือกถัง)",
+    binNotFound:"ไม่พบถังขยะนี้ในฐานข้อมูล",
+
+    needBinAndZone:"กรุณาเลือกเขตและถังขยะก่อน",
+    needBin:"กรุณาเลือกถังก่อน",
+    needTruck:"ยังไม่ได้เลือกรถ",
+    updateFillOk:"อัปเดตระดับขยะเรียบร้อย",
+    emptiedOk:"✅ เทถังแล้ว และบันทึกประวัติเรียบร้อย",
+
+    trucksLoading:"กำลังโหลด...",
+    trucksSelectPrompt:"-- เลือกรถ --",
+    truckNotFound:"ไม่พบข้อมูลรถ",
+
+    promptTruckId:"Truck ID:",
+    promptTruckName:"ชื่อรถ:",
+
+    needTruckFirst:"เลือกรถก่อน",
+    gpsNotSupported:"อุปกรณ์ไม่รองรับ GPS",
+    sendingPosition:"กำลังส่งตำแหน่ง...",
+    sentPosition:"ส่งแล้ว",
+    gpsErrorPrefix:"GPS Error: ",
+    stopped:"หยุดส่งแล้ว"
+  },
+  en:{
+    pageTitle:"Smart Waste – Sensor Simulator (Firestore only)",
+    h1:"Smart Waste – Sensor Simulator (Firestore only)",
+    binSectionTitle:"1) Bins",
+    truckSectionTitle:"2) Garbage Trucks",
+    labelZone:"1. Select Zone",
+    labelBin:"2. Select Bin",
+    labelFill:"Fill Level (%)",
+    labelTruck:"Select Truck",
+    btnFillUp:"+5%",
+    btnFillDown:"-5%",
+    btnEmpty:"Empty Bin",
+    btnCreateTruck:"+ Create New Truck",
+    btnStart:"Start Sending Location",
+    btnStop:"Stop",
+
+    binInfoDefault:"(No bin selected)",
+    truckInfoDefault:"(No truck selected)",
+
+    zonesLoading:"Loading zones...",
+    zonesNone:"(No zones in the system yet)",
+    zonesNoBins:"(No zones that contain bins yet)",
+    zonesSelectPrompt:"-- Select Zone --",
+
+    binsLoading:"Loading...",
+    binsNone:"(No bins in this zone)",
+    binsSelectPrompt:"-- Select Bin --",
+    binsSelectZoneFirst:"-- Select a zone first --",
+
+    zonesLoadError:"❌ Failed to load zones: ",
+    binsLoadError:"❌ Failed to load bins: ",
+
+    binNotSelected:"(No bin selected)",
+    binNotFound:"Bin not found in database",
+
+    needBinAndZone:"Please select a zone and bin first",
+    needBin:"Please select a bin first",
+    needTruck:"No truck selected",
+    updateFillOk:"Fill level updated",
+    emptiedOk:"✅ Bin emptied and history recorded",
+
+    trucksLoading:"Loading...",
+    trucksSelectPrompt:"-- Select Truck --",
+    truckNotFound:"Truck not found",
+
+    promptTruckId:"Truck ID:",
+    promptTruckName:"Truck name:",
+
+    needTruckFirst:"Please select a truck first",
+    gpsNotSupported:"This device does not support GPS",
+    sendingPosition:"Sending position...",
+    sentPosition:"Sent",
+    gpsErrorPrefix:"GPS Error: ",
+    stopped:"Stopped sending"
+  },
+  ms:{
+    pageTitle:"Smart Waste – Simulator Sensor (Firestore sahaja)",
+    h1:"Smart Waste – Simulator Sensor (Firestore sahaja)",
+    binSectionTitle:"1) Tong Sampah",
+    truckSectionTitle:"2) Lori Kutip Sampah",
+    labelZone:"1. Pilih Zon",
+    labelBin:"2. Pilih Tong",
+    labelFill:"Tahap Penuh (%)",
+    labelTruck:"Pilih Lori",
+    btnFillUp:"+5%",
+    btnFillDown:"-5%",
+    btnEmpty:"Kosongkan Tong",
+    btnCreateTruck:"+ Cipta Lori Baharu",
+    btnStart:"Mula Hantar Lokasi",
+    btnStop:"Henti",
+
+    binInfoDefault:"(Belum pilih tong)",
+    truckInfoDefault:"(Belum pilih lori)",
+
+    zonesLoading:"Memuatkan zon...",
+    zonesNone:"(Tiada zon dalam sistem lagi)",
+    zonesNoBins:"(Tiada zon yang mempunyai tong lagi)",
+    zonesSelectPrompt:"-- Pilih Zon --",
+
+    binsLoading:"Memuatkan...",
+    binsNone:"(Tiada tong dalam zon ini)",
+    binsSelectPrompt:"-- Pilih Tong --",
+    binsSelectZoneFirst:"-- Pilih zon dahulu --",
+
+    zonesLoadError:"❌ Gagal memuatkan zon: ",
+    binsLoadError:"❌ Gagal memuatkan tong: ",
+
+    binNotSelected:"(Belum pilih tong)",
+    binNotFound:"Tong tidak dijumpai dalam pangkalan data",
+
+    needBinAndZone:"Sila pilih zon dan tong dahulu",
+    needBin:"Sila pilih tong dahulu",
+    needTruck:"Belum pilih lori",
+    updateFillOk:"Tahap penuh telah dikemas kini",
+    emptiedOk:"✅ Tong dikosongkan dan sejarah direkodkan",
+
+    trucksLoading:"Memuatkan...",
+    trucksSelectPrompt:"-- Pilih Lori --",
+    truckNotFound:"Lori tidak dijumpai",
+
+    promptTruckId:"ID Lori:",
+    promptTruckName:"Nama lori:",
+
+    needTruckFirst:"Sila pilih lori dahulu",
+    gpsNotSupported:"Peranti ini tidak menyokong GPS",
+    sendingPosition:"Menghantar lokasi...",
+    sentPosition:"Telah dihantar",
+    gpsErrorPrefix:"Ralat GPS: ",
+    stopped:"Berhenti menghantar"
+  }
+};
+
+let currentLang = localStorage.getItem("sw_lang") || "th";
+const langSelect = document.getElementById("langSelect");
+function t(key){
+  return (translations[currentLang] && translations[currentLang][key]) || key;
+}
+
+function applyLanguage(){
+  document.title = t("pageTitle");
+  document.getElementById("pageTitleH1").textContent = t("h1");
+  document.getElementById("binSectionTitle").textContent = t("binSectionTitle");
+  document.getElementById("truckSectionTitle").textContent = t("truckSectionTitle");
+  document.getElementById("labelZone").textContent = t("labelZone");
+  document.getElementById("labelBin").textContent = t("labelBin");
+  document.getElementById("labelFill").textContent = t("labelFill");
+  document.getElementById("labelTruck").textContent = t("labelTruck");
+
+  document.getElementById("btnFillUp").textContent   = t("btnFillUp");
+  document.getElementById("btnFillDown").textContent = t("btnFillDown");
+  document.getElementById("btnEmpty").textContent    = t("btnEmpty");
+  document.getElementById("btnCreateTruck").textContent = t("btnCreateTruck");
+  document.getElementById("btnStart").textContent    = t("btnStart");
+  document.getElementById("btnStop").textContent     = t("btnStop");
+
+  // ถ้ายังไม่ได้เลือกอะไร ให้แสดงข้อความเริ่มต้นตามภาษา
+  if(!binRef && !binSel.value){
+    binInfo.textContent = t("binInfoDefault");
+  }
+  if(!currentTruckId && !truckSel.value){
+    truckInfo.textContent = t("truckInfoDefault");
+  }
+
+  // โหลดตัวเลือกใหม่ให้ข้อความใน option เป็นภาษาปัจจุบัน
+  loadZones();
+  loadTrucks();
+}
+
+function changeLanguage(lang){
+  if(!translations[lang]) return;
+  currentLang = lang;
+  localStorage.setItem("sw_lang", lang);
+  langSelect.value = lang;
+  applyLanguage();
+}
+
+langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+
 /* Helper */
 function pad2(n){return String(n).padStart(2,'0');}
 function stampLocal(now=new Date()){
@@ -102,10 +345,10 @@ let levelBinRef = null;   // bin_level/{zone}/bins/{binId}
 
 /* 🔹 โหลดเขตจาก collection zones แล้วเช็คว่ามีถังจริงใน smartbins/bins/{zone} ไหม */
 async function loadZones() {
-  zoneSel.innerHTML = `<option value="">กำลังโหลดเขต...</option>`;
+  zoneSel.innerHTML = `<option value="">${t("zonesLoading")}</option>`;
   binSel.disabled = true;
-  binSel.innerHTML = `<option value="">-- เลือกเขตก่อน --</option>`;
-  binInfo.textContent = "(ยังไม่ได้เลือกถัง)";
+  binSel.innerHTML = `<option value="">${t("binsSelectZoneFirst")}</option>`;
+  binInfo.textContent = t("binInfoDefault");
   fillShown.value = "";
   binMsg.textContent = "";
   binMsg.className = "muted";
@@ -113,15 +356,14 @@ async function loadZones() {
   try {
     const zonesSnap = await db.collection("zones").get();
     if (zonesSnap.empty) {
-      zoneSel.innerHTML = `<option value="">(ยังไม่มีเขตในระบบ)</option>`;
+      zoneSel.innerHTML = `<option value="">${t("zonesNone")}</option>`;
       return;
     }
 
     const zonesWithBins = [];
 
-    // วิ่งทีละเขตใน zones แล้วไปดูว่าที่ smartbins/bins/{zoneId} มีถังไหม
     for (const doc of zonesSnap.docs) {
-      const zoneId   = doc.id;               // เช่น "Arau"
+      const zoneId   = doc.id;
       const zoneData = doc.data() || {};
       const zoneName = zoneData.name || zoneId;
 
@@ -138,21 +380,21 @@ async function loadZones() {
     }
 
     if (zonesWithBins.length === 0) {
-      zoneSel.innerHTML = `<option value="">(ยังไม่มีเขตที่มีถังขยะ)</option>`;
+      zoneSel.innerHTML = `<option value="">${t("zonesNoBins")}</option>`;
       return;
     }
 
-    zoneSel.innerHTML = `<option value="">-- เลือกเขต --</option>`;
+    zoneSel.innerHTML = `<option value="">${t("zonesSelectPrompt")}</option>`;
     zonesWithBins.forEach(z => {
       const opt = document.createElement("option");
-      opt.value = z.id;      // จะใช้ id เป็นชื่อ zone สำหรับ path smartbins/bins/{zoneId}
+      opt.value = z.id;
       opt.textContent = z.name;
       zoneSel.appendChild(opt);
     });
   } catch (err) {
     console.error(err);
-    zoneSel.innerHTML = `<option value="">โหลดเขตไม่สำเร็จ</option>`;
-    binMsg.textContent = "❌ โหลดเขตไม่สำเร็จ: " + (err.message || err);
+    zoneSel.innerHTML = `<option value="">${t("zonesLoadError")}</option>`;
+    binMsg.textContent = t("zonesLoadError") + (err.message || err);
     binMsg.className = "err";
   }
 }
@@ -160,8 +402,8 @@ async function loadZones() {
 /* 🔹 โหลดถังในเขตที่เลือก จาก smartbins/bins/{zone}/{binId} */
 async function loadBinsInZone(zone){
   binSel.disabled = true;
-  binSel.innerHTML = `<option value="">กำลังโหลด...</option>`;
-  binInfo.textContent="(ยังไม่ได้เลือกถัง)";
+  binSel.innerHTML = `<option value="">${t("binsLoading")}</option>`;
+  binInfo.textContent=t("binInfoDefault");
   fillShown.value="";
 
   try {
@@ -172,15 +414,15 @@ async function loadBinsInZone(zone){
       .get();
 
     if (snap.empty){
-      binSel.innerHTML = `<option value="">(ไม่มีถังในเขตนี้)</option>`;
+      binSel.innerHTML = `<option value="">${t("binsNone")}</option>`;
       return;
     }
 
-    binSel.innerHTML = `<option value="">-- เลือกถัง --</option>`;
+    binSel.innerHTML = `<option value="">${t("binsSelectPrompt")}</option>`;
     snap.forEach(doc=>{
       const d = doc.data();
       const opt = document.createElement("option");
-      opt.value = doc.id;  // binId เช่น BIN001
+      opt.value = doc.id;
       opt.textContent = d.binId + (d.details ? " • "+d.details : "");
       binSel.appendChild(opt);
     });
@@ -188,8 +430,8 @@ async function loadBinsInZone(zone){
     binSel.disabled = false;
   } catch (err) {
     console.error(err);
-    binSel.innerHTML = `<option value="">โหลดถังไม่สำเร็จ</option>`;
-    binMsg.textContent = "❌ โหลดถังไม่สำเร็จ: " + (err.message || err);
+    binSel.innerHTML = `<option value="">${t("binsLoadError")}</option>`;
+    binMsg.textContent = t("binsLoadError") + (err.message || err);
     binMsg.className = "err";
   }
 }
@@ -205,8 +447,8 @@ zoneSel.onchange = ()=>{
     loadBinsInZone(z);
   }else{
     binSel.disabled = true;
-    binSel.innerHTML = `<option value="">-- เลือกเขตก่อน --</option>`;
-    binInfo.textContent="(ยังไม่ได้เลือกถัง)";
+    binSel.innerHTML = `<option value="">${t("binsSelectZoneFirst")}</option>`;
+    binInfo.textContent=t("binInfoDefault");
     fillShown.value="";
   }
 };
@@ -221,12 +463,11 @@ binSel.onchange = async ()=>{
 
   if(!zone || !binId){
     binRef=null; binData=null; levelBinRef=null;
-    binInfo.textContent="(ยังไม่ได้เลือกถัง)";
+    binInfo.textContent=t("binNotSelected");
     fillShown.value="";
     return;
   }
 
-  // smartbins/bins/{zone}/{binId}
   binRef = db.collection("smartbins")
     .doc("bins")
     .collection(zone)
@@ -234,7 +475,7 @@ binSel.onchange = async ()=>{
 
   const doc = await binRef.get();
   if(!doc.exists){
-    binInfo.textContent="ไม่พบถังขยะนี้ในฐานข้อมูล";
+    binInfo.textContent=t("binNotFound");
     binRef=null; binData=null; levelBinRef=null;
     fillShown.value="";
     return;
@@ -243,7 +484,6 @@ binSel.onchange = async ()=>{
   binData = doc.data();
   binInfo.textContent = (binData.binId || binId) + (binData.details ? " • "+binData.details : "");
 
-  // 🔸 ระดับขยะ: bin_level/{zone}/bins/{binId}
   levelBinRef = db.collection("bin_level")
     .doc(zone)
     .collection("bins")
@@ -257,7 +497,7 @@ binSel.onchange = async ()=>{
 /* 🔹 อัปเดตระดับขยะ -> bin_level/{zone}/bins/{binId} */
 async function setFill(v){
   if(!levelBinRef || !binData){
-    binMsg.textContent="กรุณาเลือกเขตและถังขยะก่อน";
+    binMsg.textContent=t("needBinAndZone");
     binMsg.className="err";
     return;
   }
@@ -271,30 +511,30 @@ async function setFill(v){
   }, {merge:true});
 
   fillShown.value = v;
-  binMsg.textContent = "อัปเดตระดับขยะเรียบร้อย";
+  binMsg.textContent = t("updateFillOk");
   binMsg.className = "ok";
 }
 
 document.getElementById("btnFillUp").onclick   = ()=>setFill((+fillShown.value || 0)+5);
 document.getElementById("btnFillDown").onclick = ()=>setFill((+fillShown.value || 0)-5);
 
-/* 🔹 เทถัง (บันทึกใน bin_level/{zone}/bins/{binId}/trashEmptyingList) */
+/* 🔹 เทถัง */
 document.getElementById("btnEmpty").onclick = async ()=>{
   if(!levelBinRef || !binRef){
-    binMsg.textContent="กรุณาเลือกถังก่อน";
+    binMsg.textContent=t("needBin");
     binMsg.className="err";
     return;
   }
   if(!currentTruckId){
-    binMsg.textContent="ยังไม่ได้เลือกรถ";
+    binMsg.textContent=t("needTruck");
     binMsg.className="err";
     return;
   }
 
   const tdoc = await db.collection("trucks").doc(currentTruckId).get();
-  const t = tdoc.data() || {};
-  const eLat = t.lat ?? null;
-  const eLng = t.lng ?? null;
+  const tData = tdoc.data() || {};
+  const eLat = tData.lat ?? null;
+  const eLng = tData.lng ?? null;
 
   const emptyColl = levelBinRef.collection("trashEmptyingList");
   const snap = await emptyColl.get();
@@ -315,7 +555,7 @@ document.getElementById("btnEmpty").onclick = async ()=>{
   }, {merge:true});
 
   fillShown.value = 0;
-  binMsg.textContent = "✅ เทถังแล้ว และบันทึกประวัติเรียบร้อย";
+  binMsg.textContent = t("emptiedOk");
   binMsg.className = "ok";
 };
 
@@ -329,7 +569,7 @@ let posWatcherId = null;
 
 async function loadTrucks(){
   const snap = await db.collection("trucks").get();
-  truckSel.innerHTML=`<option value="">-- เลือกรถ --</option>`;
+  truckSel.innerHTML=`<option value="">${t("trucksSelectPrompt")}</option>`;
   snap.forEach(d=>{
     const data = d.data();
     const opt=document.createElement("option");
@@ -343,7 +583,7 @@ truckSel.onchange = async ()=>{
   const id = truckSel.value;
   if(!id){
     truckRef=null; currentTruckId=null;
-    truckInfo.textContent="(ยังไม่ได้เลือกรถ)";
+    truckInfo.textContent=t("truckInfoDefault");
     return;
   }
   currentTruckId=id;
@@ -353,15 +593,15 @@ truckSel.onchange = async ()=>{
     const d = doc.data();
     truckInfo.textContent = `${id} • ${d.name || "-"}`;
   }else{
-    truckInfo.textContent="ไม่พบข้อมูลรถ";
+    truckInfo.textContent=t("truckNotFound");
   }
 };
 
 /* สร้างรถใหม่ */
 document.getElementById("btnCreateTruck").onclick = async ()=>{
-  const id = prompt("Truck ID:","TRUCK01");
+  const id = prompt(t("promptTruckId"),"TRUCK01");
   if(!id) return;
-  const name = prompt("ชื่อรถ:","รถเขตเมือง");
+  const name = prompt(t("promptTruckName"),"");
   await db.collection("trucks").doc(id).set({
     name,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -374,17 +614,17 @@ document.getElementById("btnCreateTruck").onclick = async ()=>{
 /* เริ่มส่งพิกัดจริง */
 document.getElementById("btnStart").onclick = ()=>{
   if(!truckRef){
-    truckMsg.textContent="เลือกรถก่อน";
+    truckMsg.textContent=t("needTruckFirst");
     truckMsg.className="err";
     return;
   }
   if(!navigator.geolocation){
-    truckMsg.textContent="อุปกรณ์ไม่รองรับ GPS";
+    truckMsg.textContent=t("gpsNotSupported");
     truckMsg.className="err";
     return;
   }
 
-  truckMsg.textContent="กำลังส่งตำแหน่ง...";
+  truckMsg.textContent=t("sendingPosition");
   truckMsg.className="muted";
 
   posWatcherId = navigator.geolocation.watchPosition(async pos=>{
@@ -401,11 +641,11 @@ document.getElementById("btnStart").onclick = ()=>{
       ts: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    truckMsg.textContent=`ส่งแล้ว (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+    truckMsg.textContent=`${t("sentPosition")} (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
     truckMsg.className="ok";
   },
   err=>{
-    truckMsg.textContent="GPS Error: " + err.message;
+    truckMsg.textContent=t("gpsErrorPrefix") + err.message;
     truckMsg.className="err";
   },
   {enableHighAccuracy:true});
@@ -420,14 +660,14 @@ document.getElementById("btnStop").onclick = ()=>{
   posWatcherId=null;
   document.getElementById("btnStart").disabled=false;
   document.getElementById("btnStop").disabled=true;
-  truckMsg.textContent="หยุดส่งแล้ว";
+  truckMsg.textContent=t("stopped");
   truckMsg.className="muted";
 };
 
 /* start */
 document.addEventListener("DOMContentLoaded", ()=>{
-  loadZones();
-  loadTrucks();
+  langSelect.value = currentLang;
+  applyLanguage();          // ภาษาตาม localStorage
 });
 </script>
 </body>

@@ -86,10 +86,10 @@
       margin-bottom:16px;
     }
     .content{
-  background:#fff;padding:24px;border-radius:12px;
-  box-shadow:0 2px 6px rgba(0,0,0,.08);
-  position:static;
-}
+      background:#fff;padding:24px;border-radius:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+      position:static;
+    }
 
     fieldset{
       border:1px solid #e3e3e3;
@@ -360,7 +360,7 @@
         <legend>เพิ่มข้อมูลถังขยะ</legend>
         <p class="muted">
           บันทึกใน Firestore ที่ <code>smartbins / bins / [เขต] / [BINID]</code><br>
-          โครงสร้าง: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>
+          โครงสร้าง: <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>
         </p>
 
         <form id="binForm" autocomplete="off">
@@ -396,31 +396,16 @@
             </div>
           </div>
 
-          <div class="row" style="margin-top:8px">
-            <div>
-              <textarea id="posDms" placeholder="ตำแหน่ง (DMS)"></textarea>
-            </div>
-          </div>
-
           <div class="gps-actions">
             <button type="button" id="btnGetPos" class="primary">ดึงพิกัดจาก GPS</button>
           </div>
 
-          <div class="row">
+          <div class="row" style="margin-top:8px">
             <div style="flex:1 1 100%">
               <label>รายละเอียดเพิ่มเติม</label>
               <textarea id="details" placeholder="เช่น หน้าอาคารวิทย์ คณะ..."></textarea>
             </div>
           </div>
-
-          <label>
-            แนบรูปถังขยะ
-            <input id="photo" type="file" accept=".jpg,.jpeg,.png" />
-            <div class="muted">
-              รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB
-            </div>
-            <img id="preview" class="preview" style="display:none" alt="ตัวอย่างรูป" />
-          </label>
 
           <div style="margin-top:12px" class="row">
             <div class="actions">
@@ -481,10 +466,7 @@
     const rfidEl    = $("rfid");
     const latEl     = $("lat");
     const lngEl     = $("lng");
-    const posDmsEl  = $("posDms");
     const detailsEl = $("details");
-    const photoEl   = $("photo");
-    const previewEl = $("preview");
     const msg       = $("msg");
     const btnReset  = $("btnReset");
     const btnGetPos = $("btnGetPos");
@@ -505,19 +487,16 @@
         navBins: "รายการถังขยะ",
         mainTitle: "ลงทะเบียนถังขยะ",
         formLegend: "เพิ่มข้อมูลถังขยะ",
-        formHint: "บันทึกใน Firestore ที่ <code>smartbins / bins / [เขต] / [BINID]</code><br>โครงสร้าง: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>",
+        formHint: "บันทึกใน Firestore ที่ <code>smartbins / bins / [เขต] / [BINID]</code><br>โครงสร้าง: <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>",
         labelZone: "เขตพื้นที่",
         labelBinId: "ชื่อถัง (อัตโนมัติ: BIN + เลขรัน 3 หลักตามเขต)",
         labelRfid: "RFID Tag",
         labelPosition: "ตำแหน่ง",
         labelDetails: "รายละเอียดเพิ่มเติม",
-        labelAttachPhoto: "แนบรูปถังขยะ",
-        photoHint: "รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB",
         placeholderBinId: "เลือกเขตก่อน ระบบจะสร้าง BINxxx ให้",
         placeholderRfid: "เช่น 04A1B2C3D4",
         placeholderLng: "ลองจิจูด (longitude)",
         placeholderLat: "ละติจูด (latitude)",
-        placeholderDms: "ตำแหน่ง (DMS)",
         placeholderDetails: "เช่น หน้าอาคารวิทย์ คณะ...",
         btnGetGps: "ดึงพิกัดจาก GPS",
         btnSave: "บันทึก",
@@ -530,9 +509,6 @@
         statusGetPosError: "ดึงตำแหน่งไม่สำเร็จ:",
         statusNoGps: "อุปกรณ์ไม่รองรับการดึงตำแหน่ง",
         statusSelectZone: "กรุณาเลือกเขตพื้นที่",
-        photoReady: "เตรียมรูปเรียบร้อย",
-        photoTooLarge: "ไฟล์รูปใหญ่เกิน 350KB",
-        photoInvalidType: "กรุณาอัปโหลดไฟล์ .jpg, .jpeg หรือ .png เท่านั้น",
         zoneModalTitle: "จัดการเขตพื้นที่",
         zoneModalNoZones: "ยังไม่มีเขตพื้นที่ ให้เพิ่มเขตใหม่ด้านล่าง",
         zoneModalNewZonePlaceholder: "ชื่อเขตใหม่ เช่น เมือง, เขต1",
@@ -567,19 +543,16 @@
         navBins: "Bin List",
         mainTitle: "Register Bin",
         formLegend: "Add Bin Information",
-        formHint: "Saves to Firestore at <code>smartbins / bins / [zone] / [BINID]</code><br>Fields: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>",
+        formHint: "Saves to Firestore at <code>smartbins / bins / [zone] / [BINID]</code><br>Fields: <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>",
         labelZone: "Zone Area",
         labelBinId: "Bin Name (Auto: BIN + 3-digit number per zone)",
         labelRfid: "RFID Tag",
         labelPosition: "Position",
         labelDetails: "Additional Details",
-        labelAttachPhoto: "Attach Bin Photo",
-        photoHint: "Supports .jpg, .jpeg, .png files up to 350KB.",
         placeholderBinId: "Select a zone first, BINxxx will be generated",
         placeholderRfid: "e.g., 04A1B2C3D4",
         placeholderLng: "Longitude",
         placeholderLat: "Latitude",
-        placeholderDms: "Position (DMS)",
         placeholderDetails: "e.g., In front of Science Building...",
         btnGetGps: "Get GPS Coordinates",
         btnSave: "Save",
@@ -592,9 +565,6 @@
         statusGetPosError: "Failed to get location:",
         statusNoGps: "Geolocation is not supported by this device",
         statusSelectZone: "Please select a zone",
-        photoReady: "Photo ready",
-        photoTooLarge: "Photo file size exceeds 350KB",
-        photoInvalidType: "Please upload only .jpg, .jpeg, or .png files",
         zoneModalTitle: "Manage Zones",
         zoneModalNoZones: "No zones yet. Add a new zone below.",
         zoneModalNewZonePlaceholder: "New zone name, e.g., City, Zone1",
@@ -629,19 +599,16 @@
         navBins: "Senarai Tong",
         mainTitle: "Daftar Tong",
         formLegend: "Tambah Maklumat Tong",
-        formHint: "Simpan ke Firestore di <code>smartbins / bins / [zon] / [BINID]</code><br>Medan: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>",
+        formHint: "Simpan ke Firestore di <code>smartbins / bins / [zon] / [BINID]</code><br>Medan: <code>createdAt, zone, binId, rfid, lng, lat, details, updatedAt</code>",
         labelZone: "Kawasan Zon",
         labelBinId: "Nama Tong (Auto: BIN + 3 digit nombor setiap zon)",
         labelRfid: "Tag RFID",
         labelPosition: "Posisi",
         labelDetails: "Butiran Tambahan",
-        labelAttachPhoto: "Lampirkan Gambar Tong",
-        photoHint: "Menyokong fail .jpg, .jpeg, .png sehingga 350KB.",
         placeholderBinId: "Pilih zon dahulu, BINxxx akan dijana",
         placeholderRfid: "cth., 04A1B2C3D4",
         placeholderLng: "Longitud",
         placeholderLat: "Latitud",
-        placeholderDms: "Posisi (DMS)",
         placeholderDetails: "cth., Di hadapan Bangunan Sains...",
         btnGetGps: "Dapatkan Koordinat GPS",
         btnSave: "Simpan",
@@ -654,9 +621,6 @@
         statusGetPosError: "Gagal mendapatkan lokasi:",
         statusNoGps: "Geolokasi tidak disokong oleh peranti ini",
         statusSelectZone: "Sila pilih zon",
-        photoReady: "Gambar sedia",
-        photoTooLarge: "Saiz fail gambar melebihi 350KB",
-        photoInvalidType: "Sila muat naik fail .jpg, .jpeg, atau .png sahaja",
         zoneModalTitle: "Urus Zon",
         zoneModalNoZones: "Belum ada zon. Tambah zon baharu di bawah.",
         zoneModalNewZonePlaceholder: "Nama zon baharu, cth., Bandar, Zon1",
@@ -692,9 +656,6 @@
     const btnCloseZoneModal = $("btnCloseZoneModal");
     const btnZoneDone       = $("btnZoneDone");
     const zoneModalMsg      = $("zoneModalMsg");
-
-    let photoFileName = null;
-    let photoDataUrl  = null;
 
     function setStatus(text, type){
       msg.textContent = text || "";
@@ -915,31 +876,6 @@
       assignBinIdForZone(z);
     });
 
-    // ---------- DMS helper ----------
-    function toDMSCoord(dec, isLat){
-      if(dec == null || isNaN(dec)) return "";
-      const hemi = dec >= 0 ? (isLat ? "N" : "E") : (isLat ? "S" : "W");
-      const abs = Math.abs(dec);
-      const deg = Math.floor(abs);
-      const minFloat = (abs - deg) * 60;
-      const min = Math.floor(minFloat);
-      const sec = (minFloat - min) * 60;
-      return `${deg}°${min}'${sec.toFixed(1)}"${hemi}`;
-    }
-
-    function syncDmsFromLatLng(){
-      if(latEl.value && lngEl.value){
-        const la = Number(latEl.value);
-        const lo = Number(lngEl.value);
-        if(!isNaN(la) && !isNaN(lo)){
-          posDmsEl.value = `${toDMSCoord(la,true)} ${toDMSCoord(lo,false)}`;
-        }
-      }
-    }
-
-    latEl.addEventListener("change", syncDmsFromLatLng);
-    lngEl.addEventListener("change", syncDmsFromLatLng);
-
     // ---------- GPS ----------
     btnGetPos.addEventListener("click", () => {
       if(!navigator.geolocation){
@@ -951,57 +887,16 @@
         const { latitude, longitude } = pos.coords;
         latEl.value = latitude.toFixed(6);
         lngEl.value = longitude.toFixed(6);
-        posDmsEl.value = `${toDMSCoord(latitude,true)} ${toDMSCoord(longitude,false)}`;
         setStatus(getTranslation('statusGetPosSuccess'),"ok");
       }, err=>{
         setStatus(`${getTranslation('statusGetPosError')} ${err.message}`,"err");
       }, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
     });
 
-    // ---------- รูป ----------
-    photoEl.addEventListener("change", () => {
-      previewEl.style.display = "none";
-      previewEl.src = "";
-      photoFileName = null;
-      photoDataUrl  = null;
-
-      const file = photoEl.files[0];
-      if(!file) return;
-
-      const lower = (file.name || "").toLowerCase();
-      if(!(/\.(jpg|jpeg|png)$/i.test(lower))){
-        setStatus(getTranslation('photoInvalidType'),"err");
-        photoEl.value = "";
-        return;
-      }
-
-      const maxBytes = 350 * 1024;
-      if(file.size > maxBytes){
-        const kb = Math.round(file.size / 1024);
-        setStatus(`${getTranslation('photoTooLarge')} (${kb}KB)`,"err");
-        photoEl.value = "";
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = e => {
-        photoFileName = file.name;
-        photoDataUrl  = e.target.result;
-        previewEl.src = photoDataUrl;
-        previewEl.style.display = "block";
-        setStatus(getTranslation('photoReady'),"ok");
-      };
-      reader.readAsDataURL(file);
-    });
-
     // ---------- เคลียร์ฟอร์ม ----------
     function clearForm(){
       binForm.reset();
       binIdEl.value = "";
-      previewEl.style.display = "none";
-      previewEl.src = "";
-      photoFileName = null;
-      photoDataUrl  = null;
       setStatus("","");
     }
 
@@ -1028,10 +923,7 @@
         const rfid = rfidEl.value.trim() || null;
         const lng  = lngEl.value ? Number(lngEl.value) : null;
         const lat  = latEl.value ? Number(latEl.value) : null;
-        const positionDms = posDmsEl.value.trim() || null;
-        const details     = detailsEl.value.trim() || null;
-        const photoFile   = photoFileName || null;
-        const photoData   = photoDataUrl  || null;
+        const details = detailsEl.value.trim() || null;
 
         const data = {
           createdAt : firebase.firestore.FieldValue.serverTimestamp(),
@@ -1040,11 +932,8 @@
           rfid      : rfid,
           lng       : lng,
           lat       : lat,
-          positionDms : positionDms,
-          details     : details,
-          photoFile   : photoFile,
-          photoData   : photoData,
-          updatedAt   : firebase.firestore.FieldValue.serverTimestamp()
+          details   : details,
+          updatedAt : firebase.firestore.FieldValue.serverTimestamp()
         };
 
         setStatus(getTranslation('statusSaving'),"");
@@ -1105,16 +994,10 @@
       labels[3].textContent = getTranslation('labelPosition');
       labels[4].textContent = getTranslation('labelDetails');
 
-      // label รูป: แก้เฉพาะข้อความตัวแรก + hint
-      const photoLabel = labels[5];
-      photoLabel.childNodes[0].textContent = getTranslation('labelAttachPhoto') + " ";
-      photoLabel.querySelector('.muted').textContent = getTranslation('photoHint');
-
       binIdEl.placeholder = getTranslation('placeholderBinId');
       rfidEl.placeholder = getTranslation('placeholderRfid');
-      lngEl.placeholder = getTranslation('placeholderLng');
-      latEl.placeholder = getTranslation('placeholderLat');
-      posDmsEl.placeholder = getTranslation('placeholderDms');
+      lngEl.placeholder   = getTranslation('placeholderLng');
+      latEl.placeholder   = getTranslation('placeholderLat');
       detailsEl.placeholder = getTranslation('placeholderDetails');
 
       btnGetPos.textContent = getTranslation('btnGetGps');
