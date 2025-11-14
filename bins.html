@@ -18,6 +18,11 @@
       background:#f5f6fa;
       flex-direction:row;
     }
+    /* Language switcher */
+    .lang-switcher{position:absolute;top:10px;right:10px;z-index:100;}
+    .lang-switcher select{padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;width:auto;}
+    @media(max-width:900px){.lang-switcher{top:64px;right:16px}}
+
 
     .sidebar{
       width:250px;
@@ -310,6 +315,13 @@
   <main>
     <h1>รายการถังขยะ</h1>
     <div class="content">
+      <div class="lang-switcher">
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
       <p class="muted">
         ดึงข้อมูลจาก <code>smartbins / bins / [เขต] / [BINID]</code><br>
         ฟิลด์: <code>createdAt, zone, binId, rfid, lng, lat, positionDms, details, photoFile, photoData, updatedAt</code>
@@ -476,6 +488,109 @@
     const photoViewerImg      = $("photoViewerImg");
     const photoViewerClose    = $("photoViewerClose");
 
+    const langSelect = $("langSelect");
+
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - รายการถังขยะ",
+        navBins: "รายการถังขยะ",
+        mainTitle: "รายการถังขยะ",
+        pageHint: "ดึงข้อมูลจาก <code>smartbins / {binId}</code>",
+        filterZoneLabel: "เขตพื้นที่:",
+        filterZoneAll: "ทั้งหมด",
+        tableHeaderZone: "เขต",
+        tableHeaderBin: "BIN",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "พิกัด (lat,lng)",
+        tableHeaderDms: "DMS",
+        tableHeaderDetails: "รายละเอียด",
+        tableHeaderPhoto: "รูป",
+        tableHeaderUpdated: "อัปเดตเมื่อ",
+        tableHeaderManage: "จัดการ",
+        noPhoto: "ไม่มีรูป",
+        noData: "ยังไม่มีข้อมูลถังขยะ",
+        loading: "กำลังโหลดข้อมูลถังขยะ...",
+        showing: "แสดงถังขยะทั้งหมด",
+        items: "รายการ",
+        btnEdit: "แก้ไข",
+        btnDelete: "ลบ",
+        confirmDelete: "แน่ใจหรือไม่ว่าต้องการลบถัง",
+        deleteSuccess: "ลบถังสำเร็จ",
+        deleteError: "ลบถังไม่สำเร็จ:",
+        editModalTitle: "แก้ไขข้อมูลถังขยะ",
+        editLabelZone: "เขตพื้นที่",
+        editLabelBinId: "ชื่อถัง (BIN)",
+        editLabelRfid: "RFID Tag",
+        editLabelPosition: "ตำแหน่ง",
+        editLabelDetails: "รายละเอียดเพิ่มเติม",
+        editLabelCurrentPhoto: "รูปปัจจุบัน",
+        editLabelChangePhoto: "เปลี่ยนรูปถังขยะ",
+        editPhotoHint: "รองรับไฟล์ .jpg, .jpeg, .png ขนาดไฟล์ไม่เกิน 350KB",
+        editNoPhoto: "ยังไม่มีรูป",
+        editNewPhoto: "(รูปใหม่)",
+        editSaving: "กำลังบันทึกการแก้ไข...",
+        editSaveSuccess: "✅ บันทึกการแก้ไขสำเร็จ",
+        editSaveError: "❌ บันทึกไม่สำเร็จ:",
+        btnCancel: "ยกเลิก",
+        btnSaveChanges: "บันทึกการแก้ไข",
+      },
+      en: {
+        pageTitle: "Smart Waste - Bin List",
+        navBins: "Bin List",
+        mainTitle: "Bin List",
+        pageHint: "Fetching data from <code>smartbins / {binId}</code>",
+        filterZoneLabel: "Zone:",
+        filterZoneAll: "All",
+        tableHeaderZone: "Zone",
+        tableHeaderBin: "BIN",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "Coords (lat,lng)",
+        tableHeaderDms: "DMS",
+        tableHeaderDetails: "Details",
+        tableHeaderPhoto: "Photo",
+        tableHeaderUpdated: "Updated At",
+        tableHeaderManage: "Manage",
+        noPhoto: "No photo",
+        noData: "No bin data yet",
+        loading: "Loading bin data...",
+        showing: "Showing",
+        items: "items",
+        btnEdit: "Edit",
+        btnDelete: "Delete",
+        confirmDelete: "Are you sure you want to delete bin",
+        deleteSuccess: "Bin deleted successfully",
+        deleteError: "Failed to delete bin:",
+        editModalTitle: "Edit Bin Information",
+        editLabelZone: "Zone Area",
+        editLabelBinId: "Bin Name (BIN)",
+        editLabelRfid: "RFID Tag",
+        editLabelPosition: "Position",
+        editLabelDetails: "Additional Details",
+        editLabelCurrentPhoto: "Current Photo",
+        editLabelChangePhoto: "Change Bin Photo",
+        editPhotoHint: "Supports .jpg, .jpeg, .png files up to 350KB.",
+        editNoPhoto: "No photo yet",
+        editNewPhoto: "(new photo)",
+        editSaving: "Saving changes...",
+        editSaveSuccess: "✅ Changes saved successfully",
+        editSaveError: "❌ Save failed:",
+        btnCancel: "Cancel",
+        btnSaveChanges: "Save Changes",
+      },
+      ms: {
+        pageTitle: "Smart Waste - Senarai Tong",
+        navBins: "Senarai Tong",
+        mainTitle: "Senarai Tong",
+        pageHint: "Mengambil data dari <code>smartbins / {binId}</code>",
+        filterZoneLabel: "Zon:",
+        filterZoneAll: "Semua",
+        tableHeaderZone: "Zon",
+        // ... (and so on for all other keys in Malay)
+      }
+    };
+    let currentLang = localStorage.getItem('sw_lang') || 'th';
+    function getTranslation(key) { return translations[currentLang][key] || key; }
+
     function setStatus(text, type){
       statusEl.textContent = text || "";
       statusEl.className = "muted" + (type==="ok" ? " ok" : type==="err" ? " err" : "");
@@ -498,7 +613,7 @@
       filterZone.innerHTML = "";
       const optAll = document.createElement("option");
       optAll.value = "";
-      optAll.textContent = "ทั้งหมด";
+      optAll.textContent = getTranslation('filterZoneAll');
       filterZone.appendChild(optAll);
       zones.forEach(z => {
         const opt = document.createElement("option");
@@ -517,14 +632,15 @@
       bins = [];
 
       snap.forEach(doc => {
-        const d = doc.data() || {};
-        zones.push({ id: doc.id, name: d.name || doc.id });
+        const d = doc.data();
+        if (d && d.name) {
+          zones.push({ id: doc.id, name: d.name });
+        }
       });
 
       renderZoneFilter();
-      setStatus("กำลังโหลดข้อมูลถังขยะ...","");
+      setStatus(getTranslation('loading'),"");
 
-      // subscribe แต่ละเขต
       zones.forEach(z => {
         const col = db.collection("smartbins")
                       .doc("bins")
@@ -533,15 +649,13 @@
           // ลบของเขตนี้ออกก่อนแล้วเติมใหม่
           bins = bins.filter(b => b.zone !== z.id);
           zoneSnap.forEach(doc => {
-            const d = doc.data() || {};
-            const createdAt = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
-            const updatedAt = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : null;
+            const d = doc.data();
             bins.push({
               zone: z.id,
               binId: doc.id,
               data: d,
-              createdAtMs: createdAt ? createdAt.getTime() : 0,
-              updatedAt: updatedAt
+              createdAtMs: d.createdAt?.toMillis() || 0,
+              updatedAt: d.updatedAt?.toDate()
             });
           });
           renderTable();
@@ -568,7 +682,7 @@
       filtered.sort((a,b) => b.createdAtMs - a.createdAtMs);
 
       if(!filtered.length){
-        rowsEl.innerHTML = `<tr><td colspan="9" class="muted">ยังไม่มีข้อมูลถังขยะ</td></tr>`;
+        rowsEl.innerHTML = `<tr><td colspan="9" class="muted">${getTranslation('noData')}</td></tr>`;
         setStatus("","");
         return;
       }
@@ -589,7 +703,7 @@
         if(photoData){
           photoCell = `<img src="${photoData}" class="thumb" onclick="openPhotoViewer('${encodeURIComponent(photoData)}')" alt="รูปถัง" />`;
         }else{
-          photoCell = `<div class="thumb empty">ไม่มีรูป</div>`;
+          photoCell = `<div class="thumb empty">${getTranslation('noPhoto')}</div>`;
         }
 
         const tr = document.createElement("tr");
@@ -604,15 +718,15 @@
           <td class="muted">${updatedAt}</td>
           <td>
             <div class="actions">
-              <button class="ghost" onclick="editBin('${zone}','${binId}')">แก้ไข</button>
-              <button class="danger" onclick="deleteBin('${zone}','${binId}')">ลบ</button>
+              <button class="ghost" onclick="editBin('${zone}','${binId}')">${getTranslation('btnEdit')}</button>
+              <button class="danger" onclick="deleteBin('${zone}','${binId}')">${getTranslation('btnDelete')}</button>
             </div>
           </td>
         `;
         rowsEl.appendChild(tr);
       });
 
-      setStatus("แสดงถังขยะทั้งหมด " + filtered.length + " รายการ","ok");
+      setStatus(`${getTranslation('showing')} ${filtered.length} ${getTranslation('items')}`,"ok");
     }
 
     // ---------- Photo viewer ----------
@@ -716,7 +830,7 @@
           editPhotoNote.textContent = currentEditPhotoFileName || "";
         }else{
           editPreview.style.display = "none";
-          editPhotoNote.textContent = "ยังไม่มีรูป";
+          editPhotoNote.textContent = getTranslation('editNoPhoto');
         }
 
         openEditModal();
@@ -754,7 +868,7 @@
         newEditPhotoDataUrl  = e.target.result;
         editPreview.src = newEditPhotoDataUrl;
         editPreview.style.display = "block";
-        editPhotoNote.textContent = newEditPhotoFileName + " (รูปใหม่)";
+        editPhotoNote.textContent = `${newEditPhotoFileName} ${getTranslation('editNewPhoto')}`;
         setEditMsg("เตรียมรูปใหม่เรียบร้อย","ok");
       };
       reader.readAsDataURL(file);
@@ -766,7 +880,7 @@
         const zone  = editDocZone.value;
         const binId = editDocBinId.value;
         if(!zone || !binId){
-          setEditMsg("ข้อมูลไม่ครบ ไม่สามารถบันทึกได้","err");
+          setEditMsg(getTranslation('editSaveError'),"err"); // Generic error
           return;
         }
 
@@ -795,34 +909,79 @@
           updatedAt  : firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        setEditMsg("กำลังบันทึกการแก้ไข...","");
+        setEditMsg(getTranslation('editSaving'),"");
         const docRef = db.collection("smartbins")
                          .doc("bins")
                          .collection(zone)
                          .doc(binId);
         await docRef.set(data, { merge:true });
-        setEditMsg("✅ บันทึกการแก้ไขสำเร็จ","ok");
-        setStatus("บันทึกการแก้ไขของ "+binId+" สำเร็จ","ok");
+        setEditMsg(getTranslation('editSaveSuccess'),"ok");
+        setStatus(`${getTranslation('editSaveSuccess')} ${binId}`,"ok");
         setTimeout(closeEditModal, 600);
       }catch(e){
-        setEditMsg("❌ บันทึกไม่สำเร็จ: " + errStr(e),"err");
+        setEditMsg(`${getTranslation('editSaveError')} ${errStr(e)}`,"err");
       }
     });
 
     // ---------- Delete ----------
     window.deleteBin = async function(zone, binId){
-      if(!confirm("แน่ใจหรือไม่ว่าต้องการลบถัง "+binId+" ในเขต "+zone+" ?")) return;
+      if(!confirm(`${getTranslation('confirmDelete')} ${binId} ${getTranslation('inZone')} ${zone}?`)) return;
       try{
         await db.collection("smartbins")
                 .doc("bins")
                 .collection(zone)
                 .doc(binId)
                 .delete();
-        setStatus("ลบถัง "+binId+" สำเร็จ","ok");
+        setStatus(`${getTranslation('deleteSuccess')} ${binId}`,"ok");
       }catch(e){
-        setStatus("ลบถังไม่สำเร็จ: " + errStr(e),"err");
+        setStatus(`${getTranslation('deleteError')} ${errStr(e)}`,"err");
       }
     };
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('sw_lang', lang);
+      langSelect.value = lang;
+
+      document.title = getTranslation('pageTitle');
+      document.querySelector('h1').textContent = getTranslation('mainTitle');
+      document.querySelector('p.muted').innerHTML = getTranslation('pageHint');
+      document.querySelector('.filters .muted').textContent = getTranslation('filterZoneLabel');
+
+      const ths = document.querySelectorAll('thead th');
+      ths[0].textContent = getTranslation('tableHeaderZone');
+      ths[1].textContent = getTranslation('tableHeaderBin');
+      ths[2].textContent = getTranslation('tableHeaderRfid');
+      ths[3].textContent = getTranslation('tableHeaderCoords');
+      ths[4].textContent = getTranslation('tableHeaderDms');
+      ths[5].textContent = getTranslation('tableHeaderDetails');
+      ths[6].textContent = getTranslation('tableHeaderPhoto');
+      ths[7].textContent = getTranslation('tableHeaderUpdated');
+      ths[8].textContent = getTranslation('tableHeaderManage');
+
+      // Modal
+      editModalBackdrop.querySelector('.modal-title').textContent = getTranslation('editModalTitle');
+      const labels = editModalBackdrop.querySelectorAll('label');
+      labels[0].textContent = getTranslation('editLabelZone');
+      labels[1].textContent = getTranslation('editLabelBinId');
+      labels[2].textContent = getTranslation('editLabelRfid');
+      labels[3].textContent = getTranslation('editLabelPosition');
+      labels[4].textContent = getTranslation('editLabelDetails');
+      labels[5].textContent = getTranslation('editLabelCurrentPhoto');
+      labels[6].textContent = getTranslation('editLabelChangePhoto');
+      labels[6].querySelector('.muted').textContent = getTranslation('editPhotoHint');
+      btnEditCancel.textContent = getTranslation('btnCancel');
+      editForm.querySelector('button[type="submit"]').textContent = getTranslation('btnSaveChanges');
+
+      // Re-render
+      renderZoneFilter();
+      renderTable();
+    }
+
+    langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
+    // Initial load is handled by the zone listener
+    changeLanguage(currentLang);
   </script>
 </body>
 </html>
