@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - โปรไฟล์ผู้ดูแล</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Auth + Shared -->
+  <script src="../Login/auth.js"></script>
+  <script src="admin-lang.js"></script>
+  <script src="admin-user.js" defer></script>
+  <script src="admin-nav.js" defer></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([0]);
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
+    }
+
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar .sw-logout-slot {
+      margin-top: 0 !important;
+      margin-left: 18px;
+      margin-right: 18px;
+      margin-bottom: 24px;
+      padding: 0;
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px 20px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 10px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn:hover,
+    .sidebar .sw-logout-slot .sw-logout-btn:focus {
+      background: #b91c1c;
+      border-left: 0;
+    }
+
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 16px
+    }
+
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      min-width: 0;
+    }
+
+    h1 {
+      color: #2f3640;
+      margin: 0 0 12px;
+      line-height: 1.25
+    }
+
+    .page-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+      position: static;
+      margin: 0 auto;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-switcher select {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    }
+
+    .user-chip .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+      color: #0f172a;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-chip__label {
+      margin: 0;
+      font-size: 12px;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+    }
+
+    .avatar-preview {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      margin: 10px auto;
+      background: #e5e7eb center / cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      color: #4b5563;
+      border: 4px solid #fff;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+    }
+
+    .avatar-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 6px;
+      font-size: 14px;
+      color: #111827;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+
+    input[readonly] {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    button,
+    .btn {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      border: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, filter .2s;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827
+    }
+
+    .danger {
+      background: #ef4444;
+      color: #fff
+    }
+
+    button:hover {
+      filter: brightness(1.03);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:focus,
+    input:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    .status-line {
+      min-height: 20px;
+    }
+
+    .ok {
+      color: #16a34a;
+    }
+
+    .err {
+      color: #dc2626;
+    }
+
+    @media(max-width:900px) {
+      body {
+        flex-direction: column
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
+      }
+
+      .sidebar.show {
+        left: 0
+      }
+
+      .toggle-btn {
+        display: inline-flex
+      }
+
+      main {
+        padding: 70px 16px 20px
+      }
+
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button id="menuToggle" class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu" data-admin-menu data-active="home"></nav>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="page-wrap">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitleText">โปรไฟล์ของฉัน</h1>
+          <p class="muted" id="pageHint">อัปเดตข้อมูลส่วนตัวและภาพโปรไฟล์</p>
+        </div>
+        <div class="topbar-right">
+          <div class="lang-switcher">
+            <select id="langSelect">
+              <option value="th">ไทย</option>
+              <option value="en">English</option>
+              <option value="ms">Bahasa Melayu</option>
+            </select>
+          </div>
+          <div class="user-chip">
+            <span class="avatar" id="adminAvatar">A</span>
+            <div>
+              <p class="muted user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
+              <strong id="adminName">-</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="profile-grid">
+          <div class="card">
+            <h3 id="avatarTitle">ภาพโปรไฟล์</h3>
+            <div id="avatarPreview" class="avatar-preview">A</div>
+            <div class="avatar-actions">
+              <label class="btn ghost" for="avatarInput" id="btnChoosePhoto">เลือกไฟล์</label>
+              <button type="button" class="danger" id="btnRemovePhoto">ลบภาพ</button>
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none">
+            <p class="muted" style="margin-top:10px" id="avatarHint"> รองรับไฟล์ภาพสูงสุด ~1.5MB</p>
+          </div>
+
+          <div class="card">
+            <h3 id="infoTitle">ข้อมูลพื้นฐาน</h3>
+            <form id="profileForm" autocomplete="off">
+              <label for="username" id="labelUsername">ชื่อผู้ใช้</label>
+              <input id="username" type="text" readonly />
+
+              <label for="fullName" id="labelFullName">ชื่อ - นามสกุล</label>
+              <input id="fullName" type="text" placeholder="กรอกชื่อ - นามสกุล" />
+
+              <label for="email" id="labelEmail">อีเมล</label>
+              <input id="email" type="email" placeholder="name@example.com" />
+
+              <label for="phone" id="labelPhone">เบอร์โทรศัพท์</label>
+              <input id="phone" type="tel" placeholder="0xxxxxxxxx" />
+
+              <div class="status-line muted" id="statusLine"></div>
+
+              <div class="actions">
+                <button type="button" class="ghost" id="btnReset">รีเซ็ต</button>
+                <button type="submit" class="primary" id="btnSave">บันทึก</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const db = firebase.firestore();
+    const userRef = db.collection("users").doc(currentUser.username);
+
+    const avatarPreview = document.getElementById("avatarPreview");
+    const avatarInput = document.getElementById("avatarInput");
+    const btnRemovePhoto = document.getElementById("btnRemovePhoto");
+    const btnReset = document.getElementById("btnReset");
+    const btnSave = document.getElementById("btnSave");
+    const statusLine = document.getElementById("statusLine");
+
+    const usernameEl = document.getElementById("username");
+    const fullNameEl = document.getElementById("fullName");
+    const emailEl = document.getElementById("email");
+    const phoneEl = document.getElementById("phone");
+
+    const langSelect = document.getElementById("langSelect");
+    const langState = window.AdminLang;
+    let currentLang = (langState && typeof langState.getLang === "function")
+      ? langState.getLang()
+      : (localStorage.getItem("sw_lang") || "th");
+
+    let avatarData = "";
+
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - โปรไฟล์ผู้ดูแล",
+        mainTitle: "โปรไฟล์ของฉัน",
+        pageHint: "อัปเดตข้อมูลส่วนตัวและภาพโปรไฟล์",
+        avatarTitle: "ภาพโปรไฟล์",
+        avatarHint: "รองรับไฟล์ภาพสูงสุด ~1.5MB",
+        choosePhoto: "เลือกไฟล์",
+        removePhoto: "ลบภาพ",
+        infoTitle: "ข้อมูลพื้นฐาน",
+        labelUsername: "ชื่อผู้ใช้",
+        labelFullName: "ชื่อ - นามสกุล",
+        labelEmail: "อีเมล",
+        labelPhone: "เบอร์โทรศัพท์",
+        phFullName: "กรอกชื่อ - นามสกุล",
+        phEmail: "name@example.com",
+        phPhone: "0xxxxxxxxx",
+        btnReset: "รีเซ็ต",
+        btnSave: "บันทึก",
+        loading: "กำลังโหลดข้อมูลโปรไฟล์...",
+        loaded: "โหลดข้อมูลโปรไฟล์แล้ว",
+        loadError: "โหลดข้อมูลไม่สำเร็จ:",
+        saving: "กำลังบันทึก...",
+        saveSuccess: "บันทึกโปรไฟล์สำเร็จ",
+        saveError: "บันทึกไม่สำเร็จ:",
+        menuBtn: "☰ เมนู",
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ"
+      },
+      en: {
+        pageTitle: "Smart Waste - Admin Profile",
+        mainTitle: "My Profile",
+        pageHint: "Update your personal info and profile picture",
+        avatarTitle: "Profile Photo",
+        avatarHint: "Supports images up to ~1.5MB",
+        choosePhoto: "Choose file",
+        removePhoto: "Remove",
+        infoTitle: "Basic Info",
+        labelUsername: "Username",
+        labelFullName: "Full name",
+        labelEmail: "Email",
+        labelPhone: "Phone",
+        phFullName: "Enter full name",
+        phEmail: "name@example.com",
+        phPhone: "0xxxxxxxxx",
+        btnReset: "Reset",
+        btnSave: "Save",
+        loading: "Loading profile...",
+        loaded: "Profile loaded",
+        loadError: "Failed to load profile:",
+        saving: "Saving...",
+        saveSuccess: "Profile saved",
+        saveError: "Save failed:",
+        menuBtn: "☰ Menu",
+        roleAdmin: "Administrator",
+        roleUser: "User",
+        logout: "Logout"
+      },
+      ms: {
+        pageTitle: "Smart Waste - Profil Pentadbir",
+        mainTitle: "Profil Saya",
+        pageHint: "Kemas kini maklumat peribadi dan gambar profil",
+        avatarTitle: "Gambar Profil",
+        avatarHint: "Sokong imej sehingga ~1.5MB",
+        choosePhoto: "Pilih fail",
+        removePhoto: "Buang",
+        infoTitle: "Maklumat Asas",
+        labelUsername: "Nama pengguna",
+        labelFullName: "Nama penuh",
+        labelEmail: "Emel",
+        labelPhone: "Telefon",
+        phFullName: "Masukkan nama penuh",
+        phEmail: "nama@contoh.com",
+        phPhone: "0xxxxxxxxx",
+        btnReset: "Set semula",
+        btnSave: "Simpan",
+        loading: "Memuatkan profil...",
+        loaded: "Profil dimuatkan",
+        loadError: "Gagal memuat profil:",
+        saving: "Menyimpan...",
+        saveSuccess: "Profil berjaya disimpan",
+        saveError: "Gagal menyimpan:",
+        menuBtn: "☰ Menu",
+        roleAdmin: "Pentadbir",
+        roleUser: "Pengguna",
+        logout: "Keluar"
+      }
+    };
+
+    function t(key) {
+      return (translations[currentLang] && translations[currentLang][key]) || key;
+    }
+
+    function getTranslation(key) {
+      return t(key);
+    }
+
+    function setStatus(text, type) {
+      statusLine.textContent = text || "";
+      statusLine.className = "status-line muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
+    }
+
+    function errStr(e) {
+      return (e && (e.message || e.code)) || String(e);
+    }
+
+    function renderAvatar() {
+      const displayName = currentUser.fullName || currentUser.username || "";
+      if (avatarData) {
+        avatarPreview.style.backgroundImage = `url(${avatarData})`;
+        avatarPreview.textContent = "";
+      } else {
+        avatarPreview.style.backgroundImage = "";
+        avatarPreview.textContent = displayName ? displayName.charAt(0).toUpperCase() : "?";
+      }
+    }
+
+    async function loadProfile() {
+      setStatus(t("loading"), "");
+      try {
+        const snap = await userRef.get();
+        const data = snap.data() || {};
+        avatarData = data.avatarData || data.avatarUrl || currentUser.avatarData || "";
+
+        usernameEl.value = currentUser.username || "";
+        fullNameEl.value = data.fullName || currentUser.fullName || "";
+        emailEl.value = data.email || currentUser.email || "";
+        phoneEl.value = data.phone || currentUser.phone || "";
+
+        renderAvatar();
+
+        if (window.AdminUser) {
+          window.AdminUser.saveToLocal({
+            fullName: fullNameEl.value,
+            email: emailEl.value,
+            phone: phoneEl.value,
+            avatarData
+          });
+          window.AdminUser.refreshChips();
+        }
+
+        setStatus(t("loaded"), "ok");
+      } catch (e) {
+        setStatus(`${t("loadError")} ${errStr(e)}`, "err");
+      }
+    }
+
+    function resetForm() {
+      avatarData = "";
+      renderAvatar();
+      fullNameEl.value = currentUser.fullName || "";
+      emailEl.value = currentUser.email || "";
+      phoneEl.value = currentUser.phone || "";
+      setStatus("", "");
+    }
+
+    avatarInput.addEventListener("change", () => {
+      const file = avatarInput.files && avatarInput.files[0];
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) {
+        setStatus("ไฟล์ใหญ่เกินไป (>1.5MB)", "err");
+        avatarInput.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        avatarData = e.target.result;
+        renderAvatar();
+        setStatus("", "");
+      };
+      reader.onerror = () => setStatus("อ่านไฟล์ไม่สำเร็จ", "err");
+      reader.readAsDataURL(file);
+    });
+
+    btnRemovePhoto.addEventListener("click", () => {
+      avatarData = "";
+      renderAvatar();
+    });
+
+    btnReset.addEventListener("click", resetForm);
+
+    document.getElementById("profileForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      try {
+        setStatus(t("saving"), "");
+        const fullName = fullNameEl.value.trim();
+        const email = emailEl.value.trim();
+        const phone = phoneEl.value.trim();
+
+        const payload = {
+          fullName,
+          email,
+          phone,
+          avatarData: avatarData || null,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await userRef.set(payload, { merge: true });
+
+        if (window.AdminUser) {
+          window.AdminUser.saveToLocal({
+            fullName,
+            email,
+            phone,
+            avatarData
+          });
+          window.AdminUser.refreshChips();
+        }
+
+        setStatus(t("saveSuccess"), "ok");
+      } catch (e) {
+        setStatus(`${t("saveError")} ${errStr(e)}`, "err");
+      }
+    });
+
+    function applyLanguage() {
+      document.title = t("pageTitle");
+      document.getElementById("menuToggle").textContent = t("menuBtn");
+      document.getElementById("pageTitleText").textContent = t("mainTitle");
+      document.getElementById("pageHint").textContent = t("pageHint");
+      document.getElementById("avatarTitle").textContent = t("avatarTitle");
+      document.getElementById("avatarHint").textContent = t("avatarHint");
+      document.getElementById("btnChoosePhoto").textContent = t("choosePhoto");
+      document.getElementById("btnRemovePhoto").textContent = t("removePhoto");
+      document.getElementById("infoTitle").textContent = t("infoTitle");
+      document.getElementById("labelUsername").textContent = t("labelUsername");
+      document.getElementById("labelFullName").textContent = t("labelFullName");
+      document.getElementById("labelEmail").textContent = t("labelEmail");
+      document.getElementById("labelPhone").textContent = t("labelPhone");
+      fullNameEl.placeholder = t("phFullName");
+      emailEl.placeholder = t("phEmail");
+      phoneEl.placeholder = t("phPhone");
+      btnReset.textContent = t("btnReset");
+      btnSave.textContent = t("btnSave");
+
+      if (window.AdminNav) {
+        window.AdminNav.setLanguage(currentLang);
+      }
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      if (langState && typeof langState.setLang === "function") {
+        langState.setLang(lang);
+        currentLang = langState.getLang();
+      } else {
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+      applyLanguage();
+    }
+
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+
+    if (langState && typeof langState.onChange === "function") {
+      langState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
+
+    function toggleMenu(force) {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('menuToggle');
+      let show;
+
+      if (typeof force === 'boolean') {
+        show = force;
+        sidebar.classList.toggle('show', show);
+      } else {
+        show = !sidebar.classList.contains('show');
+        sidebar.classList.toggle('show');
+      }
+      if (btn) btn.textContent = t("menuBtn");
+      return show;
+    }
+    window.toggleMenu = toggleMenu;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      langSelect.value = currentLang;
+      applyLanguage(); 
+
+      loadProfile();
+    });
+  </script>
+</body>
+
+</html>

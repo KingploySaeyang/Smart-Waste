@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - ตำแหน่งรถเก็บขยะ</title>
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="../Login/auth.js"></script>
+  <script src="admin-lang.js"></script>
+  <script src="admin-user.js" defer></script>
+  <script src="admin-nav.js" defer></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([0]);
+  </script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff
+    }
+
+    .sidebar .sw-logout-slot {
+      margin-top: 0 !important;
+      margin-left: 18px;
+      margin-right: 18px;
+      margin-bottom: 24px;
+      padding: 0;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px 20px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 10px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn:hover,
+    .sidebar .sw-logout-slot .sw-logout-btn:focus {
+      background: #b91c1c;
+      border-left: 0;
+    }
+
+    /* ปุ่ม 3 ขีด */
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    /* Main */
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto
+    }
+
+    h1 {
+      color: #2f3640;
+      margin: 0 0 16px;
+      line-height: 1.25;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-switcher {
+      position: static;
+    }
+
+    .lang-switcher select {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    }
+
+    .user-chip .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+      color: #0f172a;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-chip__label {
+      margin: 0;
+      font-size: 12px;
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+      position: static;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    label {
+      display: block;
+      margin: 6px 0 4px
+    }
+
+    select,
+    button,
+    input {
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0
+    }
+
+    .primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 12px 0
+    }
+
+    #map {
+      width: 100%;
+      height: 460px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 8px 10px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #fafafa
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+
+    .ok {
+      color: #16a34a;
+    }
+
+    .err {
+      color: #dc2626;
+    }
+
+    /* Responsive */
+    @media(max-width:900px) {
+      body {
+        flex-direction: column
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
+      }
+
+      .sidebar.show {
+        left: 0
+      }
+
+      .toggle-btn {
+        display: block
+      }
+
+      main {
+        padding: 70px 16px 20px
+      }
+
+      h1 {
+        text-align: center
+      }
+
+      .row {
+        flex-direction: column;
+        align-items: stretch
+      }
+
+      .row>div,
+      .row>button {
+        width: 100%;
+      }
+
+      #map {
+        height: 45vh
+      }
+    }
+
+    /* ===== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า ===== */
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      line-height: 1.35;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="month"],
+    select,
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      line-height: 1.2;
+    }
+
+    button,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+    }
+
+    .primary:hover,
+    .ghost:hover {
+      filter: brightness(1.03);
+    }
+
+    .primary:active,
+    .ghost:active {
+      transform: translateY(1px);
+    }
+
+    button:focus,
+    .toggle-btn:focus,
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    /* ===== Overlay การ์ดเด้งเพิ่มรถ ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+
+    .overlay-card {
+      width: min(520px, 92vw);
+      max-width: 520px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.38);
+      padding: 20px 18px 16px;
+      transform: translateY(8px) scale(.97);
+      opacity: 0;
+      animation: overlayIn .18s ease-out forwards;
+    }
+
+    .overlay-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    @keyframes overlayIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (min-width: 640px) {
+      .overlay-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+      }
+
+      .overlay-actions button {
+        min-width: 120px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu" data-admin-menu data-active="truck"></nav>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitleHeading">ตำแหน่งรถเก็บขยะ (RTDB Live)</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="lang-switcher">
+          <select id="langSelect">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+          </select>
+        </div>
+        <div class="user-chip">
+          <span class="avatar" id="adminAvatar">A</span>
+          <div>
+            <p class="muted user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
+            <strong id="adminName">-</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- เลือกรถที่มีแล้ว + ปุ่มเพิ่มรถ -->
+      <div class="card">
+        <div class="row">
+          <div style="flex:1 1 260px">
+            <label for="truckSelect" id="truckSelectLabel">เลือกรถ (จาก Firestore: <code>trucks</code>)</label>
+            <div class="row">
+              <select id="truckSelect">
+                <option value="">(กำลังโหลด…)</option>
+              </select>
+              <button id="btnCreate" class="ghost">+ สร้างรถใหม่</button>
+            </div>
+            <p id="truckInfo" class="muted" style="margin-top:6px">(ยังไม่ได้เลือกรถ)</p>
+          </div>
+
+          <button id="btnCenter" class="ghost">โฟกัสหมุด</button>
+        </div>
+      </div>
+
+      <div id="map"></div>
+
+      <!-- ตารางเวลาแสดงการวิ่ง -->
+      <div class="card">
+        <div class="row" style="justify-content: space-between; align-items:flex-end; gap:12px;">
+          <div>
+            <h3 id="usageTitle">เวลาแสดงการวิ่งรถตามวัน</h3>
+            <p class="muted" id="usageHint">เลือกเดือนเพื่อดูเวลาวิ่งรวมของแต่ละวันจากข้อมูลตำแหน่ง</p>
+          </div>
+          <div style="text-align:right;">
+            <label for="monthSelect" class="muted" id="monthSelectLabel">เลือกเดือน</label>
+            <input type="month" id="monthSelect" style="margin-left:8px;">
+          </div>
+        </div>
+        <p class="muted" id="usageStatus" style="margin-top:6px;"></p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th id="usageThDate">วันที่</th>
+                <th id="usageThStart">เริ่มส่ง</th>
+                <th id="usageThEnd">หยุดส่ง</th>
+                <th id="usageThDuration">เวลาวิ่งรวม</th>
+                <th id="usageThLat">ละติจูด (เริ่ม)</th>
+                <th id="usageThLng">ลองจิจูด (เริ่ม)</th>
+              </tr>
+            </thead>
+            <tbody id="usageBody">
+              <tr>
+                <td colspan="6" class="muted">เลือกรถและเดือนเพื่อดูข้อมูล</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- การ์ดเด้งเพิ่มรถใหม่ -->
+  <div id="createOverlay" class="overlay" style="display:none;">
+    <div id="createPanel" class="card overlay-card">
+      <h3 id="createPanelTitle" style="margin-bottom: 12px;">เพิ่มรถใหม่</h3>
+      <div class="row" style="align-items:flex-start;gap:16px;">
+        <div style="flex:1 1 260px">
+          <label for="zoneSelect" id="zoneSelectLabel">เลือกเขตพื้นที่ (จาก Firestore: zones)</label>
+          <select id="zoneSelect">
+            <option value="">(กำลังโหลด…)</option>
+          </select>
+          <p class="muted" id="newTruckIdText" style="margin-top:6px">
+            รถคันใหม่: <b id="newTruckId">—</b>
+          </p>
+        </div>
+      </div>
+      <div class="overlay-actions" style="margin-top: 10px;">
+        <button id="btnCancelCreate" class="ghost">ยกเลิก</button>
+        <button id="btnSaveTruck" class="primary">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Firebase */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+
+    /* Map */
+    const start = [6.46007, 100.35933];
+    const map = L.map('map').setView(start, 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 20, attribution: '&copy; OpenStreetMap' }).addTo(map);
+    let marker = L.marker(start, { draggable: false }).addTo(map).bindPopup('ตำแหน่งรถ').openPopup();
+
+    /* UI refs */
+    const truckSel = document.getElementById('truckSelect');
+    const truckInfo = document.getElementById('truckInfo');
+    const btnCreate = document.getElementById('btnCreate');
+    const btnCenter = document.getElementById('btnCenter');
+    const langSelect = document.getElementById('langSelect');
+    const adminNameEl = document.getElementById('adminName');
+    const adminAvatarEl = document.getElementById('adminAvatar');
+    const adminRoleEl = document.getElementById('adminRole');
+
+    // usage table
+    const monthSelect = document.getElementById('monthSelect');
+    const usageBody = document.getElementById('usageBody');
+    const usageStatus = document.getElementById('usageStatus');
+
+    // แผงเพิ่มรถ (overlay)
+    const createOverlay = document.getElementById('createOverlay');
+    const createPanel = document.getElementById('createPanel');
+    const zoneSelect = document.getElementById('zoneSelect');
+    const newTruckIdEl = document.getElementById('newTruckId');
+    const newTruckIdTextEl = document.getElementById('newTruckIdText');
+    const btnSaveTruck = document.getElementById('btnSaveTruck');
+    const btnCancelCreate = document.getElementById('btnCancelCreate');
+
+    const displayName = currentUser.fullName || currentUser.username;
+    const roleLabel = currentUser.roleLabel || "ผู้ดูแลระบบ";
+    if (adminNameEl) adminNameEl.textContent = displayName || "-";
+    if (adminAvatarEl) adminAvatarEl.textContent = displayName ? displayName.charAt(0).toUpperCase() : "?";
+    if (adminRoleEl) adminRoleEl.textContent = roleLabel;
+
+    /* ===== Language / i18n ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - ตำแหน่งรถเก็บขยะ",
+        menuBtn: "☰ เมนู",
+        mainTitle: "ตำแหน่งรถเก็บขยะ",
+        selectTruckLabel: "เลือกรถ (จาก Firestore: trucks)",
+        loading: "(กำลังโหลด…)",
+        selectTruckDefault: "-- เลือกรถ --",
+        createTruckBtn: "+ สร้างรถใหม่",
+        noTruckSelected: "(ยังไม่ได้เลือกรถ)",
+        truckNotFound: "ไม่พบรถนี้ใน Firestore",
+        focusBtn: "โฟกัสหมุด",
+        truckInfoText: "ID: <b>%id%</b> • เขต: %zone% • ชื่อ: %name% • อัปเดตล่าสุด (FS): %updatedAt%",
+        mapPopup: "ตำแหน่งรถ",
+
+        usageTitle: "เวลาแสดงการวิ่งรถตามวัน",
+        usageHint: "เลือกเดือนเพื่อดูเวลาวิ่งรวมของแต่ละวันจากข้อมูลตำแหน่ง",
+        monthSelectLabel: "เลือกเดือน",
+        usageThDate: "วันที่",
+        usageThStart: "เริ่มส่ง",
+        usageThEnd: "หยุดส่ง",
+        usageThDuration: "เวลาวิ่งรวม",
+        usageThLat: "ละติจูด (เริ่ม)",
+        usageThLng: "ลองจิจูด (เริ่ม)",
+        usageMsgSelectTruck: "กรุณาเลือกรถก่อน",
+        usageMsgSelectMonth: "กรุณาเลือกเดือนเพื่อดูข้อมูล",
+        usageMsgNoData: "เดือนนี้ยังไม่มีข้อมูลตำแหน่ง",
+        usageSummary: "พบ %count% วันในเดือนนี้",
+
+        // แผงเพิ่มรถ
+        createPanelTitle: "เพิ่มรถใหม่",
+        zoneSelectLabel: "เลือกเขตพื้นที่ (จาก Firestore: zones)",
+        selectZoneDefault: "-- เลือกเขต --",
+        newTruckIdText: "รถคันใหม่: <b>%id%</b>",
+        saveTruckBtn: "บันทึก",
+        cancelTruckBtn: "ยกเลิก",
+        noZones: "(ยังไม่มีเขตในระบบ)",
+        pleaseSelectZone: "กรุณาเลือกเขตก่อน",
+        cannotCreateId: "ยังไม่สามารถสร้างรหัสรถได้",
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ"
+      },
+      en: {
+        pageTitle: "Smart Waste - Truck Location",
+        menuBtn: "☰ Menu",
+        mainTitle: "Truck Location",
+        selectTruckLabel: "Select Truck (from Firestore: trucks)",
+        loading: "(Loading…)",
+        selectTruckDefault: "-- Select a truck --",
+        createTruckBtn: "+ Create New Truck",
+        noTruckSelected: "(No truck selected)",
+        truckNotFound: "This truck was not found in Firestore",
+        focusBtn: "Focus Marker",
+        truckInfoText: "ID: <b>%id%</b> • Zone: %zone% • Name: %name% • Last Updated (FS): %updatedAt%",
+        mapPopup: "Truck Location",
+
+        usageTitle: "Daily Running Time",
+        usageHint: "Select a month to see total running time per day from position data.",
+        monthSelectLabel: "Month",
+        usageThDate: "Date",
+        usageThStart: "Start",
+        usageThEnd: "Stop",
+        usageThDuration: "Total running time",
+        usageThLat: "Latitude (start)",
+        usageThLng: "Longitude (start)",
+        usageMsgSelectTruck: "Please select a truck first.",
+        usageMsgSelectMonth: "Please select a month.",
+        usageMsgNoData: "No position data for this month.",
+        usageSummary: "Showing %count% days in this month",
+
+        createPanelTitle: "Add New Truck",
+        zoneSelectLabel: "Select Zone (from Firestore: zones)",
+        selectZoneDefault: "-- Select a zone --",
+        newTruckIdText: "New Truck: <b>%id%</b>",
+        saveTruckBtn: "Save",
+        cancelTruckBtn: "Cancel",
+        noZones: "(No zones in the system yet)",
+        pleaseSelectZone: "Please select a zone first",
+        cannotCreateId: "Cannot generate truck ID yet",
+        roleAdmin: "Administrator",
+        roleUser: "User",
+        logout: "Logout"
+      },
+      ms: {
+        pageTitle: "Smart Waste - Lokasi Lori",
+        menuBtn: "☰ Menu",
+        mainTitle: "Lokasi Lori",
+        selectTruckLabel: "Pilih Lori (dari Firestore: trucks)",
+        loading: "(Memuatkan…)",
+        selectTruckDefault: "-- Pilih lori --",
+        createTruckBtn: "+ Cipta Lori Baharu",
+        noTruckSelected: "(Tiada lori dipilih)",
+        truckNotFound: "Lori ini tidak ditemui dalam Firestore",
+        focusBtn: "Fokus Penanda",
+        truckInfoText: "ID: <b>%id%</b> • Zon: %zone% • Nama: %name% • Terakhir Dikemas Kini (FS): %updatedAt%",
+        mapPopup: "Lokasi Lori",
+
+        usageTitle: "Masa Pergerakan Harian",
+        usageHint: "Pilih bulan untuk melihat jumlah masa pergerakan setiap hari.",
+        monthSelectLabel: "Bulan",
+        usageThDate: "Tarikh",
+        usageThStart: "Mula",
+        usageThEnd: "Tamat",
+        usageThDuration: "Jumlah masa pergerakan",
+        usageThLat: "Latitud (mula)",
+        usageThLng: "Longitud (mula)",
+        usageMsgSelectTruck: "Sila pilih lori terlebih dahulu.",
+        usageMsgSelectMonth: "Sila pilih bulan.",
+        usageMsgNoData: "Tiada data posisi untuk bulan ini.",
+        usageSummary: "Menunjukkan %count% hari dalam bulan ini",
+
+        createPanelTitle: "Tambah Lori Baharu",
+        zoneSelectLabel: "Pilih Zon (daripada Firestore: zones)",
+        selectZoneDefault: "-- Pilih zon --",
+        newTruckIdText: "Lori Baharu: <b>%id%</b>",
+        saveTruckBtn: "Simpan",
+        cancelTruckBtn: "Batal",
+        noZones: "(Tiada zon dalam sistem lagi)",
+        pleaseSelectZone: "Sila pilih zon terlebih dahulu",
+        cannotCreateId: "Belum dapat jana ID lori",
+        roleAdmin: "Pentadbir",
+        roleUser: "Pengguna",
+        logout: "Keluar"
+      }
+    };
+    let currentLang = localStorage.getItem('sw_lang') || 'th';
+
+    function getTranslation(key) {
+      return (translations[currentLang] && translations[currentLang][key]) || key;
+    }
+
+    function t(key) {
+      return getTranslation(key);
+    }
+
+    /* ===== Helper เรื่องเวลา / listener ===== */
+    let liveTimerId = null;
+    let liveUnsub = null;
+    let usageUnsub = null;
+    let currentTruckId = "";
+
+    function clearLiveTimer() {
+      if (liveTimerId !== null) {
+        clearInterval(liveTimerId);
+        liveTimerId = null;
+      }
+    }
+
+    function isSameDate(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
+    function formatDurationMs(ms) {
+      const durSec = Math.max(0, Math.round(ms / 1000));
+      const h = Math.floor(durSec / 3600);
+      const m = Math.floor((durSec % 3600) / 60);
+      const s = durSec % 60;
+
+      if (currentLang === 'th') {
+        return `${h} ชม. ${m} นาที ${s} วิ`;
+      } else if (currentLang === 'ms') {
+        return `${h} j ${m} m ${s} s`;
+      } else {
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        const ss = String(s).padStart(2, '0');
+        return `${hh}:${mm}:${ss}`;
+      }
+    }
+
+    function showUsageMessage(key) {
+      usageBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="muted">${getTranslation(key)}</td>
+        </tr>
+      `;
+      usageStatus.textContent = "";
+    }
+
+    function detach() {
+      if (typeof liveUnsub === 'function') { liveUnsub(); liveUnsub = null; }
+      if (typeof usageUnsub === 'function') { usageUnsub(); usageUnsub = null; }
+      clearLiveTimer();
+    }
+
+    /* ===== โหลด trucks + zones ===== */
+    async function loadTrucks() {
+      const snap = await fs.collection('trucks').get();
+      truckSel.innerHTML = '<option value="">' + getTranslation('selectTruckDefault') + '</option>';
+      if (snap.empty) {
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.textContent = getTranslation('loading');
+        truckSel.appendChild(opt);
+      } else {
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          const idLabel = d.truckId || doc.id;
+          const zoneLabel = d.zoneName || d.zone || '';
+          const opt = document.createElement('option');
+          opt.value = doc.id;
+          opt.textContent = zoneLabel ? `${idLabel} • ${zoneLabel}` : idLabel;
+          truckSel.appendChild(opt);
+        });
+      }
+    }
+
+    async function loadZonesForCreate() {
+      zoneSelect.innerHTML = '<option value="">' + getTranslation('selectZoneDefault') + '</option>';
+      const snap = await fs.collection('zones').get();
+      if (snap.empty) {
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.textContent = getTranslation('noZones');
+        zoneSelect.appendChild(opt);
+        zoneSelect.disabled = true;
+      } else {
+        zoneSelect.disabled = false;
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          const opt = document.createElement('option');
+          opt.value = doc.id;
+          opt.textContent = d.name || doc.id;
+          zoneSelect.appendChild(opt);
+        });
+      }
+      updateNewTruckIdText("—");
+    }
+
+    /* ===== สร้างรถใหม่ ===== */
+    function updateNewTruckIdText(idStr) {
+      if (newTruckIdEl) newTruckIdEl.textContent = idStr || "—";
+      if (newTruckIdTextEl) {
+        newTruckIdTextEl.innerHTML = getTranslation('newTruckIdText')
+          .replace('%id%', newTruckIdEl ? newTruckIdEl.textContent : "—");
+      }
+    }
+
+    async function computeNextTruckIdForZone(zoneId) {
+      const snap = await fs.collection('trucks').where('zone', '==', zoneId).get();
+      let maxIdx = 0;
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const idStr = d.truckId || doc.id;
+        const m = idStr.match(/(\d+)$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (!isNaN(n) && n > maxIdx) maxIdx = n;
+        }
+      });
+      const nextIdx = maxIdx + 1;
+      return `TRUCK${String(nextIdx).padStart(2, '0')}`;
+    }
+
+    zoneSelect.addEventListener('change', async () => {
+      const zoneId = zoneSelect.value;
+      if (!zoneId) {
+        updateNewTruckIdText("—");
+        return;
+      }
+      const nextId = await computeNextTruckIdForZone(zoneId);
+      updateNewTruckIdText(nextId);
+    });
+
+    function openCreateOverlay() {
+      createOverlay.style.display = 'flex';
+      createPanel.style.animation = 'none';
+      void createPanel.offsetWidth;
+      createPanel.style.animation = '';
+    }
+
+    function closeCreateOverlay() {
+      createOverlay.style.display = 'none';
+    }
+
+    btnCreate.addEventListener('click', async () => {
+      openCreateOverlay();
+      await loadZonesForCreate();
+    });
+
+    btnCancelCreate.addEventListener('click', () => {
+      closeCreateOverlay();
+    });
+
+    createOverlay.addEventListener('click', (e) => {
+      if (e.target === createOverlay) {
+        closeCreateOverlay();
+      }
+    });
+
+    btnSaveTruck.addEventListener('click', async () => {
+      const zoneId = zoneSelect.value;
+      if (!zoneId) {
+        alert(getTranslation('pleaseSelectZone'));
+        return;
+      }
+      const truckId = newTruckIdEl.textContent;
+      if (!truckId || truckId === "—") {
+        alert(getTranslation('cannotCreateId'));
+        return;
+      }
+
+      let zoneName = zoneId;
+      try {
+        const zDoc = await fs.collection('zones').doc(zoneId).get();
+        if (zDoc.exists) {
+          const zData = zDoc.data() || {};
+          if (zData.name) zoneName = zData.name;
+        }
+      } catch (e) {
+        console.warn("ไม่สามารถโหลดชื่อเขตได้", e);
+      }
+
+      const docId = `${zoneId}_${truckId}`;
+      const ref = fs.collection('trucks').doc(docId);
+      await ref.set({
+        zone: zoneId,
+        zoneName: zoneName,
+        truckId: truckId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      await loadTrucks();
+      truckSel.value = ref.id;
+      truckSel.dispatchEvent(new Event('change'));
+      closeCreateOverlay();
+    });
+
+    /* ===== ตารางเวลาใช้งาน (ใช้ runs / วัน / เดือน) ===== */
+    function setupUsageListener() {
+      if (usageUnsub) {
+        usageUnsub();
+        usageUnsub = null;
+      }
+      clearLiveTimer();
+
+      const truckId = currentTruckId;
+      const monthValue = monthSelect.value;
+
+      if (!truckId) {
+        showUsageMessage('usageMsgSelectTruck');
+        return;
+      }
+      if (!monthValue) {
+        showUsageMessage('usageMsgSelectMonth');
+        return;
+      }
+
+      const [yearStr, monthStr] = monthValue.split('-');
+      const year = parseInt(yearStr, 10);
+      const monthIdx = parseInt(monthStr, 10) - 1;
+      const monthStart = new Date(year, monthIdx, 1, 0, 0, 0, 0);
+      const monthEnd = new Date(year, monthIdx + 1, 1, 0, 0, 0, 0);
+
+      const runsRef = fs.collection('trucks')
+        .doc(truckId)
+        .collection('runs')
+        .where('startAt', '>=', monthStart)
+        .where('startAt', '<', monthEnd);
+
+      usageUnsub = runsRef.onSnapshot(sn => {
+        const perDay = {};
+        const now = new Date();
+
+        sn.forEach(doc => {
+          const r = doc.data() || {};
+          if (!r.startAt || !r.startAt.toDate) return;
+
+          const start = r.startAt.toDate();
+          const end = (r.endAt && r.endAt.toDate) ? r.endAt.toDate() : null;
+          const isActive = r.isActive === true && !end;
+
+          const dateKey =
+            start.getFullYear() + '-' +
+            String(start.getMonth() + 1).padStart(2, '0') + '-' +
+            String(start.getDate()).padStart(2, '0');
+
+          const startLat = (typeof r.startLat === 'number') ? r.startLat : null;
+          const startLng = (typeof r.startLng === 'number') ? r.startLng : null;
+
+          const effectiveEnd = end || now;
+          const durMs = Math.max(0, effectiveEnd - start);
+
+          if (!perDay[dateKey]) {
+            perDay[dateKey] = {
+              date: new Date(start.getFullYear(), start.getMonth(), start.getDate()),
+              startAt: start,
+              endAt: effectiveEnd,
+              startLat,
+              startLng,
+              baseMs: 0,
+              liveStartMs: null
+            };
+          }
+
+          const d = perDay[dateKey];
+
+          if (start < d.startAt) {
+            d.startAt = start;
+            if (startLat != null) d.startLat = startLat;
+            if (startLng != null) d.startLng = startLng;
+          }
+          if (effectiveEnd > d.endAt) {
+            d.endAt = effectiveEnd;
+          }
+
+          if (isActive) {
+            if (d.liveStartMs === null || start.getTime() < d.liveStartMs) {
+              d.liveStartMs = start.getTime();
+            }
+          } else {
+            d.baseMs += durMs;
+          }
+        });
+
+        const days = Object.values(perDay).sort((a, b) => a.date - b.date);
+
+        if (!days.length) {
+          showUsageMessage('usageMsgNoData');
+          return;
+        }
+
+        let rowsHtml = '';
+        const nowMs = Date.now();
+
+        days.forEach(d => {
+          const dateStr = d.date.toLocaleDateString();
+          const startStr = d.startAt.toLocaleTimeString();
+          const endStr = d.endAt ? d.endAt.toLocaleTimeString() : '—';
+          const latStr = (d.startLat != null) ? d.startLat.toFixed(5) : '—';
+          const lngStr = (d.startLng != null) ? d.startLng.toFixed(5) : '—';
+
+          const live = d.liveStartMs !== null;
+          const totalMs = d.baseMs + (live ? (nowMs - d.liveStartMs) : 0);
+
+          rowsHtml += `
+            <tr>
+              <td>${dateStr}</td>
+              <td>${startStr}</td>
+              <td>${endStr}</td>
+              <td>
+                <span
+                  class="dur"
+                  data-live="${live ? 1 : 0}"
+                  data-base-ms="${d.baseMs}"
+                  data-live-start-ms="${d.liveStartMs || 0}"
+                >${formatDurationMs(totalMs)}</span>
+              </td>
+              <td>${latStr}</td>
+              <td>${lngStr}</td>
+            </tr>
+          `;
+        });
+
+        usageBody.innerHTML = rowsHtml;
+        usageStatus.textContent = getTranslation('usageSummary')
+          .replace('%count%', days.length);
+
+        clearLiveTimer();
+        liveTimerId = setInterval(() => {
+          const nowMs2 = Date.now();
+          document.querySelectorAll('#usageBody .dur').forEach(span => {
+            const live = span.dataset.live === '1';
+            const base = Number(span.dataset.baseMs || 0);
+            const liveStart = Number(span.dataset.liveStartMs || 0);
+            const ms = live && liveStart ? base + (nowMs2 - liveStart) : base;
+            span.textContent = formatDurationMs(ms);
+          });
+        }, 1000);
+      });
+    }
+
+    /* ===== Truck live doc + เลือกรถ ===== */
+    truckSel.addEventListener('change', () => {
+      detach();
+      const id = truckSel.value;
+      currentTruckId = id;
+
+      if (!id) {
+        truckInfo.textContent = getTranslation('noTruckSelected');
+        showUsageMessage('usageMsgSelectTruck');
+        return;
+      }
+
+      liveUnsub = fs.collection('trucks').doc(id).onSnapshot(doc => {
+        if (!doc.exists) {
+          truckInfo.textContent = getTranslation('truckNotFound');
+          return;
+        }
+        const d = doc.data() || {};
+        const truckId = d.truckId || doc.id;
+        const zoneName = d.zoneName || d.zone || "—";
+        const name = d.name || "—";
+        const info = getTranslation('truckInfoText')
+          .replace('%id%', truckId)
+          .replace('%zone%', zoneName)
+          .replace('%name%', name)
+          .replace('%updatedAt%', d.updatedAt?.toDate?.().toLocaleString?.() || '—');
+        truckInfo.innerHTML = info;
+
+        if (typeof d.lat === 'number' && typeof d.lng === 'number') {
+          marker.setLatLng([d.lat, d.lng]);
+          map.panTo([d.lat, d.lng], { animate: true });
+        }
+      });
+
+      setupUsageListener();
+    });
+
+    monthSelect.addEventListener('change', () => {
+      setupUsageListener();
+    });
+
+    /* ===== ปุ่มโฟกัสหมุด ===== */
+    btnCenter.addEventListener('click', () => {
+      const currentLatLng = marker.getLatLng();
+      if (currentLatLng) {
+        map.setView(currentLatLng, 17, { animate: true });
+      }
+    });
+
+    window.addEventListener('beforeunload', detach);
+
+    /* ===== เปลี่ยนภาษา ===== */
+    function applyLanguage() {
+      document.title = getTranslation('pageTitle');
+      document.querySelector('.toggle-btn').textContent = getTranslation('menuBtn');
+
+      if (window.AdminNav) {
+        window.AdminNav.setLanguage(currentLang);
+      }
+
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+
+      document.getElementById('pageTitleHeading').textContent = getTranslation('mainTitle');
+      document.getElementById('truckSelectLabel').textContent = getTranslation('selectTruckLabel');
+      btnCreate.textContent = getTranslation('createTruckBtn');
+      btnCenter.textContent = getTranslation('focusBtn');
+      marker.bindPopup(getTranslation('mapPopup'));
+
+      document.getElementById('usageTitle').textContent = getTranslation('usageTitle');
+      document.getElementById('usageHint').textContent = getTranslation('usageHint');
+      document.getElementById('monthSelectLabel').textContent = getTranslation('monthSelectLabel');
+      document.getElementById('usageThDate').textContent = getTranslation('usageThDate');
+      document.getElementById('usageThStart').textContent = getTranslation('usageThStart');
+      document.getElementById('usageThEnd').textContent = getTranslation('usageThEnd');
+      document.getElementById('usageThDuration').textContent = getTranslation('usageThDuration');
+      document.getElementById('usageThLat').textContent = getTranslation('usageThLat');
+      document.getElementById('usageThLng').textContent = getTranslation('usageThLng');
+
+      const createTitleEl = document.getElementById('createPanelTitle');
+      const zoneSelectLabelEl = document.getElementById('zoneSelectLabel');
+      if (createTitleEl) createTitleEl.textContent = getTranslation('createPanelTitle');
+      if (zoneSelectLabelEl) zoneSelectLabelEl.textContent = getTranslation('zoneSelectLabel');
+      if (btnSaveTruck) btnSaveTruck.textContent = getTranslation('saveTruckBtn');
+      if (btnCancelCreate) btnCancelCreate.textContent = getTranslation('cancelTruckBtn');
+
+      updateNewTruckIdText(newTruckIdEl ? newTruckIdEl.textContent || "—" : "—");
+
+      if (!truckSel.value) {
+        truckInfo.textContent = getTranslation('noTruckSelected');
+      }
+
+      setupUsageListener();
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('sw_lang', lang);
+      langSelect.value = lang;
+      applyLanguage();
+    }
+
+    langSelect.addEventListener('change', e => changeLanguage(e.target.value));
+
+    /* ===== ปุ่มเมนู 3 ขีด ===== */
+    function toggleMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      const isShow = sidebar.classList.toggle('show');
+      if (window.innerWidth <= 900) {
+        btn.style.display = isShow ? 'none' : 'block';
+      }
+    }
+    window.toggleMenu = toggleMenu;
+
+    document.querySelectorAll('.menu a').forEach(a => {
+      a.addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar');
+        const btn = document.querySelector('.toggle-btn');
+        if (window.innerWidth <= 900) {
+          sidebar.classList.remove('show');
+          btn.style.display = 'block';
+        }
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('show');
+        btn.style.display = 'none';
+      } else {
+        sidebar.classList.remove('show');
+        btn.style.display = 'block';
+      }
+    });
+
+    /* ===== Initial ===== */
+    function initMonth() {
+      const now = new Date();
+      const ym = now.toISOString().slice(0, 7);
+      monthSelect.value = ym;
+    }
+
+    initMonth();
+    langSelect.value = currentLang;
+    applyLanguage();
+    loadTrucks();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>Smart Waste - ถังของฉัน</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="../Login/auth.js"></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([2]);
+  </script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Prompt",system-ui,sans-serif}
+    body{min-height:100vh;display:flex;background:#f5f6fa;}
+    .sidebar{
+      width:240px;background:#1f2937;color:#f3f4f6;padding:24px 18px;
+      display:flex;flex-direction:column;gap:20px;justify-content:space-between;
+    }
+    .brand h2{text-align:left;color:#38bdf8;margin-bottom:12px;}
+    .menu a{
+      display:block;color:#f3f4f6;text-decoration:none;padding:10px 12px;
+      border-radius:10px;transition:.2s;
+    }
+    .menu a:hover,.menu a.active{background:#374151;}
+    main{flex:1;padding:30px;overflow-y:auto;}
+    .muted{color:#6b7280;font-size:14px;}
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:16px;
+      margin-bottom:10px;
+    }
+    .topbar h1{font-size:30px;color:#0f172a;margin:0;}
+    .user-chip{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:#fff;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 6px 18px rgba(15,23,42,.08);
+    }
+    .user-chip .avatar{
+      width:32px;
+      height:32px;
+      border-radius:50%;
+      background:linear-gradient(135deg,#38bdf8,#1d4ed8);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:600;
+      color:#0f172a;
+      font-size:16px;
+    }
+    .user-chip__label{
+      margin:0;
+      font-size:12px;
+    }
+    .card{
+      background:#fff;border-radius:18px;padding:22px;
+      box-shadow:0 10px 30px rgba(15,23,42,.08);margin-top:18px;
+    }
+    .selector{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+      width:100%;
+    }
+    .actions-group{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;}
+    .select-wrap{min-width:220px;}
+    .select-wrap select{width:100%;}
+    label{font-size:13px;font-weight:600;color:#111827;margin-bottom:6px;display:block;}
+    select,button{
+      padding:12px 14px;border-radius:12px;border:1px solid #d1d5db;font-size:15px;
+    }
+    button{cursor:pointer;transition:.2s;}
+    .primary{background:#2563eb;color:#fff;border-color:#2563eb;}
+    .ghost{background:#f3f4f6;color:#0f172a;}
+    .primary:hover{filter:brightness(1.05);}
+    .ghost:hover{filter:brightness(.97);}
+    #binCard{display:flex;flex-wrap:wrap;gap:26px;margin-top:20px;align-items:center;}
+
+    /* ถังสีเทา */
+    .bin-visual{
+      width:190px;height:240px;
+      border:3px solid #9ca3af;
+      border-radius:22px;
+      position:relative;
+      background:#e5e7eb;
+      overflow:hidden;
+    }
+    /* ระดับถังสีเขียว (พื้นฐาน) */
+    .bin-fill{
+      position:absolute;left:16px;right:16px;top:16px;bottom:16px;border-radius:16px;
+      background:linear-gradient(180deg,#22c55e,#16a34a);
+      transform-origin:bottom center;
+      transform:scaleY(var(--fill, .1));
+      transition:transform .35s, background .25s;
+    }
+    .bin-percent{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:38px;font-weight:700;color:#0f172a;text-shadow:0 2px 6px rgba(255,255,255,.7);
+    }
+    .bin-info{flex:1 1 280px;}
+    .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px;}
+    .info-grid div{
+      background:#f8fafc;border-radius:14px;padding:12px;border:1px solid #e5e7eb;
+    }
+    .info-value{margin:4px 0 0;font-size:15px;color:#0f172a;}
+    #status{margin-top:14px;min-height:20px;}
+    #status.ok{color:#16a34a;}
+    #status.err{color:#dc2626;}
+    .empty{
+      margin-top:20px;padding:30px;border:1px dashed #cbd5f5;border-radius:16px;text-align:center;background:#f8fafc;
+    }
+    .overlay{
+      position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;
+      align-items:center;justify-content:center;z-index:1000;padding:20px;
+    }
+    .overlay.show{display:flex;}
+    .panel{
+      width:min(720px,95vw);background:#fff;border-radius:22px;padding:28px;
+      box-shadow:0 25px 60px rgba(15,23,42,.4);position:relative;
+    }
+    .close-btn{
+      position:absolute;top:16px;right:16px;border:none;background:#e5e7eb;
+      width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;
+    }
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+    .form-grid input,
+    .form-grid select,
+    .form-grid textarea{
+      width:100%;padding:11px 12px;border-radius:12px;border:1px solid #d1d5db;font-size:14px;
+    }
+    .form-grid textarea{min-height:90px;resize:vertical;}
+    .form-grid .error{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.2);}
+    .form-actions{margin-top:18px;display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;}
+    .form-note{margin-top:10px;font-size:13px;}
+    .form-note.err{color:#dc2626;}
+    .form-note.ok{color:#16a34a;}
+    .success{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.45);z-index:1100;
+    }
+    .success.show{display:flex;}
+    .success-card{
+      background:#fff;padding:32px 48px;border-radius:24px;text-align:center;
+      box-shadow:0 20px 60px rgba(15,23,42,.4);
+    }
+    .success-card div{
+      width:90px;height:90px;border-radius:50%;border:6px solid #22c55e;
+      display:flex;align-items:center;justify-content:center;font-size:42px;color:#22c55e;margin:0 auto 12px;
+    }
+    @media(max-width:780px){
+      body{flex-direction:column;}
+      .sidebar{width:100%;flex-direction:column;gap:16px;}
+      .menu{display:flex;gap:12px;}
+      .topbar{flex-direction:column;align-items:flex-start;}
+      .user-chip{align-self:flex-end;}
+    }
+    @media(max-width:520px){
+      .selector{flex-direction:column;align-items:stretch;}
+      .actions-group{margin-left:0;}
+      .select-wrap{width:100%;}
+      #binCard{flex-direction:column;}
+      #binCard .bin-info{order:2;}
+      #binCard .bin-visual{order:1;margin:0 auto;}
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <h2>Smart Waste</h2>
+      <nav class="menu">
+        <a href="home.html" class="active">หน้าหลัก</a>
+        <a href="map.html">แผนที่ของฉัน</a>
+      </nav>
+    </div>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="titles">
+        <h1>ถังขยะของฉัน</h1>
+        <p class="muted">ดูสถานะถังที่คุณเพิ่มและจัดการได้ง่าย ๆ</p>
+      </div>
+      <div class="user-chip">
+        <span class="avatar" id="userAvatar">?</span>
+        <div>
+          <p class="muted user-chip__label">ผู้ใช้งาน</p>
+          <strong id="userLabel">-</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="selector">
+        <div class="select-wrap">
+          <label for="binSelect">เลือกรายการ</label>
+          <select id="binSelect" disabled>
+            <option value="">ยังไม่มีถัง</option>
+          </select>
+        </div>
+        <div class="actions-group">
+          <!-- ลบปุ่มรีเฟรชแล้ว เหลือเฉพาะเพิ่มถัง -->
+          <button class="primary" type="button" id="btnOpenForm">+ เพิ่มถังใหม่</button>
+        </div>
+      </div>
+
+      <div class="empty" id="emptyState">
+        <p>คุณยังไม่ได้เพิ่มถังขยะ</p>
+        <button class="primary" type="button" id="btnAddFirst">เริ่มเพิ่มถัง</button>
+      </div>
+
+      <div id="binCard" hidden>
+        <div class="bin-visual">
+          <div class="bin-fill" id="binFill"></div>
+          <div class="bin-percent" id="binPercent">0%</div>
+        </div>
+        <div class="bin-info">
+          <h2 id="binTitle">-</h2>
+          <p class="muted" id="binDesc">เลือกถังเพื่อดูข้อมูล</p>
+          <div class="info-grid">
+            <div>
+              <span>เขต</span>
+              <p class="info-value" id="binZone">-</p>
+            </div>
+            <div>
+              <span>RFID</span>
+              <p class="info-value" id="binRfid">-</p>
+            </div>
+            <div>
+              <span>พิกัด (ละติจูด, ลองจิจูด)</span>
+              <p class="info-value" id="binCoords">-</p>
+            </div>
+            <div>
+              <span>อัปเดตล่าสุด</span>
+              <p class="info-value" id="binUpdated">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p id="status" class="muted"></p>
+    </div>
+  </main>
+
+  <div class="overlay" id="formOverlay" aria-hidden="true">
+    <div class="panel">
+      <button class="close-btn" type="button" id="btnCloseOverlay">✕</button>
+      <h2>เพิ่มถังขยะ</h2>
+      <p class="muted">กรอกข้อมูลให้ครบถ้วน ระบบจะบันทึกเป็นของบัญชีนี้เท่านั้น</p>
+      <form id="binForm" autocomplete="off">
+        <div class="form-grid">
+          <div>
+            <label for="zoneSelect">เขตพื้นที่ *</label>
+            <select id="zoneSelect">
+              <option value="">-- เลือกเขต --</option>
+            </select>
+          </div>
+          <div>
+            <label for="binIdInput">ชื่อถัง (อัตโนมัติ)</label>
+            <input id="binIdInput" type="text" readonly placeholder="เลือกเขตก่อน" />
+          </div>
+          <div>
+            <label for="rfidInput">RFID</label>
+            <input id="rfidInput" type="text" placeholder="04A1B2C3D4" />
+          </div>
+          <div>
+            <label for="latInput">ละติจูด *</label>
+            <input id="latInput" type="number" step="any" placeholder="13.756" />
+          </div>
+          <div>
+            <label for="lngInput">ลองจิจูด *</label>
+            <input id="lngInput" type="number" step="any" placeholder="100.501" />
+          </div>
+          <div>
+            <label for="detailsInput">รายละเอียด *</label>
+            <textarea id="detailsInput" placeholder="เช่น หน้าอาคารเรียน..."></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="ghost" id="btnGps">ดึงพิกัด</button>
+          <button type="button" class="ghost" id="btnAddZone">+ เพิ่มเขตใหม่</button>
+          <button type="button" class="ghost" id="btnCancel">ยกเลิก</button>
+          <button type="submit" class="primary">บันทึก</button>
+        </div>
+        <p id="formStatus" class="form-note muted"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="success" id="successOverlay" aria-hidden="true">
+    <div class="success-card">
+      <div>✓</div>
+      <p>บันทึกสำเร็จ</p>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const userLabelEl = $("userLabel");
+    const userAvatar = $("userAvatar");
+    const displayName = currentUser.fullName || currentUser.username;
+    userLabelEl.textContent = displayName;
+    userAvatar.textContent = displayName ? displayName.charAt(0).toUpperCase() : "?";
+
+    const binSelect = $("binSelect");
+    const btnOpenForm = $("btnOpenForm");
+    const btnAddFirst = $("btnAddFirst");
+    const emptyState = $("emptyState");
+    const binCard = $("binCard");
+    const binFill = $("binFill");
+    const binPercent = $("binPercent");
+    const binTitle = $("binTitle");
+    const binDesc = $("binDesc");
+    const binZone = $("binZone");
+    const binRfid = $("binRfid");
+    const binCoords = $("binCoords");
+    const binUpdated = $("binUpdated");
+    const statusEl = $("status");
+
+    const formOverlay = $("formOverlay");
+    const successOverlay = $("successOverlay");
+    const binForm = $("binForm");
+    const zoneSelect = $("zoneSelect");
+    const binIdInput = $("binIdInput");
+    const rfidInput = $("rfidInput");
+    const latInput = $("latInput");
+    const lngInput = $("lngInput");
+    const detailsInput = $("detailsInput");
+    const formStatus = $("formStatus");
+    const btnGps = $("btnGps");
+    const btnAddZone = $("btnAddZone");
+    const btnCancel = $("btnCancel");
+    const btnCloseOverlay = $("btnCloseOverlay");
+
+    firebase.initializeApp({
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    });
+
+    const db = firebase.firestore();
+    const zonesCol = db.collection("zones");
+    const smartbinsCol = db.collection("smartbins");
+
+    let zoneList = [];
+    let myBins = [];
+    let currentBinId = "";
+    let levelUnsub = null;
+    let lastCardData = null;
+
+    function setStatus(text, type){
+      statusEl.textContent = text || "";
+      statusEl.className = "muted" + (type ? " " + type : "");
+    }
+
+    function setFormStatus(text, type){
+      formStatus.textContent = text || "";
+      formStatus.className = "form-note muted" + (type ? " " + type : "");
+    }
+
+    function formatTimestamp(ts){
+      if(!ts) return "-";
+      let date = ts;
+      if(typeof ts.toDate === "function"){
+        date = ts.toDate();
+      }else if(!(ts instanceof Date)){
+        date = new Date(ts);
+      }
+      if(!(date instanceof Date) || isNaN(date)) return "-";
+      return date.toLocaleString("th-TH",{ dateStyle:"medium", timeStyle:"short" });
+    }
+
+    function toggleOverlay(show){
+      if(show){
+        formOverlay.classList.add("show");
+      }else{
+        formOverlay.classList.remove("show");
+        clearForm();
+      }
+      setFormStatus("", "");
+    }
+
+    function showSuccess(){
+      successOverlay.classList.add("show");
+      setTimeout(()=>successOverlay.classList.remove("show"), 1400);
+    }
+
+    function clearForm(){
+      binForm.reset();
+      binIdInput.value = "";
+      [zoneSelect, latInput, lngInput, detailsInput].forEach(el => el.classList.remove("error"));
+    }
+
+    function renderZones(){
+      zoneSelect.innerHTML = "<option value=''>-- เลือกเขต --</option>";
+      zoneList.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.id;
+        opt.textContent = z.name || z.id;
+        zoneSelect.appendChild(opt);
+      });
+      const addOpt = document.createElement("option");
+      addOpt.value = "__new__";
+      addOpt.textContent = "+ เพิ่มเขตใหม่…";
+      zoneSelect.appendChild(addOpt);
+    }
+
+    // ใช้ smartbins/{zone}/bin_data เพื่อรันเลข BIN ต่อเขต
+    function pad3(n){ return String(n).padStart(3,"0"); }
+    async function assignBinId(zone){
+      if(!zone) return "";
+      try{
+        const binsCol = smartbinsCol.doc(zone).collection("bin_data");
+        const snap = await binsCol.get();
+        let maxNum = 0;
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          const code = (d.binId || doc.id || "").toString();
+          const m = /(\d+)$/.exec(code);
+          if(m){
+            const num = Number(m[1]);
+            if(!Number.isNaN(num)) maxNum = Math.max(maxNum, num);
+          }
+        });
+        const next = maxNum + 1;
+        const id = "BIN" + pad3(next);
+        binIdInput.value = id;
+        return id;
+      }catch(err){
+        console.error("assignBinId error", err);
+        const fallback = "BIN001";
+        binIdInput.value = fallback;
+        return fallback;
+      }
+    }
+
+    function updateCard(data){
+      if(!data){
+        binCard.hidden = true;
+        return;
+      }
+      binCard.hidden = false;
+      binTitle.textContent = `${data.binId} (${data.zone})`;
+      binDesc.textContent = data.details || "ไม่มีรายละเอียด";
+      binZone.textContent = data.zone;
+      binRfid.textContent = data.rfid || "-";
+      binCoords.textContent = data.coords || "-";
+      binUpdated.textContent = formatTimestamp(data.updatedAt);
+      const level = Math.max(0, Math.min(100, Math.round(data.fillLevel || 0)));
+      binPercent.textContent = level + "%";
+      binFill.style.setProperty("--fill", Math.max(level, 4) / 100);
+
+      // สีระดับถัง: เขียวปกติ / แดงเมื่อ >= 80%
+      binFill.style.background = level >= 80
+        ? "linear-gradient(180deg,#ef4444,#b91c1c)"   // อันตราย
+        : "linear-gradient(180deg,#22c55e,#16a34a)";  // ปกติ (เขียว)
+    }
+
+    async function loadBinDetail(entry){
+      if(!entry) return;
+
+      // ยกเลิก listener เดิม ถ้ามี
+      if(levelUnsub){
+        levelUnsub();
+        levelUnsub = null;
+      }
+
+      setStatus("กำลังโหลดข้อมูล...", "");
+      try{
+        const zone = entry.zone;
+        const binId = entry.binId;
+
+        const binDocRef   = smartbinsCol.doc(zone).collection("bin_data").doc(binId);
+        const levelDocRef = smartbinsCol.doc(zone).collection("bin_level").doc(binId);
+
+        const binSnap = await binDocRef.get();
+        const binData = binSnap.exists ? (binSnap.data() || {}) : entry;
+
+        const lat = typeof binData.lat === "number" ? binData.lat : null;
+        const lng = typeof binData.lng === "number" ? binData.lng : null;
+
+        lastCardData = {
+          zone   : binData.zone || entry.zone,
+          binId  : binData.binId || entry.binId,
+          details: binData.details || entry.details || "",
+          rfid   : binData.RFID || binData.rfid || entry.RFID || entry.rfid || "-",
+          lat,
+          lng,
+          updatedAt: binData.updatedAt || null,
+          fillLevel: 0
+        };
+
+        // แสดงข้อมูลพื้นฐานก่อน (fillLevel = 0 ถ้ายังไม่มีค่า)
+        updateCard({
+          zone: lastCardData.zone,
+          binId: lastCardData.binId,
+          details: lastCardData.details,
+          rfid: lastCardData.rfid,
+          coords: (lat !== null && lng !== null) ? `${lat}, ${lng}` : "-",
+          updatedAt: lastCardData.updatedAt,
+          fillLevel: lastCardData.fillLevel
+        });
+        setStatus("โหลดข้อมูลพื้นฐานแล้ว กำลังฟังค่าระดับถังแบบเรียลไทม์...", "ok");
+
+        // ฟังระดับถังแบบเรียลไทม์
+        levelUnsub = levelDocRef.onSnapshot(levelSnap => {
+          if(!levelSnap.exists){
+            lastCardData.fillLevel = 0;
+            updateCard({
+              zone: lastCardData.zone,
+              binId: lastCardData.binId,
+              details: lastCardData.details,
+              rfid: lastCardData.rfid,
+              coords: (lastCardData.lat != null && lastCardData.lng != null)
+                ? `${lastCardData.lat}, ${lastCardData.lng}` : "-",
+              updatedAt: lastCardData.updatedAt,
+              fillLevel: 0
+            });
+            return;
+          }
+          const levelData = levelSnap.data() || {};
+          const level = typeof levelData.fillLevel === "number" ? levelData.fillLevel : 0;
+          const updatedAt = levelData.updatedAt || lastCardData.updatedAt || null;
+
+          lastCardData.fillLevel = level;
+          lastCardData.updatedAt = updatedAt;
+
+          updateCard({
+            zone: lastCardData.zone,
+            binId: lastCardData.binId,
+            details: lastCardData.details,
+            rfid: lastCardData.rfid,
+            coords: (lastCardData.lat != null && lastCardData.lng != null)
+              ? `${lastCardData.lat}, ${lastCardData.lng}` : "-",
+            updatedAt,
+            fillLevel: level
+          });
+          setStatus("อัปเดตระดับถังแบบเรียลไทม์แล้ว", "ok");
+        }, err => {
+          console.error(err);
+          setStatus("เกิดข้อผิดพลาดในการอัปเดตระดับถังแบบเรียลไทม์: " + (err.message || err), "err");
+        });
+
+      }catch(err){
+        console.error(err);
+        setStatus("ไม่สามารถโหลดข้อมูลถังได้: " + (err.message || err), "err");
+      }
+    }
+
+    function renderBinList(){
+      if(!myBins.length){
+        emptyState.hidden = false;
+        binSelect.disabled = true;
+        binCard.hidden = true;
+        setStatus("ยังไม่มีถังขยะในระบบของคุณ", "err");
+        return;
+      }
+      emptyState.hidden = true;
+      binSelect.disabled = false;
+      binSelect.innerHTML = "";
+      myBins.forEach(entry => {
+        const opt = document.createElement("option");
+        opt.value = entry.id; // ใช้ path ของเอกสารเป็น key
+        opt.textContent = `${entry.binId} (${entry.zone})`;
+        binSelect.appendChild(opt);
+      });
+      if(!currentBinId || !myBins.some(b => b.id === currentBinId)){
+        currentBinId = myBins[0].id;
+      }
+      binSelect.value = currentBinId;
+      loadBinDetail(myBins.find(b => b.id === currentBinId));
+    }
+
+    function validateForm(){
+      [zoneSelect, latInput, lngInput, detailsInput].forEach(el => el.classList.remove("error"));
+      const zone = zoneSelect.value;
+      const lat = parseFloat(latInput.value);
+      const lng = parseFloat(lngInput.value);
+      const details = detailsInput.value.trim();
+      let firstError = "";
+      if(!zone){
+        zoneSelect.classList.add("error");
+        firstError = firstError || "กรุณาเลือกเขต";
+      }
+      if(Number.isNaN(lat)){
+        latInput.classList.add("error");
+        firstError = firstError || "ละติจูดไม่ถูกต้อง";
+      }
+      if(Number.isNaN(lng)){
+        lngInput.classList.add("error");
+        firstError = firstError || "ลองจิจูดไม่ถูกต้อง";
+      }
+      if(!details){
+        detailsInput.classList.add("error");
+        firstError = firstError || "กรุณาระบุรายละเอียด";
+      }
+      if(firstError){
+        setFormStatus(firstError, "err");
+        return null;
+      }
+      return { zone, lat, lng, details };
+    }
+
+    // ----- Events -----
+    btnOpenForm.addEventListener("click", () => toggleOverlay(true));
+    btnAddFirst.addEventListener("click", () => toggleOverlay(true));
+    btnCancel.addEventListener("click", () => toggleOverlay(false));
+    btnCloseOverlay.addEventListener("click", () => toggleOverlay(false));
+    formOverlay.addEventListener("click", e => {
+      if(e.target === formOverlay) toggleOverlay(false);
+    });
+
+    binSelect.addEventListener("change", () => {
+      const entry = myBins.find(b => b.id === binSelect.value);
+      if(entry){
+        currentBinId = entry.id;
+        loadBinDetail(entry);
+      }
+    });
+
+    btnGps.addEventListener("click", () => {
+      if(!navigator.geolocation){
+        setFormStatus("อุปกรณ์ไม่รองรับการระบุตำแหน่ง", "err");
+        return;
+      }
+      setFormStatus("กำลังดึงพิกัด...", "");
+      navigator.geolocation.getCurrentPosition(pos => {
+        latInput.value = pos.coords.latitude.toFixed(6);
+        lngInput.value = pos.coords.longitude.toFixed(6);
+        setFormStatus("ดึงพิกัดสำเร็จ", "ok");
+      }, err => {
+        setFormStatus("ดึงพิกัดไม่สำเร็จ: " + err.message, "err");
+      }, { enableHighAccuracy:true, timeout:10000, maximumAge:0 });
+    });
+
+    btnAddZone.addEventListener("click", async () => {
+      const raw = prompt("ชื่อเขตใหม่");
+      if(raw === null) return;
+      const name = raw.trim();
+      if(!name){
+        setFormStatus("กรุณากรอกชื่อเขต", "err");
+        return;
+      }
+      try{
+        const docRef = zonesCol.doc(name);
+        if((await docRef.get()).exists){
+          setFormStatus("มีเขตนี้อยู่แล้ว", "err");
+          return;
+        }
+        await docRef.set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        setFormStatus("เพิ่มเขตสำเร็จ", "ok");
+        zoneSelect.value = name;
+        assignBinId(name);
+      }catch(err){
+        console.error(err);
+        setFormStatus("เพิ่มเขตไม่สำเร็จ: " + (err.message || err), "err");
+      }
+    });
+
+    zoneSelect.addEventListener("change", async () => {
+      if(zoneSelect.value === "__new__"){
+        zoneSelect.value = "";
+        binIdInput.value = "";
+        btnAddZone.click();
+        return;
+      }
+      if(!zoneSelect.value){
+        binIdInput.value = "";
+        return;
+      }
+      setFormStatus("กำลังกำหนดชื่อถัง...", "");
+      await assignBinId(zoneSelect.value);
+      setFormStatus("", "");
+    });
+
+    binForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = validateForm();
+      if(!payload) return;
+      try{
+        setFormStatus("กำลังบันทึก...", "");
+        const zone = payload.zone;
+        const binId = binIdInput.value || await assignBinId(zone);
+        if(!binId){
+          setFormStatus("ไม่สามารถสร้างชื่อถังได้", "err");
+          return;
+        }
+        const rfid = rfidInput.value.trim() || null;
+
+        const zoneDocRef = smartbinsCol.doc(zone);
+        const data = {
+          binId,
+          zone,
+          ownerUsername: currentUser.username,
+          ownerName: currentUser.fullName || currentUser.username,
+          RFID: rfid,
+          lng: payload.lng,
+          lat: payload.lat,
+          details: payload.details,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await zoneDocRef
+          .collection("bin_data")
+          .doc(binId)
+          .set(data, { merge:false });
+
+        await zoneDocRef
+          .collection("bin_level")
+          .doc(binId)
+          .set({
+            binId,
+            zone,
+            fillLevel: 0,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge:true });
+
+        toggleOverlay(false);
+        showSuccess();
+      }catch(err){
+        console.error(err);
+        setFormStatus("บันทึกไม่สำเร็จ: " + (err.message || err), "err");
+      }
+    });
+
+    zonesCol.orderBy("name").onSnapshot(snap => {
+      zoneList = snap.docs.map(doc => ({ id: doc.id, ...(doc.data()||{}) }));
+      renderZones();
+    }, err => console.error(err));
+
+    // ดึง "ถังของฉัน" แบบเรียลไทม์
+    db.collectionGroup("bin_data")
+      .where("ownerUsername","==", currentUser.username)
+      .onSnapshot(snapshot => {
+        myBins = snapshot.docs.map(doc => {
+          const data = doc.data() || {};
+          const zone = data.zone || (doc.ref.parent && doc.ref.parent.parent ? doc.ref.parent.parent.id : "");
+          const binId = data.binId || doc.id;
+          return {
+            id: doc.ref.path,
+            zone,
+            binId,
+            ...data
+          };
+        }).sort((a,b)=>{
+          const z = a.zone.localeCompare(b.zone);
+          return z !== 0 ? z : a.binId.localeCompare(b.binId);
+        });
+        renderBinList();
+      }, err => {
+        console.error(err);
+        setStatus("โหลดรายการถังไม่สำเร็จ: " + (err.message || err), "err");
+      });
+
+    // ยกเลิก listener เมื่อปิดหน้า
+    window.addEventListener("beforeunload", () => {
+      if(levelUnsub) levelUnsub();
+    });
+  </script>
+</body>
+</html>

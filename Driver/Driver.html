@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - แดชบอร์ดคนขับ</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Auth -->
+  <script src="../Login/auth.js"></script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
+
+    body{
+      min-height:100vh;
+      background:#f5f6fa;
+      display:flex;
+      flex-direction:column;
+    }
+
+    :root{
+      --btn-min-h:44px;
+      --btn-pad-x:16px;
+      --btn-pad-y:10px;
+      --btn-radius:999px;
+      --btn-font:15px;
+      --card-radius:18px;
+      --card-bg:#ffffff;
+      --card-shadow:0 10px 30px rgba(15,23,42,.08);
+      --muted:#6b7280;
+      --brand:#2563eb;
+    }
+
+    .app-shell{
+      max-width:1200px;
+      margin:0 auto;
+      padding:18px 18px 26px;
+    }
+
+    /* Header */
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .brand-area{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .brand-pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#e5f0ff;
+      color:#1e40af;
+      font-weight:600;
+    }
+
+    .page-title-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .page-title{
+      font-size:22px;
+      font-weight:700;
+      color:#111827;
+    }
+
+    .page-sub{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .topbar-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .lang-switcher select{
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid #d1d5db;
+      font-size:13px;
+      background:#fff;
+    }
+
+    .user-chip{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:#fff;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      padding:8px 12px;
+      box-shadow:0 6px 18px rgba(15,23,42,.08);
+    }
+    .user-chip .avatar{
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      background:linear-gradient(135deg,#38bdf8,#1d4ed8);
+      color:#0f172a;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .user-chip__label{
+      margin:0;
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .logout-btn{
+      min-height:var(--btn-min-h);
+      padding:var(--btn-pad-y) 18px;
+      border-radius:var(--btn-radius);
+      border:none;
+      background:#ef4444;
+      color:#fff;
+      font-size:var(--btn-font);
+      cursor:pointer;
+    }
+    .logout-btn:hover{filter:brightness(1.03);}
+    .logout-btn:active{transform:translateY(1px);}
+
+    /* Cards section */
+    .card-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .card{
+      background:var(--card-bg);
+      border-radius:var(--card-radius);
+      box-shadow:var(--card-shadow);
+      padding:16px 18px;
+    }
+    .card-small{
+      flex:1 1 220px;
+      min-width:0;
+    }
+    .card-large{
+      margin-top:14px;
+    }
+
+    .card-label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+    .card-main{
+      font-size:18px;
+      font-weight:700;
+      color:#111827;
+      margin-bottom:4px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:600;
+    }
+    .badge-pill{
+      background:#e5f0ff;
+      color:#1e40af;
+    }
+    .badge-status-work{
+      background:#dcfce7;
+      color:#15803d;
+    }
+    .badge-status-off{
+      background:#fee2e2;
+      color:#b91c1c;
+    }
+
+    .muted{font-size:12px;color:var(--muted);}
+    .muted-strong{font-size:12px;color:#4b5563;}
+
+    /* Filter radio summary */
+    .status-options{
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+      margin-top:6px;
+    }
+    .status-options label{
+      font-size:13px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      cursor:pointer;
+    }
+
+    /* Map and route */
+    .section-title-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
+    }
+
+    .section-title{
+      font-size:16px;
+      font-weight:700;
+      color:#111827;
+    }
+    .section-sub{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .pill-tabs{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .pill-tabs button{
+      min-height:var(--btn-min-h);
+      padding:6px 14px;
+      border-radius:999px;
+      border:none;
+      font-size:13px;
+      cursor:pointer;
+      background:#f4f4f5;
+      color:#111827;
+    }
+    .pill-tabs button.active{
+      background:var(--brand);
+      color:#fff;
+    }
+
+    #map{
+      width:100%;
+      height:380px;
+      border-radius:16px;
+      border:1px solid #e5e7eb;
+      margin-top:10px;
+    }
+
+    .route-legend{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      font-size:11px;
+      margin-top:8px;
+    }
+    .legend-row{display:flex;align-items:center;gap:8px;}
+    .legend-color{
+      width:16px;
+      height:6px;
+      border-radius:999px;
+      background:#e5e5e5;
+    }
+
+    /* Bin pins */
+    .leaflet-marker-icon.bin-icon{
+      background:transparent;
+      border:none;
+    }
+    .bin-pin{
+      --pin-color:#16a34a;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      filter:drop-shadow(0 10px 20px rgba(15,23,42,.25));
+    }
+    .bin-pin__bubble{
+      position:relative;
+      width:46px;
+      height:46px;
+      border-radius:16px 16px 12px 12px;
+      background:linear-gradient(135deg,var(--pin-color),rgba(255,255,255,.2));
+      border:2px solid rgba(255,255,255,.85);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      color:#0f172a;
+    }
+    .bin-pin__pointer{
+      width:0;
+      height:0;
+      border:10px solid transparent;
+      border-top-color:var(--pin-color);
+      margin-top:-6px;
+      filter:brightness(.9);
+    }
+    .bin-pin__label{
+      font-size:12px;
+      font-weight:600;
+      color:#0f172a;
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:999px;
+      padding:2px 8px;
+      line-height:1;
+      box-shadow:0 4px 10px rgba(15,23,42,.12);
+    }
+    .bin-pin__label.is-unknown{
+      color:#475569;
+      background:#f8fafc;
+    }
+
+    /* Footer buttons */
+    .footer-actions{
+      display:flex;
+      justify-content:flex-end;
+      margin-top:18px;
+      gap:10px;
+    }
+    .btn{
+      min-height:var(--btn-min-h);
+      padding:var(--btn-pad-y) var(--btn-pad-x);
+      border-radius:var(--btn-radius);
+      border:none;
+      font-size:var(--btn-font);
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      transition:transform .06s ease,filter .2s ease;
+    }
+    .btn-primary{
+      background:var(--brand);
+      color:#fff;
+    }
+    .btn-ghost{
+      background:#f4f4f5;
+      color:#111827;
+    }
+    .btn:hover{filter:brightness(1.03);}
+    .btn:active{transform:translateY(1px);}
+
+    @media(max-width:900px){
+      .app-shell{padding:14px 12px 20px;}
+      .topbar{flex-direction:column;align-items:flex-start;}
+      .card-row{flex-direction:column;}
+      #map{height:320px;}
+      .footer-actions{justify-content:center;}
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="brand-area">
+        <div id="brandPill" class="brand-pill">Smart Waste • Driver Center</div>
+        <div class="page-title-wrap">
+          <div id="pageTitle" class="page-title">แดชบอร์ดคนขับ</div>
+          <div id="pageSub" class="page-sub">ภาพรวมงานวันนี้ และเส้นทางวิ่งรถเก็บขยะของคุณ</div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="lang-switcher">
+          <select id="langSelect">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+          </select>
+        </div>
+        <div class="user-chip">
+          <span class="avatar" id="driverAvatar">D</span>
+          <div>
+            <p class="user-chip__label" id="driverRoleLabel">คนขับรถเก็บขยะ</p>
+            <strong id="driverName">-</strong>
+          </div>
+        </div>
+        <button id="btnLogout" class="logout-btn">ออกจากระบบ</button>
+      </div>
+    </header>
+
+    <!-- Summary cards -->
+    <section class="card-row">
+      <div class="card card-small">
+        <div class="card-label" id="cardDriverLabel">ชื่อคนขับ</div>
+        <div class="card-main" id="cardDriverName">-</div>
+        <div class="muted" id="cardDriverInfo">รหัสพนักงาน: -</div>
+      </div>
+
+      <div class="card card-small">
+        <div class="card-label" id="cardTodayRouteLabel">ตารางงานวันนี้</div>
+        <div class="card-main" id="cardTodayRoute">ยังไม่มีตารางเวรวันนี้</div>
+        <div class="muted" id="cardTodayRouteSub">-</div>
+      </div>
+
+      <div class="card card-small">
+        <div class="card-label" id="cardWorkStatusLabel">สถานะงานวันนี้</div>
+        <div id="cardWorkStatusBadge" class="badge badge-status-off">ยังไม่เริ่มงาน</div>
+        <div class="status-options">
+          <label><input type="radio" name="routeStatus" value="notstart" checked> <span id="statusOptionNotStart">ยังไม่เริ่ม</span></label>
+          <label><input type="radio" name="routeStatus" value="working"> <span id="statusOptionWorking">กำลังเก็บขยะ</span></label>
+          <label><input type="radio" name="routeStatus" value="done"> <span id="statusOptionDone">เก็บครบแล้ว</span></label>
+        </div>
+
+        <!-- แสดงเวลางานวันนี้ -->
+        <div class="muted-strong" style="margin-top:6px;">
+          <span id="workTimeLabel">เวลางานวันนี้</span>:
+          <span id="workTimer">00:00:00</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map + route card -->
+    <section class="card card-large">
+      <div class="section-title-row">
+        <div>
+          <h2 id="mapSectionTitle" class="section-title">แผนที่เส้นทาง (Map route)</h2>
+          <p id="mapSectionSub" class="section-sub">
+            ตำแหน่งรถแบบ Real-time (อ่านจาก Firestore: <code>trucks</code>) แสดงเฉพาะรถที่ได้รับมอบหมายวันนี้
+          </p>
+        </div>
+        <div class="pill-tabs">
+          <button id="tabLive" class="active" type="button">เริ่มทำงาน (โหมดปกติ)</button>
+          <button id="tabBreak" type="button">งานเสร็จแล้ว (หยุดพัก)</button>
+        </div>
+      </div>
+
+      <div id="map"></div>
+
+      <div class="route-legend">
+        <div class="legend-row">
+          <span class="legend-color" style="background:#ef4444;"></span>
+          <span id="legendFull">เส้นทางที่มีถังเต็ม</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-color" style="background:#f97316;"></span>
+          <span id="legendNearFull">เส้นทางถังใกล้เต็ม</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-color" style="background:#22c55e;"></span>
+          <span id="legendNormal">เส้นทางปกติ</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-color" style="background:#9ca3af;"></span>
+          <span id="legendTodaySummary">สรุปจำนวนถังที่พบในเส้นทางวันนี้จะแสดงที่นี่ในอนาคต</span>
+        </div>
+        <!-- สถานะ GPS -->
+        <div class="legend-row">
+          <span class="legend-color" style="background:#2563eb;"></span>
+          <span id="gpsStatus">-</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-actions">
+      <button id="btnBackLogin" class="btn btn-ghost" type="button">กลับหน้า Login</button>
+    </section>
+  </div>
+
+  <script>
+    // ===== Auth (เฉพาะ driver) =====
+    const currentUser = window.SWAuth.requireAuth([1]); // สมมติ role 1 = คนขับ
+
+    // ===== Firebase =====
+    var firebaseConfig = {
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const fs = firebase.firestore();
+    const scheduleCol = fs.collection("truck_schedule");
+    const trucksCol   = fs.collection("trucks");
+    // โครงสร้าง: smartbins/{zone}/bin_data/{BINID}, smartbins/{zone}/bin_level/{BINID}
+    const smartbinsCol = fs.collection("smartbins");
+
+    // ===== DOM refs =====
+    const driverNameEl   = document.getElementById("driverName");
+    const driverAvatarEl = document.getElementById("driverAvatar");
+    const driverRoleLbl  = document.getElementById("driverRoleLabel");
+    const cardDriverName = document.getElementById("cardDriverName");
+    const cardDriverInfo = document.getElementById("cardDriverInfo");
+    const cardTodayRoute = document.getElementById("cardTodayRoute");
+    const cardTodayRouteSub = document.getElementById("cardTodayRouteSub");
+    const cardWorkStatusBadge = document.getElementById("cardWorkStatusBadge");
+
+    const mapEl = document.getElementById("map");
+    const btnLogout = document.getElementById("btnLogout");
+    const btnBackLogin = document.getElementById("btnBackLogin");
+
+    const langSelect = document.getElementById("langSelect");
+    const tabLive = document.getElementById("tabLive");
+    const tabBreak = document.getElementById("tabBreak");
+    const gpsStatusEl = document.getElementById("gpsStatus");
+    const workTimerEl = document.getElementById("workTimer");
+
+    // ===== i18n =====
+    const t = {
+      th:{
+        pageHtmlTitle:"Smart Waste - แดชบอร์ดคนขับ",
+        pageTitle:"แดชบอร์ดคนขับ",
+        brandPill:"Smart Waste • ศูนย์คนขับ",
+        brandSub:"ภาพรวมงานวันนี้ และเส้นทางวิ่งรถเก็บขยะของคุณ",
+        cardDriverLabel:"ชื่อคนขับ",
+        cardTodayRouteLabel:"ตารางงานวันนี้",
+        cardWorkStatusLabel:"สถานะงานวันนี้",
+        statusNotStart:"ยังไม่เริ่ม",
+        statusWorking:"กำลังเก็บขยะ",
+        statusDone:"เก็บครบแล้ว",
+        noScheduleToday:"ยังไม่มีตารางเวรวันนี้",
+        scheduleRange:"เขต %zone% • รถ %truck%",
+        scheduleRangeDate:"ช่วง %start% - %end%",
+        workStatusOff:"ยังไม่เริ่มงาน",
+        workStatusOn:"กำลังปฏิบัติงาน",
+        workStatusDone:"งานวันนี้เสร็จสิ้น",
+        workTimeLabel:"เวลางานวันนี้",
+        workTimePlaceholder:"00:00:00",
+        mapTitle:"แผนที่เส้นทาง (Map route)",
+        mapSub:"ตำแหน่งรถแบบ Real-time (อ่านจาก Firestore: trucks) แสดงเฉพาะรถที่ได้รับมอบหมายวันนี้",
+        tabLive:"เริ่มทำงาน (โหมดปกติ)",
+        tabBreak:"งานเสร็จแล้ว (หยุดพัก)",
+        legendFull:"เส้นทางที่มีถังเต็ม",
+        legendNearFull:"เส้นทางถังใกล้เต็ม",
+        legendNormal:"เส้นทางปกติ",
+        legendTodaySummary:"สรุปจำนวนถังที่พบในเส้นทางวันนี้จะแสดงที่นี่ในอนาคต",
+        btnBackLogin:"กลับหน้า Login",
+        btnEndDay:"จบการทำงานวันนี้",
+        btnLogout:"ออกจากระบบ",
+        logoutConfirm:"ต้องการออกจากระบบหรือไม่?",
+        endDayConfirm:"ยืนยันจบการทำงานวันนี้หรือไม่? (ตอนนี้ยังเป็นแค่ข้อความแจ้งเตือน)",
+        roleDriver:"คนขับรถเก็บขยะ",
+        driverCodePrefix:"รหัสพนักงาน: ",
+        gpsIdle:"ยังไม่ได้เริ่มส่งพิกัด",
+        gpsSending:"กำลังส่งพิกัด...",
+        gpsSent:"ส่งพิกัดล่าสุดแล้ว",
+        gpsStopped:"หยุดส่งพิกัดแล้ว",
+        gpsNotSupported:"อุปกรณ์นี้ไม่รองรับ GPS",
+        gpsErrorPrefix:"เกิดข้อผิดพลาด GPS: ",
+        noTruckToday:"ยังไม่มีตารางงานหรือไม่ได้กำหนดรถในวันนี้"
+      },
+      en:{
+        pageHtmlTitle:"Smart Waste - Driver Dashboard",
+        pageTitle:"Driver dashboard",
+        brandPill:"Smart Waste • Driver Center",
+        brandSub:"Overview of today's work and your garbage truck route.",
+        cardDriverLabel:"Driver name",
+        cardTodayRouteLabel:"Today schedule",
+        cardWorkStatusLabel:"Work status",
+        statusNotStart:"Not started",
+        statusWorking:"Collecting",
+        statusDone:"Finished",
+        noScheduleToday:"No schedule for today",
+        scheduleRange:"Zone %zone% • Truck %truck%",
+        scheduleRangeDate:"From %start% to %end%",
+        workStatusOff:"Not started yet",
+        workStatusOn:"Currently working",
+        workStatusDone:"Today's work finished",
+        workTimeLabel:"Today's work time",
+        workTimePlaceholder:"00:00:00",
+        mapTitle:"Map route",
+        mapSub:"Real-time truck position (from Firestore: trucks) for today's assigned truck.",
+        tabLive:"Working mode",
+        tabBreak:"Finished / Break",
+        legendFull:"Route with full bins",
+        legendNearFull:"Route with near-full bins",
+        legendNormal:"Normal route",
+        legendTodaySummary:"Summary of bins along today's route will be shown here later.",
+        btnBackLogin:"Back to login",
+        btnEndDay:"End today's work",
+        btnLogout:"Logout",
+        logoutConfirm:"Do you want to logout?",
+        endDayConfirm:"Confirm to end today's work? (Now this is just an alert.)",
+        roleDriver:"Garbage truck driver",
+        driverCodePrefix:"Employee ID: ",
+        gpsIdle:"Location sending is idle",
+        gpsSending:"Sending GPS position...",
+        gpsSent:"Latest GPS position sent",
+        gpsStopped:"Stopped sending GPS",
+        gpsNotSupported:"This device does not support GPS",
+        gpsErrorPrefix:"GPS error: ",
+        noTruckToday:"No schedule or truck assigned for today"
+      },
+      ms:{
+        pageHtmlTitle:"Smart Waste - Papan Pemandu",
+        pageTitle:"Papan pemandu",
+        brandPill:"Smart Waste • Pusat Pemandu",
+        brandSub:"Gambaran tugas hari ini dan laluan lori sampah anda.",
+        cardDriverLabel:"Nama pemandu",
+        cardTodayRouteLabel:"Jadual hari ini",
+        cardWorkStatusLabel:"Status kerja",
+        statusNotStart:"Belum mula",
+        statusWorking:"Sedang kutip",
+        statusDone:"Selesai",
+        noScheduleToday:"Tiada jadual untuk hari ini",
+        scheduleRange:"Zon %zone% • Lori %truck%",
+        scheduleRangeDate:"Daripada %start% hingga %end%",
+        workStatusOff:"Belum mula",
+        workStatusOn:"Sedang bekerja",
+        workStatusDone:"Kerja hari ini selesai",
+        workTimeLabel:"Masa kerja hari ini",
+        workTimePlaceholder:"00:00:00",
+        mapTitle:"Laluan peta",
+        mapSub:"Lokasi lori masa nyata (dari Firestore: trucks) untuk lori yang diberi tugasan hari ini.",
+        tabLive:"Mod bekerja",
+        tabBreak:"Selesai / Rehat",
+        legendFull:"Laluan dengan tong penuh",
+        legendNearFull:"Laluan tong hampir penuh",
+        legendNormal:"Laluan biasa",
+        legendTodaySummary:"Ringkasan tong di sepanjang laluan akan dipaparkan di sini kemudian.",
+        btnBackLogin:"Kembali ke login",
+        btnEndDay:"Tamat kerja hari ini",
+        btnLogout:"Log keluar",
+        logoutConfirm:"Log keluar?",
+        endDayConfirm:"Sahkan tamat kerja hari ini? (Kini hanya amaran.)",
+        roleDriver:"Pemandu lori sampah",
+        driverCodePrefix:"ID pekerja: ",
+        gpsIdle:"Penghantaran lokasi belum bermula",
+        gpsSending:"Menghantar lokasi GPS...",
+        gpsSent:"Lokasi GPS terkini telah dihantar",
+        gpsStopped:"Henti menghantar GPS",
+        gpsNotSupported:"Peranti ini tidak menyokong GPS",
+        gpsErrorPrefix:"Ralat GPS: ",
+        noTruckToday:"Tiada jadual atau lori untuk hari ini"
+      }
+    };
+
+    let currentLang = localStorage.getItem("sw_lang") || "th";
+    function tr(key){
+      const pack = t[currentLang] || t.th;
+      return pack[key] !== undefined ? pack[key] : key;
+    }
+
+    // ใช้ driverId ภายนอก เพื่อ translate "รหัสพนักงาน" ใหม่ตอนเปลี่ยนภาษา
+    let globalDriverId = "-";
+
+    function updateDriverInfoTexts(){
+      const prefix = tr("driverCodePrefix");
+      cardDriverInfo.textContent = prefix + (globalDriverId || "-");
+    }
+
+    function applyLanguage(){
+      document.title = tr("pageHtmlTitle");
+      document.getElementById("brandPill").textContent = tr("brandPill");
+      document.getElementById("pageTitle").textContent = tr("pageTitle");
+      document.getElementById("pageSub").textContent = tr("brandSub");
+
+      document.getElementById("cardDriverLabel").textContent = tr("cardDriverLabel");
+      document.getElementById("cardTodayRouteLabel").textContent = tr("cardTodayRouteLabel");
+      document.getElementById("cardWorkStatusLabel").textContent = tr("cardWorkStatusLabel");
+
+      document.getElementById("statusOptionNotStart").textContent = tr("statusNotStart");
+      document.getElementById("statusOptionWorking").textContent = tr("statusWorking");
+      document.getElementById("statusOptionDone").textContent = tr("statusDone");
+
+      document.getElementById("mapSectionTitle").textContent = tr("mapTitle");
+      document.getElementById("mapSectionSub").textContent = tr("mapSub");
+      document.getElementById("tabLive").textContent = tr("tabLive");
+      document.getElementById("tabBreak").textContent = tr("tabBreak");
+      document.getElementById("legendFull").textContent = tr("legendFull");
+      document.getElementById("legendNearFull").textContent = tr("legendNearFull");
+      document.getElementById("legendNormal").textContent = tr("legendNormal");
+      document.getElementById("legendTodaySummary").textContent = tr("legendTodaySummary");
+
+      document.getElementById("btnBackLogin").textContent = tr("btnBackLogin");
+      document.getElementById("btnLogout").textContent = tr("btnLogout");
+
+      driverRoleLbl.textContent = tr("roleDriver");
+      document.getElementById("workTimeLabel").textContent = tr("workTimeLabel");
+
+      if (!cardTodayRoute.dataset.hasSchedule) {
+        cardTodayRoute.textContent = tr("noScheduleToday");
+        cardTodayRouteSub.textContent = "-";
+      }
+
+      updateDriverInfoTexts();
+
+      const checked = document.querySelector('input[name="routeStatus"]:checked');
+      if(checked){
+        updateStatusBadge(checked.value);
+      }
+    }
+
+    langSelect.value = currentLang;
+    langSelect.addEventListener("change", e=>{
+      currentLang = e.target.value;
+      localStorage.setItem("sw_lang", currentLang);
+      applyLanguage();
+    });
+
+    function pad2(n){return String(n).padStart(2,"0");}
+    function stampLocal(now = new Date()){
+      return `${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+    }
+
+    // ===== Fill driver info from currentUser =====
+    const displayName = currentUser.fullName || currentUser.username;
+    const driverId = currentUser.driverId || currentUser.username || "-";
+    globalDriverId = driverId || "-";
+
+    driverNameEl.textContent = displayName || "-";
+    driverAvatarEl.textContent = displayName ? displayName.charAt(0).toUpperCase() : "D";
+    cardDriverName.textContent = displayName || "-";
+    updateDriverInfoTexts();
+
+    // ===== Work status radio -> badge text =====
+    function updateStatusBadge(status){
+      if(status === "working"){
+        cardWorkStatusBadge.textContent = tr("workStatusOn");
+        cardWorkStatusBadge.className = "badge badge-status-work";
+      }else if(status === "done"){
+        cardWorkStatusBadge.textContent = tr("workStatusDone");
+        cardWorkStatusBadge.className = "badge badge-status-off";
+      }else{
+        cardWorkStatusBadge.textContent = tr("workStatusOff");
+        cardWorkStatusBadge.className = "badge badge-status-off";
+      }
+    }
+    document.querySelectorAll('input[name="routeStatus"]').forEach(r=>{
+      r.addEventListener("change", e=> updateStatusBadge(e.target.value));
+    });
+
+    // ===== Map (Leaflet) + marker รถ =====
+    const defaultCenter = [6.46007,100.35933];
+    const map = L.map(mapEl).setView(defaultCenter,15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+      maxZoom:20,
+      attribution:"&copy; OpenStreetMap"
+    }).addTo(map);
+
+    function clampFillValue(value){
+      if(typeof value !== "number" || Number.isNaN(value)){
+        return null;
+      }
+      return Math.max(0, Math.min(100, Math.round(value)));
+    }
+    function getFillColor(value){
+      if(value === null){
+        return "#94a3b8";
+      }
+      if(value >= 80) return "#dc2626";
+      if(value >= 50) return "#f97316";
+      return "#16a34a";
+    }
+    function buildBinIcon(entry){
+      const fillValue = clampFillValue(entry.fillLevel);
+      const labelText = fillValue === null ? "?" : `${fillValue}%`;
+      const labelClass = `bin-pin__label${fillValue === null ? " is-unknown" : ""}`;
+      const color = getFillColor(fillValue);
+      return L.divIcon({
+        className: "bin-icon",
+        html: `
+          <div class="bin-pin" style="--pin-color:${color};">
+            <div class="bin-pin__bubble">🗑️</div>
+            <div class="bin-pin__pointer"></div>
+            <div class="${labelClass}">${labelText}</div>
+          </div>
+        `.trim(),
+        iconSize: [50, 64],
+        iconAnchor: [25, 52],
+        popupAnchor: [0, -48]
+      });
+    }
+
+    let truckMarker = L.marker(defaultCenter).addTo(map).bindPopup("ตำแหน่งรถ").openPopup();
+    let truckUnsub = null;
+    let truckFirstUpdate = true; // panTo ครั้งแรกครั้งเดียว
+
+    function attachTruckListener(truckDocId){
+      if(truckUnsub){truckUnsub();truckUnsub=null;}
+      if(!truckDocId) return;
+
+      truckFirstUpdate = true;
+
+      truckUnsub = trucksCol.doc(truckDocId).onSnapshot(doc=>{
+        if(!doc.exists) return;
+        const d = doc.data() || {};
+        if(typeof d.lat === "number" && typeof d.lng === "number"){
+          const pos = [d.lat,d.lng];
+          truckMarker.setLatLng(pos);
+          if(truckFirstUpdate){
+            map.panTo(pos,{animate:true});
+            truckFirstUpdate = false;
+          }
+        }
+      });
+    }
+
+    // ===== แสดงถังในเขตของคนขับที่ fillLevel >= 80% =====
+    let zoneTodayId = null;
+    let binsUnsub = null;
+    let binMarkers = {};
+    let binZoneNote = null;
+
+    function clearBinMarkers(){
+      Object.keys(binMarkers).forEach(id=>{
+        map.removeLayer(binMarkers[id]);
+      });
+      binMarkers = {};
+    }
+
+    // ดึง lat/lng จาก smartbins/{zoneId}/bin_data/{binId}
+    async function fetchBinPosition(zoneId, binDocId){
+      try{
+        const snap = await smartbinsCol
+          .doc(zoneId)
+          .collection("bin_data")
+          .doc(binDocId)
+          .get();
+        if(!snap.exists) return null;
+        const b = snap.data() || {};
+        const lat = b.lat ?? b.regLat ?? null;
+        const lng = b.lng ?? b.regLng ?? null;
+        if(typeof lat !== "number" || typeof lng !== "number") return null;
+        return { lat, lng, details: b.details || "" };
+      }catch(e){
+        console.error("fetchBinPosition error:", e);
+        return null;
+      }
+    }
+
+    function listenBinsForZone(zoneId){
+      if(binsUnsub){ binsUnsub(); binsUnsub=null; }
+      clearBinMarkers();
+      if(!zoneId) return;
+
+      console.log("listenBinsForZone zoneId =", zoneId);
+
+      binsUnsub = smartbinsCol
+        .doc(zoneId)
+        .collection("bin_level")
+        .where("fillLevel", ">=", 80)
+        .onSnapshot(async sn=>{
+          const seen = {};
+          binZoneNote = zoneId;
+
+          const tasks = sn.docs.map(async doc=>{
+            const d = doc.data() || {};
+            const id = doc.id;              // doc id เช่น BIN001
+            const fill = clampFillValue(d.fillLevel);
+            const binId = d.binId || id;
+            const updatedAt = (d.updatedAt && d.updatedAt.toDate) ? d.updatedAt.toDate() : null;
+
+            // ดึงตำแหน่งจาก bin_data
+            const pos = await fetchBinPosition(zoneId, id);
+            if(!pos) return; // ถ้าไม่มี lat/lng ก็ไม่วาด
+
+            const popup = `
+              <strong>${binId}</strong><br>
+              ระดับ: ${fill === null ? "?" : fill + "%"}<br>
+              อัปเดต: ${updatedAt ? updatedAt.toLocaleString() : "—"}
+            `;
+
+            if(!binMarkers[id]){
+              binMarkers[id] = L.marker([pos.lat,pos.lng], { icon: buildBinIcon({ fillLevel: fill }) })
+                .addTo(map)
+                .bindPopup(popup, { autoPan:false });
+            }else{
+              binMarkers[id].setLatLng([pos.lat,pos.lng]);
+              binMarkers[id].setIcon(buildBinIcon({ fillLevel: fill }));
+              binMarkers[id].setPopupContent(popup);
+            }
+            seen[id] = true;
+          });
+
+          await Promise.all(tasks);
+
+          // ลบ marker ที่ไม่อยู่ใน snapshot แล้ว
+          Object.keys(binMarkers).forEach(id=>{
+            if(!seen[id]){
+              map.removeLayer(binMarkers[id]);
+              delete binMarkers[id];
+            }
+          });
+
+          // pan ไปที่ถังแรก (ถ้ามี)
+          const ids = Object.keys(binMarkers);
+          if(ids.length){
+            const first = binMarkers[ids[0]];
+            if(first && first.getLatLng){
+              map.panTo(first.getLatLng(), { animate:true });
+            }
+          }
+        }, err=>{
+          console.error("listenBinsForZone error", err);
+        });
+    }
+
+    // ===== ตัวแปร GPS =====
+    let currentTruckId = null;
+    let truckDocRef = null;
+    let posWatcherId = null;
+    let activeRunRef = null;
+
+    function setGpsStatus(msgKeyOrText){
+      const fromDict = tr(msgKeyOrText);
+      if(fromDict && fromDict !== msgKeyOrText){
+        gpsStatusEl.textContent = fromDict;
+      }else{
+        gpsStatusEl.textContent = msgKeyOrText;
+      }
+    }
+
+    // ขออนุญาตตำแหน่งทุกครั้งที่เปิดหน้า
+    function requestLocationPermission(){
+      if(!navigator.geolocation){
+        setGpsStatus("gpsNotSupported");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos=>{
+          setGpsStatus("gpsIdle");
+        },
+        err=>{
+          console.error("initial geolocation error", err);
+          setGpsStatus(tr("gpsErrorPrefix") + err.message);
+        },
+        { enableHighAccuracy:true }
+      );
+    }
+
+    async function startGpsTracking(){
+      if(!currentTruckId || !truckDocRef){
+        alert(tr("noTruckToday"));
+        return;
+      }
+      if(!navigator.geolocation){
+        alert(tr("gpsNotSupported"));
+        return;
+      }
+      if(posWatcherId){
+        return;
+      }
+
+      try{
+        await truckDocRef.set({
+          isTracking: true,
+          driverId: driverId || null,
+          driverUsername: currentUser.username || null,
+          driverName: displayName || null
+        }, { merge:true });
+      }catch(e){
+        console.error("set isTracking true error:", e);
+      }
+
+      setGpsStatus("gpsSending");
+
+      posWatcherId = navigator.geolocation.watchPosition(async pos=>{
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        try{
+          if(!activeRunRef){
+            const runId = "RUN_" + stampLocal();
+            activeRunRef = truckDocRef.collection("runs").doc(runId);
+            await activeRunRef.set({
+              startAt: firebase.firestore.FieldValue.serverTimestamp(),
+              startLat: lat,
+              startLng: lng,
+              isActive: true
+            }, {merge:true});
+          }
+
+          await truckDocRef.set({
+            lat, lng,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, {merge:true});
+
+          setGpsStatus("gpsSent");
+        }catch(err){
+          console.error(err);
+          setGpsStatus(tr("gpsErrorPrefix") + (err.message || err));
+        }
+      }, err=>{
+        console.error(err);
+        setGpsStatus(tr("gpsErrorPrefix") + err.message);
+      }, {enableHighAccuracy:true});
+    }
+
+    async function stopGpsTracking(){
+      if(posWatcherId){
+        navigator.geolocation.clearWatch(posWatcherId);
+        posWatcherId = null;
+      }
+      if(activeRunRef){
+        try{
+          await activeRunRef.set({
+            endAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isActive:false
+          }, {merge:true});
+        }catch(e){
+          console.error("update run endAt error", e);
+        }
+        activeRunRef = null;
+      }
+
+      try{
+        if(truckDocRef){
+          await truckDocRef.set({
+            isTracking: false
+          }, { merge:true });
+        }
+      }catch(e){
+        console.error("set isTracking false error:", e);
+      }
+
+      setGpsStatus("gpsStopped");
+    }
+
+    function setTabMode(mode){
+      if(mode === "live"){
+        tabLive.classList.add("active");
+        tabBreak.classList.remove("active");
+      }else{
+        tabBreak.classList.add("active");
+        tabLive.classList.remove("active");
+      }
+    }
+
+    // flag สำหรับ “จบงานวันนี้แล้ว” ให้หยุดเวลาแม้ Firestore ยัง sync
+    let manualDayEnded = false;
+    let manualFrozenMs = null;
+
+    tabLive.addEventListener("click", ()=>{
+      setTabMode("live");
+      const workingRadio = document.querySelector('input[name="routeStatus"][value="working"]');
+      if(workingRadio){ workingRadio.checked = true; updateStatusBadge("working"); }
+      manualDayEnded = false;
+      manualFrozenMs = null;
+      startGpsTracking();
+    });
+
+    tabBreak.addEventListener("click", async ()=>{
+      setTabMode("break");
+      const doneRadio = document.querySelector('input[name="routeStatus"][value="done"]');
+      if(doneRadio){ doneRadio.checked = true; updateStatusBadge("done"); }
+      manualDayEnded = true;
+      await stopGpsTracking();
+    });
+
+    // ===== ตัวจับเวลา "เวลางานวันนี้" =====
+    let driverUsageUnsub = null;
+    let driverTimerId = null;
+
+    function clearDriverTimer(){
+      if(driverTimerId !== null){
+        clearInterval(driverTimerId);
+        driverTimerId = null;
+      }
+    }
+
+    function formatHMS(ms){
+      const totalSec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      return (
+        String(h).padStart(2,"0") + ":" +
+        String(m).padStart(2,"0") + ":" +
+        String(s).padStart(2,"0")
+      );
+    }
+
+    function startDriverUsageListener(){
+      if(driverUsageUnsub){
+        driverUsageUnsub();
+        driverUsageUnsub = null;
+      }
+      clearDriverTimer();
+
+      if(!currentTruckId || !truckDocRef){
+        if(workTimerEl) workTimerEl.textContent = "00:00:00";
+        return;
+      }
+
+      const today = new Date();
+      const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(),0,0,0,0);
+      const nextDay  = new Date(today.getFullYear(), today.getMonth(), today.getDate()+1,0,0,0,0);
+
+      const runsRef = truckDocRef
+        .collection("runs")
+        .where("startAt", ">=", dayStart)
+        .where("startAt", "<", nextDay);
+
+      driverUsageUnsub = runsRef.onSnapshot(sn=>{
+        let baseMs = 0;
+        let liveStartMs = null;
+        const now = new Date();
+
+        sn.forEach(doc=>{
+          const r = doc.data() || {};
+          if(!r.startAt || !r.startAt.toDate) return;
+
+          const startAt = r.startAt.toDate();
+          const endAt = (r.endAt && r.endAt.toDate) ? r.endAt.toDate() : null;
+
+          const hasEnd = !!(r.endAt && r.endAt.toDate);
+          const isActive = (r.isActive === true) && !hasEnd;
+
+          if(isActive){
+            if(liveStartMs === null || startAt.getTime() < liveStartMs){
+              liveStartMs = startAt.getTime();
+            }
+          }else{
+            const effectiveEnd = endAt || now;
+            const durMs = Math.max(0, effectiveEnd - startAt);
+            baseMs += durMs;
+          }
+        });
+
+        const nowMs = Date.now();
+        const initialMs = baseMs + (liveStartMs ? (nowMs - liveStartMs) : 0);
+
+        if(manualDayEnded){
+          manualFrozenMs = initialMs;
+          clearDriverTimer();
+          if(workTimerEl){
+            workTimerEl.textContent = formatHMS(manualFrozenMs);
+          }
+          return;
+        }
+
+        function updateLabel(){
+          const nowMs2 = Date.now();
+          const ms = baseMs + (liveStartMs ? (nowMs2 - liveStartMs) : 0);
+          if(workTimerEl){
+            workTimerEl.textContent = formatHMS(ms);
+          }
+        }
+
+        clearDriverTimer();
+        updateLabel();
+
+        if(liveStartMs){
+          driverTimerId = setInterval(updateLabel, 1000);
+        }
+      });
+    }
+
+    // เดา zone จาก truckId ถ้าไม่มี field zone ใน doc
+    function deriveZoneFromTruckDocId(docId){
+      if(!docId) return null;
+      const parts = String(docId).split("_");
+      return (parts[0] || "").trim() || null; // เช่น Pattani_TRUCK01 → Pattani
+    }
+
+    // ===== โหลดตารางงานวันนี้ของคนขับ =====
+    async function loadTodaySchedule(){
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(),0,0,0,0);
+      const endOfDay   = new Date(today.getFullYear(), today.getMonth(), today.getDate(),23,59,59,999);
+
+      const endTs = firebase.firestore.Timestamp.fromDate(endOfDay);
+
+      const myUsername = currentUser.username || "";
+      const myDriverId = currentUser.driverId || "";
+
+      const snap = await scheduleCol
+        .where("startDate","<=", endTs)
+        .orderBy("startDate","desc")
+        .get();
+
+      let picked = null;
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        if(!d.startDate || !d.endDate) return;
+
+        const sameDriver =
+          (d.driverUsername && myUsername && d.driverUsername === myUsername) ||
+          (d.driverId && myDriverId && d.driverId === myDriverId);
+
+        if(!sameDriver) return;
+
+        const s = d.startDate.toDate();
+        const e = d.endDate.toDate();
+        if(e >= startOfDay){
+          if(!picked) picked = {id:doc.id,data:d};
+        }
+      });
+
+      if(!picked){
+        cardTodayRoute.dataset.hasSchedule = "";
+        cardTodayRoute.textContent = tr("noScheduleToday");
+        cardTodayRouteSub.textContent = "-";
+        attachTruckListener(null);
+        currentTruckId = null;
+        truckDocRef = null;
+
+        zoneTodayId = null;
+        listenBinsForZone(null);
+
+        if(workTimerEl) workTimerEl.textContent = "00:00:00";
+        if(driverUsageUnsub){ driverUsageUnsub(); driverUsageUnsub = null; }
+        clearDriverTimer();
+        manualDayEnded = false;
+        manualFrozenMs = null;
+        return;
+      }
+
+      const d = picked.data;
+      let zoneName = d.zoneName || d.zoneId || d.zone || "-";
+      const truckLabel = d.truckName || d.truckId || "-";
+      const sDateStr = d.startDate.toDate().toLocaleDateString();
+      const eDateStr = d.endDate.toDate().toLocaleDateString();
+
+      const line1 = tr("scheduleRange")
+        .replace("%zone%", zoneName)
+        .replace("%truck%", truckLabel);
+      const line2 = tr("scheduleRangeDate")
+        .replace("%start%", sDateStr)
+        .replace("%end%", eDateStr);
+
+      cardTodayRoute.textContent = line1;
+      cardTodayRouteSub.textContent = line2;
+      cardTodayRoute.dataset.hasSchedule = "1";
+
+      let zoneId = d.zoneId || d.zone || null;
+      console.log("Schedule picked, zoneId from schedule =", zoneId);
+
+      if(d.truckId){
+        currentTruckId = d.truckId;
+        truckDocRef = trucksCol.doc(d.truckId);
+        attachTruckListener(d.truckId);
+
+        const truckSnap = await truckDocRef.get();
+        const tData = truckSnap.exists ? (truckSnap.data() || {}) : {};
+        if(!zoneId){
+          zoneId = tData.zone || deriveZoneFromTruckDocId(d.truckId) || null;
+          console.log("ZoneId from truck doc / derive =", zoneId);
+        }
+        if(tData.zoneName){ zoneName = tData.zoneName; }
+      }else{
+        currentTruckId = null;
+        truckDocRef = null;
+        attachTruckListener(null);
+      }
+
+      zoneTodayId = zoneId || null;
+      console.log("Final zoneTodayId =", zoneTodayId);
+
+      listenBinsForZone(zoneTodayId);
+
+      manualDayEnded = false;
+      manualFrozenMs = null;
+      startDriverUsageListener();
+    }
+
+    // ===== Buttons =====
+    btnLogout.addEventListener("click", async ()=>{
+      if(!confirm(tr("logoutConfirm"))) return;
+      try{
+        await window.SWAuth.logout();
+      }catch(e){}
+      window.location.href = "../Login/index.html";
+    });
+
+    btnBackLogin.addEventListener("click", ()=>{
+      window.location.href = "../Login/index.html";
+    });
+
+    // ===== Init =====
+    applyLanguage();
+    updateStatusBadge("notstart");
+    setGpsStatus("gpsIdle");
+    if(workTimerEl) workTimerEl.textContent = "00:00:00";
+
+    loadTodaySchedule();
+    requestLocationPermission();
+
+    window.addEventListener("beforeunload", ()=>{
+      if(driverUsageUnsub){ driverUsageUnsub(); driverUsageUnsub = null; }
+      clearDriverTimer();
+      if(truckUnsub){ truckUnsub = null; }
+      if(binsUnsub){ binsUnsub = null; }
+      clearBinMarkers();
+    });
+  </script>
+</body>
+</html>

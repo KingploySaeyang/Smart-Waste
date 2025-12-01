@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - รายงานย้อนหลัง</title>
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="../Login/auth.js"></script>
+  <script src="admin-lang.js"></script>
+  <script src="admin-user.js" defer></script>
+  <script src="admin-nav.js" defer></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([0]);
+  </script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar .sw-logout-slot {
+      margin-top: 0 !important;
+      margin-left: 18px;
+      margin-right: 18px;
+      margin-bottom: 24px;
+      padding: 0;
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px 20px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 10px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn:hover,
+    .sidebar .sw-logout-slot .sw-logout-btn:focus {
+      background: #b91c1c;
+      border-left: 0;
+    }
+
+    /* Mobile toggle */
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    /* Main */
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto
+    }
+
+    h1 {
+      color: #2f3640;
+      margin: 0 0 16px;
+      line-height: 1.25;
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08)
+    }
+
+    .zone-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 8px;
+      cursor: pointer;
+      transition: .2s;
+      background: #fff;
+    }
+
+    .zone-card:hover {
+      background: #f0f4ff;
+      border-color: #2563eb;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 8px 0 4px
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      line-height: 1.2;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827
+    }
+
+    canvas {
+      max-width: 100%;
+      height: 320px;
+      margin: 12px 0 8px;
+      border: 1px solid #eee;
+      border-radius: 10px
+    }
+
+    /* Responsive */
+    @media(max-width:900px) {
+      body {
+        flex-direction: column
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
+      }
+
+      .sidebar.show {
+        left: 0
+      }
+
+      .toggle-btn {
+        display: block
+      }
+
+      main {
+        padding: 70px 16px 20px
+      }
+
+      h1 {
+        text-align: center
+      }
+
+      .grid {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .zone-card {
+        width: 100%;
+        margin: 6px 0;
+      }
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-switcher {
+      position: static;
+    }
+
+    .lang-switcher select {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    }
+
+    .user-chip .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+      color: #0f172a;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-chip__label {
+      margin: 0;
+      font-size: 12px;
+    }
+
+    @media(max-width:900px) {
+      .topbar {
+        align-items: stretch;
+      }
+
+      .topbar-right {
+        width: 100%;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ เมนู</button>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu" data-admin-menu data-active="report"></nav>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitleHeading">รายงานย้อนหลัง</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="lang-switcher">
+          <select id="langSelect">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+          </select>
+        </div>
+        <div class="user-chip">
+          <span class="avatar" id="adminAvatar">A</span>
+          <div>
+            <p class="muted user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
+            <strong id="adminName">-</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="row">
+        <h3 id="chartTitle" style="margin-right:auto">สรุปจำนวน “การเทถัง” ต่อเขต</h3>
+        <!-- ปุ่ม Back เดิมซ่อนไว้ ไม่ใช้แล้ว -->
+        <button id="btnBack" class="ghost" style="display:none">⬅ ย้อนกลับ</button>
+      </div>
+      <canvas id="zoneChart"></canvas>
+
+      <hr style="margin:20px 0;">
+      <h3>เลือกเขตเพื่อดูรายละเอียด</h3>
+      <p class="muted" id="zonesHint">คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” รายถังในเขตนั้น</p>
+      <div id="zones" class="grid"></div>
+
+      <div id="loading" class="muted" style="margin-top:10px;display:none">กำลังคำนวณข้อมูล…</div>
+    </div>
+  </main>
+
+  <script>
+    /* ===== Profile ===== */
+    const adminNameEl = document.getElementById("adminName");
+    const adminAvatarEl = document.getElementById("adminAvatar");
+    const adminRoleEl = document.getElementById("adminRole");
+
+    /* ===== Firebase ===== */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // โครงสร้างที่ใช้สำหรับรายงาน:
+    // zones                              -> รายชื่อเขต
+    // smartbins/{zone}/bin_data/{binId}  -> ข้อมูลถัง
+    // smartbins/{zone}/Emptythetrash/{binId}/logs/{logId} -> การเทถังแต่ละครั้ง
+
+    const LOG_COLLECTION = "logs";
+
+    const zonesDiv = document.getElementById("zones");
+    const chartTitle = document.getElementById("chartTitle");
+    const btnBack = document.getElementById("btnBack");
+    const loadingEl = document.getElementById("loading");
+    const langSelect = document.getElementById("langSelect");
+
+    const ctx = document.getElementById("zoneChart").getContext("2d");
+    let chart = null;
+
+    // เก็บข้อมูลโครงสร้างเขต/ถังไว้ใช้ซ้ำเวลาเปลี่ยนภาษา
+    // [{zoneId, displayName, bins:[{binId, name}]}]
+    let cachedZones = [];
+
+    function renderChart(labels, data, labelText) {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: labelText,
+            data,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: getTranslation("chartYAxis") } },
+            x: { title: { display: true, text: "" } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.parsed.y} ${getTranslation("times")}`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* ===== Internationalization (i18n) ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - รายงานย้อนหลัง",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
+        mainTitle: "รายงานย้อนหลัง",
+        summaryTitle: "สรุปจำนวน “การเทถัง” ต่อเขต",
+        backBtn: "⬅ ย้อนกลับ",
+        chartYAxis: "จำนวนครั้ง",
+        times: "ครั้ง",
+        selectZoneTitle: "เลือกเขตเพื่อดูรายละเอียด",
+        selectZoneHint: "คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” รายถังในเขตนั้น",
+        loading: "กำลังคำนวณข้อมูล…",
+        noData: "ยังไม่มีข้อมูลเขต/การเทในระบบ",
+        detailTitle: "จำนวน “การเทถัง” ต่อถัง — เขต: ",
+        unspecifiedZone: "ไม่ระบุเขต",
+        chartLabel: "จำนวนการเท",
+        allEmptyCard: "📊 รายการเทถังขยะทั้งหมด",
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ"
+      },
+      en: {
+        pageTitle: "Smart Waste - Historical Report",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
+        mainTitle: "Historical Report",
+        summaryTitle: 'Summary of "Bin Empties" per Zone',
+        backBtn: "⬅ Back",
+        chartYAxis: "Count",
+        times: "times",
+        selectZoneTitle: "Select a zone to see details",
+        selectZoneHint: 'Click on a zone name to see the number of "bin empties" for each bin in that zone',
+        loading: "Calculating data...",
+        noData: "No zone/emptying data in the system yet",
+        detailTitle: 'Number of "Bin Empties" per Bin — Zone: ',
+        unspecifiedZone: "Unspecified Zone",
+        chartLabel: "Empty Count",
+        allEmptyCard: "📊 All bin emptying records",
+        roleAdmin: "Administrator",
+        roleUser: "User",
+        logout: "Logout"
+      },
+      ms: {
+        pageTitle: "Smart Waste - Laporan Sejarah",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
+        mainTitle: "Laporan Sejarah",
+        summaryTitle: 'Ringkasan "Pengosongan Tong" setiap Zon',
+        backBtn: "⬅ Kembali",
+        chartYAxis: "Bilangan",
+        times: "kali",
+        selectZoneTitle: "Pilih zon untuk melihat butiran",
+        selectZoneHint: 'Klik pada nama zon untuk melihat bilangan "pengosongan tong" bagi setiap tong di zon itu',
+        loading: "Mengira data...",
+        noData: "Belum ada data zon/pengosongan dalam sistem",
+        detailTitle: 'Bilangan "Pengosongan Tong" setiap Tong — Zon: ',
+        unspecifiedZone: "Zon Tidak Dinyatakan",
+        chartLabel: "Bilangan Pengosongan",
+        allEmptyCard: "📊 Senarai pengosongan tong keseluruhan",
+        roleAdmin: "Pentadbir",
+        roleUser: "Pengguna",
+        logout: "Keluar"
+      }
+    };
+
+    const LangState = window.AdminLang;
+    let currentLang = (LangState && typeof LangState.getLang === "function")
+      ? LangState.getLang()
+      : (localStorage.getItem("sw_lang") || "th");
+
+    function getTranslation(key) {
+      return translations[currentLang][key] || key;
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+
+      document.title = getTranslation("pageTitle");
+      document.querySelector(".toggle-btn").textContent = getTranslation("menuBtn");
+      if (window.AdminNav) {
+        window.AdminNav.setLanguage(currentLang);
+      }
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+      document.querySelector("h1").textContent = getTranslation("mainTitle");
+      document.querySelector("h3:not(#chartTitle)").textContent = getTranslation("selectZoneTitle");
+      document.getElementById("zonesHint").textContent = getTranslation("selectZoneHint");
+      btnBack.textContent = getTranslation("backBtn");
+      loadingEl.textContent = getTranslation("loading");
+
+      // รีโหลดสรุปด้วยภาษาปัจจุบัน
+      loadSummaryByZone();
+    }
+
+    langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          changeLanguage(lang);
+        }
+      });
+    }
+
+    // โหลดโครงสร้างเขต + ถังจาก zones + smartbins/{zone}/bin_data/{binId}
+    async function loadZonesAndBins() {
+      const zonesSnap = await db.collection("zones").orderBy("name").get();
+      const zones = [];
+
+      for (const zDoc of zonesSnap.docs) {
+        const zoneId = zDoc.id;
+        const zoneName = zDoc.data().name || zoneId;
+
+        const binsSnap = await db
+          .collection("smartbins")
+          .doc(zoneId)
+          .collection("bin_data")
+          .get();
+
+        const bins = [];
+        binsSnap.forEach(bDoc => {
+          const d = bDoc.data() || {};
+          const binId = d.binId || bDoc.id;
+          // ตั้งชื่อ bin จาก binId หรือ ownerName ก็ได้ แต่ตอนนี้ใช้ binId พอ
+          const binName = d.binId || bDoc.id;
+          bins.push({ binId, name: binName });
+        });
+
+        zones.push({ zoneId, displayName: zoneName, bins });
+      }
+      return zones;
+    }
+
+    // โหลดสรุปจำนวนการเทต่อเขตจาก smartbins/{zone}/Emptythetrash/{binId}/logs/*
+    async function loadSummaryByZone() {
+      loadingEl.style.display = "inline";
+
+      if (!cachedZones.length) {
+        cachedZones = await loadZonesAndBins();
+      }
+
+      const zoneToCount = new Map();
+
+      for (const zone of cachedZones) {
+        let total = 0;
+
+        for (const bin of zone.bins) {
+          const logsSnap = await db
+            .collection("smartbins")
+            .doc(zone.zoneId)
+            .collection("Emptythetrash")
+            .doc(bin.binId)
+            .collection(LOG_COLLECTION)
+            .get();
+
+          total += logsSnap.size;
+        }
+
+        zoneToCount.set(zone.zoneId, { total, displayName: zone.displayName });
+      }
+
+      const labels = [];
+      const data = [];
+
+      zoneToCount.forEach((val, zoneId) => {
+        labels.push(val.displayName || zoneId);
+        data.push(val.total);
+      });
+
+      chartTitle.textContent = getTranslation("summaryTitle");
+      renderChart(labels, data, getTranslation("chartLabel"));
+      loadingEl.style.display = "none";
+
+      // การ์ดเขต + การ์ด "รายการเทถังขยะทั้งหมด"
+      zonesDiv.innerHTML = "";
+
+      const allCard = document.createElement("div");
+      allCard.className = "zone-card";
+      allCard.textContent = getTranslation("allEmptyCard");
+      allCard.onclick = () => loadSummaryByZone();
+      zonesDiv.appendChild(allCard);
+
+      if (!labels.length) {
+        const p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = getTranslation("noData");
+        zonesDiv.appendChild(p);
+      } else {
+        cachedZones.forEach(z => {
+          const info = zoneToCount.get(z.zoneId) || { total: 0 };
+          const card = document.createElement("div");
+          card.className = "zone-card";
+          card.textContent = `${z.displayName} • ${info.total} ${getTranslation("times")}`;
+          card.onclick = () => showZoneDetail(z.zoneId);
+          zonesDiv.appendChild(card);
+        });
+      }
+
+      btnBack.style.display = "none";
+      btnBack.onclick = null;
+    }
+
+    // แสดงกราฟจำนวนการเทต่อถังในเขตที่เลือก
+    async function showZoneDetail(zoneId) {
+      const zone = cachedZones.find(z => z.zoneId === zoneId);
+      if (!zone) return;
+
+      loadingEl.style.display = "inline";
+
+      const labels = [];
+      const data = [];
+
+      for (const bin of zone.bins) {
+        const logsSnap = await db
+          .collection("smartbins")
+          .doc(zone.zoneId)
+          .collection("Emptythetrash")
+          .doc(bin.binId)
+          .collection(LOG_COLLECTION)
+          .get();
+
+        labels.push(bin.name);
+        data.push(logsSnap.size);
+      }
+
+      chartTitle.textContent = `${getTranslation("detailTitle")}${zone.displayName}`;
+      renderChart(labels, data, getTranslation("chartLabel"));
+      loadingEl.style.display = "none";
+    }
+
+    // เริ่มต้นด้วยภาษาใน localStorage แล้วโหลดข้อมูล
+    changeLanguage(currentLang);
+  </script>
+</body>
+
+</html>

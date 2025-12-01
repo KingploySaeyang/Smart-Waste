@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Waste - เข้าสู่ระบบ</title>
+
+  <!-- Firebase v8 SDKs (App + Firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Prompt",system-ui,sans-serif}
+    body{
+      min-height:100vh;
+      background:radial-gradient(circle at top,#a5d8ff 0,#0f62ff 55%,#0b2c7f 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+      color:#0f172a;
+    }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:url("https://www.transparenttextures.com/patterns/cubes.png");
+      opacity:.2;
+      z-index:-1;
+    }
+    .shell{
+      width:clamp(300px,90vw,920px);
+      background:rgba(255,255,255,.1);
+      border-radius:30px;
+      padding:3px;
+      backdrop-filter:blur(16px);
+      box-shadow:0 20px 50px rgba(5,17,51,.4);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:0;
+      background:rgba(255,255,255,.9);
+      border-radius:28px;
+      overflow:hidden;
+    }
+    .hero{
+      background:linear-gradient(160deg,#002b5b,#0055b8);
+      color:#e0f2ff;
+      padding:45px 42px;
+      position:relative;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      inset:30px;
+      border:1px solid rgba(255,255,255,.2);
+      border-radius:24px;
+      pointer-events:none;
+    }
+    .hero h1{
+      font-size:30px;
+      margin-bottom:12px;
+    }
+    .hero p{
+      font-size:15px;
+      line-height:1.6;
+      margin-bottom:22px;
+      color:#cbd5f5;
+    }
+    .hero ul{
+      list-style:none;
+      display:grid;
+      gap:12px;
+      font-size:14px;
+    }
+    .hero li{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .hero li span{
+      width:26px;
+      height:26px;
+      border-radius:50%;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(255,255,255,.15);
+      margin-right:10px;
+      font-weight:600;
+    }
+    .panel{
+      padding:50px 48px;
+    }
+    .panel h2{
+      font-size:26px;
+      margin-bottom:6px;
+    }
+    .panel .muted{
+      font-size:14px;
+      color:#6b7280;
+      margin-bottom:22px;
+    }
+    label{
+      display:block;
+      font-size:14px;
+      font-weight:600;
+      color:#0f172a;
+      margin-bottom:6px;
+    }
+    input{
+      width:100%;
+      padding:13px 15px;
+      border-radius:14px;
+      border:1px solid #d1d5db;
+      font-size:15px;
+      margin-bottom:18px;
+      transition:.2s;
+      background:#f8fafc;
+    }
+    input:focus{
+      outline:3px solid #bfdbfe;
+      border-color:#2563eb;
+      background:#fff;
+    }
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin-top:8px;
+    }
+    button{
+      flex:1 1 180px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:none;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+      transition:transform .15s,box-shadow .15s;
+    }
+    .primary{
+      background:#2563eb;
+      color:#fff;
+      box-shadow:0 10px 20px rgba(37,99,235,.3);
+    }
+    .ghost{
+      background:#eef2ff;
+      color:#1d4ed8;
+    }
+    button:hover{transform:translateY(-1px);}
+    #status{
+      margin-top:16px;
+      min-height:22px;
+      font-size:14px;
+    }
+    #status.ok{color:#059669;}
+    #status.err{color:#dc2626;}
+    @media(max-width:720px){
+      body{padding:16px;}
+      .panel{padding:36px 30px;}
+      .hero{padding:36px;}
+      button{flex:1 1 100%;}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="grid">
+      <section class="hero">
+        <h1>Smart Waste Platform</h1>
+        <p>ระบบจัดการขยะอัจฉริยะ เชื่อมข้อมูลถังขยะ พนักงานเก็บ และผู้ใช้งาน เพื่อเมืองสะอาดยั่งยืน</p>
+        <ul>
+          <li><span>0</span>สำหรับผู้ดูแลระบบบริหารจัดการทุกส่วน</li>
+          <li><span>1</span>หน้าไดรเวอร์ติดตามเส้นทางและสถานะเก็บขยะ</li>
+          <li><span>2</span>ผู้ใช้ทั่วไปแจ้งข้อมูลถังขยะและติดตามผล</li>
+        </ul>
+      </section>
+
+      <main class="panel">
+        <h2>เข้าสู่ระบบ</h2>
+        <p class="muted">ใช้ชื่อผู้ใช้และรหัสผ่านของคุณ เพื่อไปยังหน้าตามสิทธิ์</p>
+
+        <form id="loginForm">
+          <label for="username">ชื่อผู้ใช้</label>
+          <input id="username" name="username" type="text" autocomplete="username" required />
+
+          <label for="password">รหัสผ่าน</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+
+          <div class="actions">
+            <button type="submit" class="primary">เข้าสู่ระบบ</button>
+            <button type="button" class="ghost" id="registerBtn">สร้างบัญชีใหม่</button>
+          </div>
+        </form>
+
+        <p id="status" class="muted"></p>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const loginForm = $("loginForm");
+    const registerBtn = $("registerBtn");
+    const statusEl = $("status");
+    const usernameEl = $("username");
+    const passwordEl = $("password");
+
+    function setStatus(text, type){
+      statusEl.textContent = text || "";
+      statusEl.className = "muted" + (type ? " " + type : "");
+    }
+
+    // ---- Firebase ----
+    var firebaseConfig = {
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const usersCol = db.collection("users");
+
+    async function hashPassword(pw){
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pw);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+
+    const statusRoutes = {
+      0: "../Admin/home.html",
+      1: "../Driver/Driver.html",
+      2: "../User/home.html"
+    };
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = usernameEl.value.trim();
+      const password = passwordEl.value.trim();
+      if(!username || !password){
+        setStatus("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน", "err");
+        return;
+      }
+      try{
+        setStatus("กำลังตรวจสอบข้อมูล...", "");
+        const docSnap = await usersCol.doc(username).get();
+        if(!docSnap.exists){
+          setStatus("ไม่พบบัญชีนี้", "err");
+          return;
+        }
+        const hash = await hashPassword(password);
+        const data = docSnap.data() || {};
+        if(data.passwordHash !== hash){
+          setStatus("รหัสผ่านไม่ถูกต้อง", "err");
+          return;
+        }
+
+        const statusValue = typeof data.status === "number" ? data.status : 2;
+        localStorage.setItem("sw_user", JSON.stringify({
+          username,
+          status: statusValue,
+          fullName: data.fullName || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          loginAt: Date.now()
+        }));
+
+        const target = statusRoutes[statusValue] || statusRoutes[2];
+        setStatus("เข้าสู่ระบบสำเร็จ กำลังนำทาง...", "ok");
+        setTimeout(() => window.location.href = target, 800);
+      }catch(err){
+        console.error(err);
+        setStatus("เกิดข้อผิดพลาด: " + (err.message || err), "err");
+      }
+    });
+
+    registerBtn.addEventListener("click", () => {
+      window.location.href = "register.html";
+    });
+  </script>
+</body>
+</html>

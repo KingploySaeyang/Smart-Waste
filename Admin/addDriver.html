@@ -1,0 +1,1306 @@
+﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - คนขับรถเก็บขยะ</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Auth (เหมือนหน้าอื่น) -->
+  <script src="../Login/auth.js"></script>
+  <script src="admin-lang.js"></script>
+  <script src="admin-user.js" defer></script>
+  <script src="admin-nav.js" defer></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([0]); // เฉพาะแอดมิน
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
+      overflow-x: hidden;
+    }
+
+    /* ---------- ตัวแปรพื้นฐานสำหรับปุ่ม/ฟอร์ม ---------- */
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar .sw-logout-slot {
+      margin-top: 0 !important;
+      margin-left: 18px;
+      margin-right: 18px;
+      margin-bottom: 24px;
+      padding: 0;
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn{
+      display:block;
+      width:100%;
+      text-align:left;
+      padding:14px 20px;
+      margin-top:6px;
+      border:none;
+      border-radius:10px;
+      background:#dc2626;
+      color:#fff;
+      font-size:15px;
+      font-weight:600;
+      box-shadow:none !important;
+      transform:none !important;
+    }
+    .sidebar .sw-logout-slot .sw-logout-btn:hover,
+    .sidebar .sw-logout-slot .sw-logout-btn:focus{
+      background:#b91c1c;
+      border-left:0;
+    }
+
+    /* ปุ่ม 3 ขีด */
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 16px;
+    }
+
+    /* ---------- Main ---------- */
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      line-height: 1.25;
+      color: #2f3640;
+      font-size: 22px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .page-header {
+      max-width: 60%;
+    }
+
+    .page-header .muted {
+      font-size: 13px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-switcher {
+      position: static;
+    }
+
+    .lang-switcher select {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    }
+
+    .user-chip .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+      color: #0f172a;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-chip__label {
+      margin: 0;
+      font-size: 12px;
+      color:#6b7280;
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      background: #f9fafb;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color:#111827;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      border: 1px solid #cbd5e1;
+      font-size: var(--btn-font);
+      background: #f9fafb;
+      margin-bottom: 10px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      border-color: #2563eb;
+      background: #fff;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .row > div {
+      flex: 1 1 220px;
+    }
+
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      border: none;
+      font-size: var(--btn-font);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, filter .2s;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827;
+    }
+
+    .danger {
+      background:#ef4444;
+      color:#fff;
+    }
+
+    button:hover {
+      filter: brightness(1.03);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    button:focus,
+    .toggle-btn:focus,
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    .muted {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    /* zone filter chips */
+    .chips-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .chip {
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid #d4d4d8;
+      background:#f4f4f5;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .chip.active {
+      background:#2563eb;
+      color:#fff;
+      border-color:#2563eb;
+    }
+
+    .table-tools {
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-top:4px;
+    }
+
+    .table-tools input[type="text"] {
+      max-width:260px;
+      margin-bottom:0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #f9fafb;
+      font-weight:600;
+    }
+
+    td:last-child {
+      text-align:right;
+    }
+
+    .badge-zone {
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      font-size:12px;
+    }
+
+    /* ปุ่มเล็กให้สูงเท่าปุ่มอื่น */
+    .btn-small {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      font-size: var(--btn-font);
+      border-radius: var(--btn-radius);
+    }
+
+    .btn-edit {
+      background:#e5e7eb;
+      color:#111827;
+    }
+
+    .btn-delete {
+      background:#ef4444;
+      color:#fff;
+      margin-left:6px;
+    }
+
+    .count-label {
+      font-size:13px;
+      color:#16a34a;
+    }
+
+    /* Responsive */
+    @media(max-width:900px){
+      body{flex-direction:column;}
+      .sidebar{
+        position:fixed;
+        left:-250px;
+        top:0;
+        height:100%;
+        z-index:999;
+      }
+      .sidebar.show{left:0;}
+      .toggle-btn{display:inline-flex;}
+      main{padding:70px 16px 20px;}
+      .row{flex-direction:column;}
+      .row > div{width:100%;}
+      .page-header{max-width:100%;}
+    }
+
+    @media(min-width:901px){
+      .toggle-btn{
+        display:none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="toggle-btn" id="menuToggleBtn">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu" data-admin-menu data-active="addDriver"></nav>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="page-header">
+        <h1 id="mainTitle">จัดการคนขับรถเก็บขยะ</h1>
+        <p class="muted" id="pageHint">
+          เพิ่ม / จัดการบัญชีผู้ใช้ของพนักงานขับรถเก็บขยะในแต่ละเขตพื้นที่
+        </p>
+      </div>
+      <div class="topbar-right">
+        <div class="lang-switcher">
+          <select id="langSelect">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+          </select>
+        </div>
+        <div class="user-chip">
+          <span class="avatar" id="adminAvatar">A</span>
+          <div>
+            <p class="user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
+            <strong id="adminName">-</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ฟอร์มเพิ่มคนขับ -->
+      <div class="card">
+        <h3 style="margin-bottom:10px;" id="addDriverTitle">เพิ่มคนขับใหม่</h3>
+        <form id="driverForm">
+          <div class="row">
+            <div>
+              <label for="zoneSelect" id="labelZone">เขตพื้นที่ (โซนการทำงาน)</label>
+              <select id="zoneSelect" required>
+                <option value="">เลือกเขต...</option>
+              </select>
+              <p class="muted" id="zoneHelp">เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ</p>
+            </div>
+            <div>
+              <label for="driverId" id="labelDriverId">Driver ID</label>
+              <input id="driverId" type="text" readonly placeholder="เลือกเขตก่อน" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:8px;">
+            <div>
+              <label for="fullName" id="labelFullName">ชื่อ - นามสกุล</label>
+              <input id="fullName" type="text" required placeholder="เช่น นายสมชาย ขับรถดี" />
+            </div>
+            <div>
+              <label for="phone" id="labelPhone">เบอร์โทรศัพท์</label>
+              <input id="phone" type="text" required placeholder="เช่น 0812345678" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:8px;">
+            <div>
+              <label for="username" id="labelUsername">ชื่อผู้ใช้ (ใช้เข้าสู่ระบบ)</label>
+              <input id="username" type="text" required placeholder="เช่น drv_somchai หรือหมายเลขโทรศัพท์" />
+            </div>
+            <div>
+              <label for="password" id="labelPassword">รหัสผ่านเริ่มต้น</label>
+              <input id="password" type="password" required placeholder="กำหนดรหัสผ่านสำหรับคนขับ" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;align-items:center;">
+            <div class="muted" id="formStatus"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;flex:1;">
+              <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
+              <button type="submit" class="primary" id="btnSaveDriver">บันทึกคนขับ</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- ตารางคนขับ -->
+      <div class="card">
+        <div class="row" style="margin-bottom:4px;">
+          <div style="flex:1 1 auto;">
+            <label class="muted" style="margin-bottom:6px;" id="labelZoneFilter">เขตพื้นที่</label>
+            <div class="chips-row" id="zoneChips">
+              <button type="button" class="chip active" data-zone="__all" id="chipAllZones">เขตทั้งหมด</button>
+            </div>
+          </div>
+          <div style="flex:0 0 260px;">
+            <label for="searchInput" class="muted" style="margin-bottom:6px;" id="labelSearch">ค้นหา Driver ID / Username</label>
+            <input id="searchInput" type="text" placeholder="เช่น DRV001 หรือชื่อผู้ใช้" />
+          </div>
+        </div>
+
+        <div class="table-tools">
+          <span class="count-label" id="countLabel">แสดง 0 รายการ</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th id="thZone">เขต</th>
+                <th id="thDriverId">Driver ID</th>
+                <th id="thUsername">ชื่อผู้ใช้</th>
+                <th id="thFullName">ชื่อ - สกุล</th>
+                <th id="thPhone">เบอร์โทรศัพท์</th>
+                <th id="thUpdated">อัปเดตเมื่อ</th>
+                <th id="thActions">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="driversTbody">
+              <tr><td colspan="7" class="muted" id="loadingText">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    /* ---------- Firebase ---------- */
+    var firebaseConfig = {
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+    const usersCol = fs.collection("users");
+    const ACTIVE_DRIVER_STATUS = new Set([1, "1"]);
+
+    function isActiveDriver(data){
+      if(!data) return false;
+      if(data.isDeleted === true) return false;
+      const status = typeof data.status === "string" ? data.status.trim() : data.status;
+      return ACTIVE_DRIVER_STATUS.has(status);
+    }
+
+    async function hasPhoneConflict(phoneDigits, rawPhone){
+      const jobs = [];
+      jobs.push(
+        usersCol.where("phoneNormalized","==", phoneDigits).limit(5).get()
+      );
+
+      const variants = Array.from(
+        new Set(
+          [rawPhone ? rawPhone.trim() : "", phoneDigits].filter(Boolean)
+        )
+      );
+      if(variants.length){
+        jobs.push(
+          usersCol.where("phone","in", variants).limit(5).get()
+        );
+      }
+
+      const snaps = await Promise.all(jobs);
+      for(const snap of snaps){
+        for(const doc of snap.docs){
+          const data = doc.data() || {};
+          if(isActiveDriver(data)){
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    const zonesCol = fs.collection("zones");
+
+    /* ---------- Auth UI ---------- */
+    const adminNameEl = document.getElementById('adminName');
+    const adminAvatarEl = document.getElementById('adminAvatar');
+    const adminRoleEl = document.getElementById('adminRole');
+
+    /* ---------- DOM refs ---------- */
+    const zoneSelect = document.getElementById('zoneSelect');
+    const driverIdInput = document.getElementById('driverId');
+    const fullNameInput = document.getElementById('fullName');
+    const phoneInput = document.getElementById('phone');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const formStatus = document.getElementById('formStatus');
+    const driverForm = document.getElementById('driverForm');
+    const btnClear = document.getElementById('btnClear');
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+
+    const zoneChips = document.getElementById('zoneChips');
+    const searchInput = document.getElementById('searchInput');
+    const driversTbody = document.getElementById('driversTbody');
+    const countLabel = document.getElementById('countLabel');
+
+    /* ---------- State ---------- */
+    let zones = [];        // {id, name}
+    let drivers = [];      // {docId, driverId, username, fullName, phone, zoneId, zoneName, updatedAt}
+    let activeZoneFilter = "__all";
+    let searchText = "";
+
+    /* ---------- แปลภาษา ---------- */
+    const translations = {
+      th: {
+        menuBtn: "☰ เมนู",
+        pageTitle: "Smart Waste - คนขับรถเก็บขยะ",
+        mainTitle: "จัดการคนขับรถเก็บขยะ",
+        pageHint: "เพิ่ม / จัดการบัญชีผู้ใช้ของพนักงานขับรถเก็บขยะในแต่ละเขตพื้นที่",
+
+        addDriverTitle: "เพิ่มคนขับใหม่",
+        labelZone: "เขตพื้นที่ (โซนการทำงาน)",
+        zoneHelp: "เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ",
+        labelDriverId: "Driver ID",
+        labelFullName: "ชื่อ - นามสกุล",
+        labelPhone: "เบอร์โทรศัพท์",
+        labelUsername: "ชื่อผู้ใช้ (ใช้เข้าสู่ระบบ)",
+        labelPassword: "รหัสผ่านเริ่มต้น",
+
+        zonePlaceholder: "เลือกเขต...",
+        driverIdPlaceholder: "เลือกเขตก่อน",
+        fullNamePh: "เช่น นายสมชาย ขับรถดี",
+        phonePh: "เช่น 0812345678",
+        usernamePh: "เช่น drv_somchai หรือหมายเลขโทรศัพท์",
+        passwordPh: "กำหนดรหัสผ่านสำหรับคนขับ",
+        searchPh: "เช่น DRV001 หรือชื่อผู้ใช้",
+
+        btnClear: "ล้างฟอร์ม",
+        btnSaveDriver: "บันทึกคนขับ",
+
+        labelZoneFilter: "เขตพื้นที่",
+        chipAllZones: "เขตทั้งหมด",
+        labelSearch: "ค้นหา Driver ID / Username",
+
+        thZone: "เขต",
+        thDriverId: "Driver ID",
+        thUsername: "ชื่อผู้ใช้",
+        thFullName: "ชื่อ - สกุล",
+        thPhone: "เบอร์โทรศัพท์",
+        thUpdated: "อัปเดตเมื่อ",
+        thActions: "จัดการ",
+        loadingText: "กำลังโหลดข้อมูล...",
+
+        countPrefix: "แสดง",
+        countSuffix: "รายการ",
+        noDrivers: "ไม่พบข้อมูล",
+
+        btnEdit: "แก้ไข",
+        btnDelete: "ลบ",
+
+        statusSelectZoneFirst: "กรุณาเลือกเขตก่อน",
+        statusComputingId: "กำลังคำนวณ Driver ID...",
+        statusIdGenerated: "ระบบสร้าง Driver ID อัตโนมัติแล้ว",
+        statusIdErrorPrefix: "ไม่สามารถสร้าง Driver ID ได้: ",
+
+        statusRequiredZone: "กรุณาเลือกเขตพื้นที่",
+        statusMissingDriverId: "ยังไม่มี Driver ID กรุณาเลือกเขตอีกครั้ง",
+        statusMissingNamePhone: "กรุณากรอกชื่อ-นามสกุล และเบอร์โทรศัพท์",
+        statusMissingUserPass: "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน",
+        statusSaving: "กำลังบันทึกข้อมูล...",
+        statusUsernameExists: "มีชื่อผู้ใช้นี้ในระบบแล้ว กรุณาใช้ชื่ออื่น",
+        statusPhoneExists: "มีเบอร์โทรนี้ในระบบแล้ว กรุณาใช้หมายเลขอื่น",
+        statusSaveOk: "บันทึกข้อมูลคนขับเรียบร้อย",
+        statusSaveErrorPrefix: "เกิดข้อผิดพลาด: ",
+
+        confirmDelete: "ต้องการลบ (ซ่อน) คนขับคนนี้หรือไม่?",
+        deleteFailPrefix: "ลบไม่สำเร็จ: ",
+
+        editNotImpl: "ปุ่มแก้ไขยังไม่ได้ทำ ถ้าต้องการให้ทำระบบแก้ไขเพิ่ม บอกได้เลยนะ 😊",
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleDriver: "พนักงานขับรถ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ"
+      },
+      en: {
+        menuBtn: "☰ Menu",
+        pageTitle: "Smart Waste - Drivers",
+        mainTitle: "Manage Garbage Truck Drivers",
+        pageHint: "Create and manage driver accounts for each operation zone.",
+
+        addDriverTitle: "Add New Driver",
+        labelZone: "Zone (Operation Area)",
+        zoneHelp: "Select a zone first and the system will generate a Driver ID automatically.",
+        labelDriverId: "Driver ID",
+        labelFullName: "Full Name",
+        labelPhone: "Phone Number",
+        labelUsername: "Username (for login)",
+        labelPassword: "Initial Password",
+
+        zonePlaceholder: "Select zone...",
+        driverIdPlaceholder: "Select zone first",
+        fullNamePh: "e.g. Mr. Somchai Driver",
+        phonePh: "e.g. 0812345678",
+        usernamePh: "e.g. drv_somchai or phone number",
+        passwordPh: "Set an initial password for the driver",
+        searchPh: "e.g. DRV001 or username",
+
+        btnClear: "Reset Form",
+        btnSaveDriver: "Save Driver",
+
+        labelZoneFilter: "Zone",
+        chipAllZones: "All Zones",
+        labelSearch: "Search Driver ID / Username",
+
+        thZone: "Zone",
+        thDriverId: "Driver ID",
+        thUsername: "Username",
+        thFullName: "Full Name",
+        thPhone: "Phone",
+        thUpdated: "Updated At",
+        thActions: "Actions",
+        loadingText: "Loading data...",
+
+        countPrefix: "Showing",
+        countSuffix: "items",
+        noDrivers: "No drivers found",
+
+        btnEdit: "Edit",
+        btnDelete: "Delete",
+
+        statusSelectZoneFirst: "Please select a zone first",
+        statusComputingId: "Calculating Driver ID...",
+        statusIdGenerated: "Driver ID has been generated automatically",
+        statusIdErrorPrefix: "Unable to generate Driver ID: ",
+
+        statusRequiredZone: "Please select a zone",
+        statusMissingDriverId: "Driver ID is missing, please select zone again",
+        statusMissingNamePhone: "Please enter full name and phone number",
+        statusMissingUserPass: "Please enter username and password",
+        statusSaving: "Saving driver data...",
+        statusUsernameExists: "This username already exists, please use another",
+        statusPhoneExists: "This phone number is already used by another driver.",
+        statusSaveOk: "Driver saved successfully",
+        statusSaveErrorPrefix: "Error: ",
+
+        confirmDelete: "Are you sure you want to delete (hide) this driver?",
+        deleteFailPrefix: "Delete failed: ",
+
+        editNotImpl: "Edit function not implemented yet.",
+        roleAdmin: "Administrator",
+        roleDriver: "Driver",
+        roleUser: "User",
+        logout: "Logout"
+      },
+      ms: {
+        menuBtn: "☰ Menu",
+        pageTitle: "Smart Waste - Pemandu",
+        mainTitle: "Urus Pemandu Lori Sampah",
+        pageHint: "Cipta dan urus akaun pemandu mengikut zon operasi.",
+
+        addDriverTitle: "Tambah Pemandu Baharu",
+        labelZone: "Zon (Kawasan Operasi)",
+        zoneHelp: "Pilih zon dahulu, sistem akan jana ID Pemandu secara automatik.",
+        labelDriverId: "ID Pemandu",
+        labelFullName: "Nama Penuh",
+        labelPhone: "Nombor Telefon",
+        labelUsername: "Nama Pengguna (untuk log masuk)",
+        labelPassword: "Kata Laluan Asal",
+
+        zonePlaceholder: "Pilih zon...",
+        driverIdPlaceholder: "Pilih zon dahulu",
+        fullNamePh: "cth. Encik Somchai Pemandu",
+        phonePh: "cth. 0812345678",
+        usernamePh: "cth. drv_somchai atau nombor telefon",
+        passwordPh: "Tetapkan kata laluan awal untuk pemandu",
+        searchPh: "cth. DRV001 atau nama pengguna",
+
+        btnClear: "Kosongkan Borang",
+        btnSaveDriver: "Simpan Pemandu",
+
+        labelZoneFilter: "Zon",
+        chipAllZones: "Semua Zon",
+        labelSearch: "Cari ID Pemandu / Nama Pengguna",
+
+        thZone: "Zon",
+        thDriverId: "ID Pemandu",
+        thUsername: "Nama Pengguna",
+        thFullName: "Nama Penuh",
+        thPhone: "Telefon",
+        thUpdated: "Dikemas Kini",
+        thActions: "Tindakan",
+        loadingText: "Memuatkan data...",
+
+        countPrefix: "Menunjukkan",
+        countSuffix: "rekod",
+        noDrivers: "Tiada pemandu",
+
+        btnEdit: "Ubah",
+        btnDelete: "Padam",
+
+        statusSelectZoneFirst: "Sila pilih zon dahulu",
+        statusComputingId: "Mengira ID Pemandu...",
+        statusIdGenerated: "ID Pemandu dijana secara automatik",
+        statusIdErrorPrefix: "Tidak dapat menjana ID Pemandu: ",
+
+        statusRequiredZone: "Sila pilih zon",
+        statusMissingDriverId: "ID Pemandu tiada, sila pilih zon semula",
+        statusMissingNamePhone: "Sila isi nama penuh dan nombor telefon",
+        statusMissingUserPass: "Sila isi nama pengguna dan kata laluan",
+        statusSaving: "Menyimpan data pemandu...",
+        statusUsernameExists: "Nama pengguna ini sudah wujud, sila guna yang lain",
+        statusPhoneExists: "Nombor telefon ini telah digunakan oleh pemandu lain.",
+        statusSaveOk: "Pemandu berjaya disimpan",
+        statusSaveErrorPrefix: "Ralat: ",
+
+        confirmDelete: "Adakah anda pasti mahu memadam (sembunyi) pemandu ini?",
+        deleteFailPrefix: "Gagal memadam: ",
+
+        editNotImpl: "Fungsi ubah belum disediakan.",
+        roleAdmin: "Pentadbir",
+        roleDriver: "Pemandu",
+        roleUser: "Pengguna",
+        logout: "Keluar"
+      }
+    };
+
+    const LangState = window.AdminLang;
+    let currentLang = (LangState && typeof LangState.getLang === "function")
+      ? LangState.getLang()
+      : (localStorage.getItem("sw_lang") || "th");
+    const langSelect = document.getElementById("langSelect");
+
+    function tr(key){
+      const t = translations[currentLang] || translations.th;
+      return t[key] !== undefined ? t[key] : key;
+    }
+
+    function setFormStatus(text, type){
+      formStatus.textContent = text || "";
+      formStatus.style.color = type === "err" ? "#dc2626" :
+                               type === "ok" ? "#16a34a" : "#6b7280";
+    }
+
+    function normalizePhone(value){
+      return (value || "").replace(/[^0-9]/g,"");
+    }
+
+    /* hash password เหมือนหน้า login */
+    async function hashPassword(pw){
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pw);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2,"0"))
+        .join("");
+    }
+
+    /* ---------- Load zones ---------- */
+    async function loadZones(){
+      const snap = await zonesCol.get();
+      zones = [];
+      zoneSelect.innerHTML = '<option value="">' + tr("zonePlaceholder") + '</option>';
+
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const id = doc.id;
+        const name = d.name || id;
+        zones.push({id, name});
+
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = name;
+        zoneSelect.appendChild(opt);
+      });
+
+      // chips
+      while(zoneChips.children.length > 1){
+        zoneChips.removeChild(zoneChips.lastChild);
+      }
+      zones.forEach(z => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip";
+        btn.dataset.zone = z.id;
+        btn.textContent = z.name;
+        zoneChips.appendChild(btn);
+      });
+    }
+
+    /* ---------- Compute next driverId (per zone) ---------- */
+    async function computeNextDriverId(zoneId){
+      if(!zoneId){
+        driverIdInput.value = "";
+        return;
+      }
+      const snap = await usersCol
+        .where("zoneId","==",zoneId)
+        .get();
+
+      let maxNum = 0;
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const idStr = d.driverId || doc.id;
+        const m = idStr.match(/(\d+)$/);
+        if(m){
+          const n = parseInt(m[1],10);
+          if(!isNaN(n) && n > maxNum) maxNum = n;
+        }
+      });
+
+      const next = maxNum + 1;
+      const driverId = "DRV" + String(next).padStart(3,"0");
+      driverIdInput.value = driverId;
+    }
+
+    zoneSelect.addEventListener("change", () => {
+      const zoneId = zoneSelect.value;
+      if(!zoneId){
+        driverIdInput.value = "";
+        setFormStatus(tr("statusSelectZoneFirst"), "err");
+        return;
+      }
+      setFormStatus(tr("statusComputingId"), "");
+      computeNextDriverId(zoneId).then(() => {
+        setFormStatus(tr("statusIdGenerated"), "ok");
+      }).catch(err => {
+        console.error(err);
+        setFormStatus(tr("statusIdErrorPrefix") + err.message, "err");
+      });
+    });
+
+    /* ---------- Load drivers ---------- */
+    async function loadDrivers(){
+      const snap = await usersCol.get();
+      drivers = [];
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        if(!isActiveDriver(d)) return;
+        const updatedAt = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : null;
+        const phoneValue = d.phone || d.phoneNormalized || "";
+        drivers.push({
+          docId: doc.id,
+          driverId: d.driverId || "",
+          username: d.username || doc.id,
+          fullName: d.fullName || "",
+          phone: phoneValue,
+          zoneId: d.zoneId || "",
+          zoneName: d.zoneName || d.zoneId || "",
+          updatedAt
+        });
+      });
+      drivers.sort((a,b) => {
+        const ta = a.updatedAt ? a.updatedAt.getTime() : 0;
+        const tb = b.updatedAt ? b.updatedAt.getTime() : 0;
+        return tb - ta;
+      });
+      renderDrivers();
+    }
+
+    /* ---------- Render table ---------- */
+    function renderDrivers(){
+      const zoneFilter = activeZoneFilter;
+      const keyword = (searchText || "").trim().toLowerCase();
+
+      let filtered = drivers.slice();
+      if(zoneFilter !== "__all"){
+        filtered = filtered.filter(d => d.zoneId === zoneFilter);
+      }
+      if(keyword){
+        filtered = filtered.filter(d =>
+          (d.driverId || "").toLowerCase().includes(keyword) ||
+          (d.username || "").toLowerCase().includes(keyword)
+        );
+      }
+
+      countLabel.textContent = tr("countPrefix") + " " + filtered.length + " " + tr("countSuffix");
+
+      if(filtered.length === 0){
+        const msg = tr("noDrivers");
+        driversTbody.innerHTML = '<tr><td colspan="7" class="muted">'+msg+'</td></tr>';
+        return;
+      }
+
+      const rows = filtered.map(d => {
+        const zoneName = d.zoneName || d.zoneId || "-";
+        const t = d.updatedAt ? d.updatedAt.toLocaleString() : "-";
+        const editLabel = tr("btnEdit");
+        const delLabel = tr("btnDelete");
+        return `
+          <tr>
+            <td><span class="badge-zone">${zoneName}</span></td>
+            <td>${d.driverId || "—"}</td>
+            <td>${d.username || "—"}</td>
+            <td>${d.fullName || "—"}</td>
+            <td>${d.phone || "—"}</td>
+            <td>${t}</td>
+            <td>
+              <button type="button" class="btn-small btn-edit" data-action="edit" data-id="${d.docId}">${editLabel}</button>
+              <button type="button" class="btn-small btn-delete" data-action="delete" data-id="${d.docId}">${delLabel}</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+      driversTbody.innerHTML = rows;
+    }
+
+    /* ---------- Filter chips ---------- */
+    zoneChips.addEventListener("click", (e) => {
+      const btn = e.target.closest(".chip");
+      if(!btn) return;
+      const z = btn.dataset.zone;
+      if(typeof z === "undefined") return;
+
+      activeZoneFilter = z;
+
+      zoneChips.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+
+      renderDrivers();
+    });
+
+    searchInput.addEventListener("input", () => {
+      searchText = searchInput.value;
+      renderDrivers();
+    });
+
+    /* ---------- Add driver (submit form) ---------- */
+    driverForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const zoneId = zoneSelect.value;
+      const driverId = driverIdInput.value.trim();
+      const fullName = fullNameInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const phoneDigits = normalizePhone(phone);
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if(!zoneId){
+        setFormStatus(tr("statusRequiredZone"), "err");
+        return;
+      }
+      if(!driverId){
+        setFormStatus(tr("statusMissingDriverId"), "err");
+        return;
+      }
+      if(!fullName || !phoneDigits){
+        setFormStatus(tr("statusMissingNamePhone"), "err");
+        return;
+      }
+      if(!username || !password){
+        setFormStatus(tr("statusMissingUserPass"), "err");
+        return;
+      }
+
+      const zone = zones.find(z => z.id === zoneId);
+      const zoneName = zone ? zone.name : zoneId;
+
+      setFormStatus(tr("statusSaving"), "");
+
+      try{
+        // ตรวจว่ามี username นี้อยู่แล้วหรือยัง
+          const existed = await usersCol.doc(username).get();
+          if(existed.exists && existed.data() && existed.data().isDeleted !== true){
+            setFormStatus(tr("statusUsernameExists"), "err");
+            return;
+          }
+
+        const phoneConflict = await hasPhoneConflict(phoneDigits, phone);
+        if(phoneConflict){
+          setFormStatus(tr("statusPhoneExists"), "err");
+          return;
+        }
+
+          const passwordHash = await hashPassword(password);
+
+        // ใช้ docId = username เพื่อให้หน้า login ใช้ username เป็น key ได้
+        const docId = username;
+
+          await usersCol.doc(docId).set({
+            username,
+            driverId,
+            fullName,
+            phone: phoneDigits,
+            phoneNormalized: phoneDigits,
+            status: 1,           // 1 = คนขับรถ
+            zoneId,
+            zoneName,
+          passwordHash,
+          isDeleted: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        setFormStatus(tr("statusSaveOk"), "ok");
+        fullNameInput.value = "";
+        phoneInput.value = "";
+        usernameInput.value = "";
+        passwordInput.value = "";
+
+        await loadDrivers();
+      }catch(err){
+        console.error(err);
+        setFormStatus(tr("statusSaveErrorPrefix") + (err.message || err), "err");
+      }
+    });
+
+    btnClear.addEventListener("click", () => {
+      zoneSelect.value = "";
+      driverIdInput.value = "";
+      fullNameInput.value = "";
+      phoneInput.value = "";
+      usernameInput.value = "";
+      passwordInput.value = "";
+      setFormStatus("", "");
+    });
+
+    /* ---------- Soft delete (ซ่อน ไม่ลบจริง) ---------- */
+    driversTbody.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-action]");
+      if(!btn) return;
+      const action = btn.dataset.action;
+      const docId = btn.dataset.id;
+      if(!docId) return;
+
+      if(action === "delete"){
+        const confirmMsg = tr("confirmDelete");
+        const ok = confirm(confirmMsg);
+        if(!ok) return;
+
+        try{
+          await usersCol.doc(docId).update({
+            isDeleted: true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          drivers = drivers.filter(d => d.docId !== docId);
+          renderDrivers();
+        }catch(err){
+          alert(tr("deleteFailPrefix") + (err.message || err));
+        }
+      }else if(action === "edit"){
+        alert(tr("editNotImpl"));
+      }
+    });
+
+    /* ---------- Sidebar mobile ---------- */
+    function toggleMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      const isShow = sidebar.classList.toggle('show');
+      if (window.innerWidth <= 900) {
+        btn.style.display = isShow ? 'none' : 'inline-flex';
+      }
+    }
+    window.toggleMenu = toggleMenu;
+
+    menuToggleBtn.addEventListener("click", toggleMenu);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.menu a').forEach(a => {
+        a.addEventListener('click', () => {
+          const sidebar = document.getElementById('sidebar');
+          const btn = document.querySelector('.toggle-btn');
+          if (window.innerWidth <= 900) {
+            sidebar.classList.remove('show');
+            btn.style.display = 'inline-flex';
+          }
+        });
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('show');
+        btn.style.display = 'none';
+      } else {
+        sidebar.classList.remove('show');
+        btn.style.display = 'inline-flex';
+      }
+    });
+
+    /* ---------- apply language ---------- */
+    function applyLanguage() {
+      const t = translations[currentLang] || translations.th;
+
+      document.title = t.pageTitle;
+      document.getElementById("mainTitle").textContent = t.mainTitle;
+      document.getElementById("pageHint").textContent = t.pageHint;
+      document.getElementById("addDriverTitle").textContent = t.addDriverTitle;
+      document.getElementById("labelZone").textContent = t.labelZone;
+      document.getElementById("zoneHelp").textContent = t.zoneHelp;
+      document.getElementById("labelDriverId").textContent = t.labelDriverId;
+      document.getElementById("labelFullName").textContent = t.labelFullName;
+      document.getElementById("labelPhone").textContent = t.labelPhone;
+      document.getElementById("labelUsername").textContent = t.labelUsername;
+      document.getElementById("labelPassword").textContent = t.labelPassword;
+      document.getElementById("btnClear").textContent = t.btnClear;
+      document.getElementById("btnSaveDriver").textContent = t.btnSaveDriver;
+
+      document.getElementById("labelZoneFilter").textContent = t.labelZoneFilter;
+      document.getElementById("chipAllZones").textContent = t.chipAllZones;
+      document.getElementById("labelSearch").textContent = t.labelSearch;
+
+      document.getElementById("thZone").textContent = t.thZone;
+      document.getElementById("thDriverId").textContent = t.thDriverId;
+      document.getElementById("thUsername").textContent = t.thUsername;
+      document.getElementById("thFullName").textContent = t.thFullName;
+      document.getElementById("thPhone").textContent = t.thPhone;
+      document.getElementById("thUpdated").textContent = t.thUpdated;
+      document.getElementById("thActions").textContent = t.thActions;
+      document.getElementById("loadingText").textContent = t.loadingText;
+
+      // placeholders
+      if (zoneSelect.options.length > 0) {
+        zoneSelect.options[0].textContent = t.zonePlaceholder;
+      }
+      driverIdInput.placeholder = t.driverIdPlaceholder;
+      fullNameInput.placeholder = t.fullNamePh;
+      phoneInput.placeholder = t.phonePh;
+      usernameInput.placeholder = t.usernamePh;
+      passwordInput.placeholder = t.passwordPh;
+      searchInput.placeholder = t.searchPh;
+
+      // ปุ่มเมนู
+      menuToggleBtn.textContent = t.menuBtn;
+
+      // ให้เมนูซ้ายเปลี่ยนภาษาด้วย
+      if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {
+        window.AdminNav.setLanguage(currentLang);
+      }
+
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+
+      // re-render ตารางให้ข้อความในปุ่ม/ไม่มีข้อมูลเปลี่ยนภาษา
+      renderDrivers();
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+      applyLanguage();
+    }
+
+    langSelect.addEventListener("change", (e) => {
+      changeLanguage(e.target.value);
+    });
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
+
+    // initial lang setup
+    langSelect.value = currentLang;
+    applyLanguage();
+
+    /* ---------- Init data ---------- */
+    (async () => {
+      await loadZones();
+      await loadDrivers();
+    })();
+  </script>
+</body>
+</html>

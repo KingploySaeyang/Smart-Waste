@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - จัดตารางขับรถเก็บขยะ</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Auth + เมนู -->
+  <script src="../Login/auth.js"></script>
+  <script src="admin-lang.js"></script>
+  <script src="admin-user.js" defer></script>
+  <script src="admin-nav.js" defer></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([0]); // เฉพาะแอดมิน
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
+      overflow-x: hidden;
+    }
+
+    /* ---------- ตัวแปรพื้นฐานสำหรับปุ่ม/ฟอร์ม ---------- */
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff;
+    }
+
+    .sidebar .sw-logout-slot {
+      margin-top: 0 !important;
+      margin-left: 18px;
+      margin-right: 18px;
+      margin-bottom: 24px;
+      padding: 0;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px 20px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 10px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn:hover,
+    .sidebar .sw-logout-slot .sw-logout-btn:focus {
+      background: #b91c1c;
+      border-left: 0;
+    }
+
+    /* ---------- ปุ่ม ☰ สำหรับมือถือ ---------- */
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 16px;
+    }
+
+    /* ---------- Main ---------- */
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      min-width: 0;
+    }
+
+    .page-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      color: #111827;
+      line-height: 1.25;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .page-header .muted {
+      font-size: 13px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-switcher select {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    }
+
+    .user-chip .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+      color: #0f172a;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-chip__label {
+      margin: 0;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      background: #f9fafb;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #111827;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .muted {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    input[type="date"],
+    select {
+      width: 100%;
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      border: 1px solid #cbd5e1;
+      background: #f9fafb;
+      font-size: var(--btn-font);
+    }
+
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      border-color: #2563eb;
+      background: #fff;
+      outline-offset: 2px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .row > div {
+      flex: 1 1 220px;
+    }
+
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      border: none;
+      font-size: var(--btn-font);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, filter .2s;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827;
+    }
+
+    .primary:hover,
+    .ghost:hover {
+      filter: brightness(1.03);
+    }
+
+    .primary:active,
+    .ghost:active {
+      transform: translateY(1px);
+    }
+
+    button:focus,
+    .toggle-btn:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    .btn-delete {
+      background: #ef4444;
+      color: #fff;
+      padding-inline: 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      min-height: 32px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    th,
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background: #f9fafb;
+    }
+
+    .badge-zone {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 12px;
+    }
+
+    .ok { color:#16a34a; }
+    .err { color:#dc2626; }
+
+    /* ---------- Responsive ---------- */
+    @media(max-width:900px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
+      }
+
+      .sidebar.show {
+        left: 0;
+      }
+
+      .toggle-btn {
+        display: inline-flex;
+      }
+
+      main {
+        padding: 70px 16px 20px;
+      }
+
+      h1 {
+        text-align: center;
+      }
+    }
+
+    @media(min-width:901px) {
+      .toggle-btn {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ปุ่ม ☰ แสดงเฉพาะมือถือ -->
+  <button id="menuToggle" class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu" data-admin-menu data-active="schedule"></nav>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="page-wrap">
+      <div class="topbar">
+        <div class="page-header">
+          <h1 id="mainTitle">จัดตารางขับรถเก็บขยะ</h1>
+          <p class="muted" id="pageHint">
+            สร้างตารางมอบหมายรถและคนขับตามเขตพื้นที่
+          </p>
+        </div>
+        <div class="topbar-right">
+          <div class="lang-switcher">
+            <select id="langSelect">
+              <option value="th">ไทย</option>
+              <option value="en">English</option>
+              <option value="ms">Bahasa Melayu</option>
+            </select>
+          </div>
+          <div class="user-chip">
+            <span class="avatar" id="adminAvatar">A</span>
+            <div>
+              <p class="user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
+              <strong id="adminName">-</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- ฟอร์มตาราง -->
+        <div class="card">
+          <h3 id="formTitle">สร้างตารางขับรถ</h3>
+
+          <form id="scheduleForm">
+            <div class="row">
+              <div>
+                <label id="labelStart">วันเริ่มต้น</label>
+                <input id="startDate" type="date" required />
+              </div>
+              <div>
+                <label id="labelEnd">วันสิ้นสุด</label>
+                <input id="endDate" type="date" required />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <div>
+                <label id="labelZone">เขตพื้นที่</label>
+                <select id="zoneSelect" required>
+                  <option value="">เลือกเขต...</option>
+                </select>
+              </div>
+
+              <div>
+                <label id="labelTruck">เลือกรถ</label>
+                <select id="truckSelect" required disabled>
+                  <option value="">เลือกเขตก่อน...</option>
+                </select>
+              </div>
+
+              <div>
+                <label id="labelDriver">เลือกคนขับ</label>
+                <select id="driverSelect" required disabled>
+                  <option value="">เลือกเขตก่อน...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:12px;">
+              <div id="formStatus" class="muted"></div>
+              <div style="flex:1;text-align:right">
+                <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
+                <button type="submit" class="primary" id="btnSave">บันทึกตาราง</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- ตาราง -->
+        <div class="card">
+          <h3 id="tableTitle">ตารางขับรถล่าสุด</h3>
+          <p class="muted" id="countLabel">แสดง 0 รายการ</p>
+
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th id="thZone">เขต</th>
+                  <th id="thRange">ช่วงวันที่</th>
+                  <th id="thTruck">รถ</th>
+                  <th id="thDriver">คนขับ</th>
+                  <th id="thCreated">บันทึกเมื่อ</th>
+                </tr>
+              </thead>
+              <tbody id="scheduleTbody">
+                <tr>
+                  <td colspan="5" class="muted" id="loadingText">กำลังโหลด...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /* ----------- ปุ่มเมนูสำหรับมือถือ ----------- */
+    function toggleMenu(force) {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('menuToggle');
+      let show;
+
+      if (typeof force === 'boolean') {
+        show = force;
+        sidebar.classList.toggle('show', show);
+      } else {
+        show = !sidebar.classList.contains('show');
+        sidebar.classList.toggle('show');
+      }
+      if (window.innerWidth <= 900) {
+        btn.style.display = show ? 'none' : 'inline-flex';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.menu a').forEach(a => {
+        a.addEventListener('click', () => {
+          if (window.innerWidth <= 900) toggleMenu(false);
+        });
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const btn = document.getElementById('menuToggle');
+      if (window.innerWidth > 900) {
+        btn.style.display = 'none';
+      } else {
+        const sidebar = document.getElementById('sidebar');
+        btn.style.display = sidebar.classList.contains('show') ? 'none' : 'inline-flex';
+      }
+    });
+
+    /* ----------- Firebase ----------- */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+
+    const zonesCol = fs.collection("zones");
+    const trucksCol = fs.collection("trucks");
+    const usersCol = fs.collection("users");
+    const scheduleCol = fs.collection("truck_schedule");
+
+    /* DOM */
+    const zoneSelect = document.getElementById("zoneSelect");
+    const truckSelect = document.getElementById("truckSelect");
+    const driverSelect = document.getElementById("driverSelect");
+    const formStatus = document.getElementById("formStatus");
+    const scheduleTbody = document.getElementById("scheduleTbody");
+    const countLabel = document.getElementById("countLabel");
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+    const btnClear = document.getElementById("btnClear");
+
+    let zones = [];
+    let schedules = [];
+
+    /* ----------- Auth header (ชื่อแอดมิน) ----------- */
+    const adminNameEl = document.getElementById("adminName");
+    const adminAvatarEl = document.getElementById("adminAvatar");
+    const adminRoleEl = document.getElementById("adminRole");
+
+    /* ----------- i18n ----------- */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - จัดตารางขับรถเก็บขยะ",
+        menuBtn: "☰ เมนู",
+        mainTitle: "จัดตารางขับรถเก็บขยะ",
+        pageHint: "สร้างตารางมอบหมายรถและคนขับตามเขตพื้นที่",
+
+        formTitle: "สร้างตารางขับรถ",
+        labelStart: "วันเริ่มต้น",
+        labelEnd: "วันสิ้นสุด",
+        labelZone: "เขตพื้นที่",
+        labelTruck: "เลือกรถ",
+        labelDriver: "เลือกคนขับ",
+        zonePlaceholder: "เลือกเขต...",
+        truckLoading: "กำลังโหลดรถ...",
+        truckPlaceholder: "เลือกรถ...",
+        truckNoData: "ยังไม่มีรถในเขตนี้",
+        driverLoading: "กำลังโหลด...",
+        driverPlaceholder: "เลือกคนขับ...",
+        driverNoData: "ยังไม่มีคนขับในเขตนี้",
+        btnClear: "ล้างฟอร์ม",
+        btnSave: "บันทึกตาราง",
+
+        tableTitle: "ตารางขับรถล่าสุด",
+        countPrefix: "แสดง",
+        countSuffix: "รายการ",
+        loadingText: "กำลังโหลด...",
+        noData: "ยังไม่มีข้อมูล",
+
+        thZone: "เขต",
+        thRange: "ช่วงวันที่",
+        thTruck: "รถ",
+        thDriver: "คนขับ",
+        thCreated: "บันทึกเมื่อ",
+
+        statusEndBeforeStart: "วันสิ้นสุดต้องไม่ก่อนวันเริ่ม",
+        statusSaveOk: "บันทึกเรียบร้อย",
+
+        // ฟอร์ม clear
+        cleared: "",
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ"
+      },
+      en: {
+        pageTitle: "Smart Waste - Truck Schedule",
+        menuBtn: "☰ Menu",
+        mainTitle: "Garbage Truck Schedule",
+        pageHint: "Create schedules assigning trucks and drivers to each zone.",
+
+        formTitle: "Create Schedule",
+        labelStart: "Start date",
+        labelEnd: "End date",
+        labelZone: "Zone",
+        labelTruck: "Select truck",
+        labelDriver: "Select driver",
+        zonePlaceholder: "Select zone...",
+        truckLoading: "Loading trucks...",
+        truckPlaceholder: "Select truck...",
+        truckNoData: "No trucks in this zone",
+        driverLoading: "Loading drivers...",
+        driverPlaceholder: "Select driver...",
+        driverNoData: "No drivers in this zone",
+        btnClear: "Reset form",
+        btnSave: "Save schedule",
+
+        tableTitle: "Latest Schedules",
+        countPrefix: "Showing",
+        countSuffix: "items",
+        loadingText: "Loading...",
+        noData: "No schedule data yet",
+
+        thZone: "Zone",
+        thRange: "Date range",
+        thTruck: "Truck",
+        thDriver: "Driver",
+        thCreated: "Created at",
+
+        statusEndBeforeStart: "End date must not be before start date",
+        statusSaveOk: "Schedule saved",
+
+        cleared: "",
+        roleAdmin: "Administrator",
+        roleUser: "User",
+        logout: "Logout"
+      },
+      ms: {
+        pageTitle: "Smart Waste - Jadual Lori Sampah",
+        menuBtn: "☰ Menu",
+        mainTitle: "Jadual Lori Sampah",
+        pageHint: "Cipta jadual bagi lori dan pemandu mengikut zon.",
+
+        formTitle: "Cipta Jadual",
+        labelStart: "Tarikh mula",
+        labelEnd: "Tarikh tamat",
+        labelZone: "Zon",
+        labelTruck: "Pilih lori",
+        labelDriver: "Pilih pemandu",
+        zonePlaceholder: "Pilih zon...",
+        truckLoading: "Memuatkan lori...",
+        truckPlaceholder: "Pilih lori...",
+        truckNoData: "Tiada lori dalam zon ini",
+        driverLoading: "Memuatkan pemandu...",
+        driverPlaceholder: "Pilih pemandu...",
+        driverNoData: "Tiada pemandu dalam zon ini",
+        btnClear: "Kosongkan borang",
+        btnSave: "Simpan jadual",
+
+        tableTitle: "Jadual Terkini",
+        countPrefix: "Menunjukkan",
+        countSuffix: "rekod",
+        loadingText: "Sedang memuatkan...",
+        noData: "Belum ada data jadual",
+
+        thZone: "Zon",
+        thRange: "Julat tarikh",
+        thTruck: "Lori",
+        thDriver: "Pemandu",
+        thCreated: "Direkodkan",
+
+        statusEndBeforeStart: "Tarikh tamat tidak boleh sebelum tarikh mula",
+        statusSaveOk: "Jadual berjaya disimpan",
+
+        cleared: "",
+        roleAdmin: "Pentadbir",
+        roleUser: "Pengguna",
+        logout: "Keluar"
+      }
+    };
+
+    const LangState = window.AdminLang;
+    let currentLang = (LangState && typeof LangState.getLang === "function")
+      ? LangState.getLang()
+      : (localStorage.getItem("sw_lang") || "th");
+    const langSelect = document.getElementById("langSelect");
+
+    function tr(key) {
+      const t = translations[currentLang] || translations.th;
+      return t[key] !== undefined ? t[key] : key;
+    }
+
+    function setFormStatusText(text, type) {
+      formStatus.textContent = text || "";
+      formStatus.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
+    }
+
+    function applyLanguage() {
+      document.title = tr("pageTitle");
+      document.getElementById("menuToggle").textContent = tr("menuBtn");
+
+      if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {
+        window.AdminNav.setLanguage(currentLang);
+      }
+
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+
+      document.getElementById("mainTitle").textContent = tr("mainTitle");
+      document.getElementById("pageHint").textContent = tr("pageHint");
+      document.getElementById("formTitle").textContent = tr("formTitle");
+      document.getElementById("labelStart").textContent = tr("labelStart");
+      document.getElementById("labelEnd").textContent = tr("labelEnd");
+      document.getElementById("labelZone").textContent = tr("labelZone");
+      document.getElementById("labelTruck").textContent = tr("labelTruck");
+      document.getElementById("labelDriver").textContent = tr("labelDriver");
+      document.getElementById("btnClear").textContent = tr("btnClear");
+      document.getElementById("btnSave").textContent = tr("btnSave");
+
+      document.getElementById("tableTitle").textContent = tr("tableTitle");
+      document.getElementById("thZone").textContent = tr("thZone");
+      document.getElementById("thRange").textContent = tr("thRange");
+      document.getElementById("thTruck").textContent = tr("thTruck");
+      document.getElementById("thDriver").textContent = tr("thDriver");
+      document.getElementById("thCreated").textContent = tr("thCreated");
+      document.getElementById("loadingText").textContent = tr("loadingText");
+
+      // placeholder / option แรก
+      if (zoneSelect.options.length > 0) {
+        zoneSelect.options[0].textContent = tr("zonePlaceholder");
+      }
+      if (!truckSelect.disabled && truckSelect.options.length > 0) {
+        if (!truckSelect.value) truckSelect.options[0].textContent = tr("truckPlaceholder");
+      }
+      if (!driverSelect.disabled && driverSelect.options.length > 0) {
+        if (!driverSelect.value) driverSelect.options[0].textContent = tr("driverPlaceholder");
+      }
+
+      // รีเรนเดอร์ตารางให้ countLabel/ข้อความไม่มีข้อมูล ถูกภาษา
+      renderSchedules();
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+      applyLanguage();
+    }
+
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+    langSelect.value = currentLang;
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
+
+    /* โหลดเขต */
+    async function loadZones() {
+      const snap = await zonesCol.get();
+      zones = [];
+      zoneSelect.innerHTML = '<option value="">' + tr("zonePlaceholder") + '</option>';
+      snap.forEach(doc => {
+        const d = doc.data();
+        zones.push({ id: doc.id, name: d.name });
+        const opt = document.createElement("option");
+        opt.value = doc.id;
+        opt.textContent = d.name;
+        zoneSelect.appendChild(opt);
+      });
+    }
+
+    /* โหลดรถในเขต */
+    async function loadTrucks(zoneId) {
+      truckSelect.disabled = true;
+      truckSelect.innerHTML = '<option>' + tr("truckLoading") + '</option>';
+
+      const snap = await trucksCol.where("zone", "==", zoneId).get();
+
+      truckSelect.innerHTML = '<option value="">' + tr("truckPlaceholder") + '</option>';
+
+      if (snap.empty) {
+        truckSelect.innerHTML = '<option value="">' + tr("truckNoData") + '</option>';
+      } else {
+        snap.forEach(doc => {
+          const d = doc.data();
+          const opt = document.createElement("option");
+          opt.value = doc.id;
+          opt.textContent = doc.id + " • " + (d.truckId || "");
+          truckSelect.appendChild(opt);
+        });
+      }
+      truckSelect.disabled = false;
+    }
+
+    /* โหลดคนขับในเขต */
+    async function loadDrivers(zoneId) {
+      driverSelect.disabled = true;
+      driverSelect.innerHTML = '<option>' + tr("driverLoading") + '</option>';
+
+      const snap = await usersCol.where("status", "==", 1).where("zoneId", "==", zoneId).get();
+
+      driverSelect.innerHTML = '<option value="">' + tr("driverPlaceholder") + '</option>';
+
+      if (snap.empty) {
+        driverSelect.innerHTML = '<option value="">' + tr("driverNoData") + '</option>';
+      } else {
+        snap.forEach(doc => {
+          const d = doc.data();
+          const opt = document.createElement("option");
+          opt.value = doc.id;
+          opt.textContent = (d.driverId || "") + " • " + (d.fullName || "");
+          opt.dataset.driverId = d.driverId || "";
+          opt.dataset.driverName = d.fullName || "";
+          driverSelect.appendChild(opt);
+        });
+      }
+      driverSelect.disabled = false;
+    }
+
+    /* เปลี่ยนเขต */
+    zoneSelect.addEventListener("change", () => {
+      if (!zoneSelect.value) {
+        truckSelect.disabled = true;
+        driverSelect.disabled = true;
+        return;
+      }
+      loadTrucks(zoneSelect.value);
+      loadDrivers(zoneSelect.value);
+    });
+
+    /* บันทึกตาราง */
+    document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const s = startDate.value;
+      const e2 = endDate.value;
+      const zone = zoneSelect.value;
+      const truck = truckSelect.value;
+      const driver = driverSelect.value;
+
+      if (e2 < s) {
+        setFormStatusText(tr("statusEndBeforeStart"), "err");
+        return;
+      }
+
+      const driverOpt = driverSelect.options[driverSelect.selectedIndex];
+      const truckOpt = truckSelect.options[truckSelect.selectedIndex];
+
+      await scheduleCol.add({
+        zoneId: zone,
+        zoneName: zones.find(z => z.id === zone)?.name,
+        truckId: truck,
+        truckName: truckOpt.textContent,
+        driverUsername: driver,
+        driverName: driverOpt.dataset.driverName,
+        driverId: driverOpt.dataset.driverId,
+        startDate: firebase.firestore.Timestamp.fromDate(new Date(s + "T00:00:00")),
+        endDate: firebase.firestore.Timestamp.fromDate(new Date(e2 + "T23:59:59")),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      setFormStatusText(tr("statusSaveOk"), "ok");
+    });
+
+    /* ปุ่มล้างฟอร์ม */
+    btnClear.addEventListener("click", () => {
+      startDate.value = "";
+      endDate.value = "";
+      zoneSelect.value = "";
+      truckSelect.disabled = true;
+      driverSelect.disabled = true;
+      truckSelect.innerHTML = '<option value="">' + tr("truckPlaceholder") + '</option>';
+      driverSelect.innerHTML = '<option value="">' + tr("driverPlaceholder") + '</option>';
+      setFormStatusText(tr("cleared"), "");
+    });
+
+    /* โหลดตาราง */
+    function setupScheduleListener() {
+      scheduleCol.orderBy("createdAt", "desc").limit(100)
+        .onSnapshot(sn => {
+          schedules = [];
+          sn.forEach(doc => {
+            const d = doc.data();
+            const start = d.startDate?.toDate();
+            const end = d.endDate?.toDate();
+            const created = d.createdAt?.toDate();
+
+            schedules.push({
+              zoneName: d.zoneName,
+              truckId: d.truckId,
+              truckName: d.truckName,
+              driverName: d.driverName,
+              driverId: d.driverId,
+              start: start?.toLocaleDateString(),
+              end: end?.toLocaleDateString(),
+              created: created?.toLocaleString()
+            });
+          });
+
+          renderSchedules();
+        });
+    }
+
+    function renderSchedules() {
+      if (!scheduleTbody) return;
+
+      if (!schedules.length) {
+        countLabel.textContent = tr("countPrefix") + " 0 " + tr("countSuffix");
+        scheduleTbody.innerHTML = '<tr><td colspan="5" class="muted">' + tr("noData") + '</td></tr>';
+        return;
+      }
+
+      countLabel.textContent = tr("countPrefix") + " " + schedules.length + " " + tr("countSuffix");
+
+      scheduleTbody.innerHTML = schedules.map(s => `
+        <tr>
+          <td><span class="badge-zone">${s.zoneName}</span></td>
+          <td>${s.start} - ${s.end}</td>
+          <td>${s.truckId}</td>
+          <td>${s.driverId} • ${s.driverName}</td>
+          <td>${s.created}</td>
+        </tr>
+      `).join("");
+    }
+
+    /* Init */
+    (async () => {
+      langSelect.value = currentLang;
+      applyLanguage();
+      await loadZones();
+      setupScheduleListener();
+    })();
+  </script>
+
+</body>
+</html>
