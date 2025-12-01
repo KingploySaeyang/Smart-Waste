@@ -193,12 +193,26 @@
       color: #111827
     }
 
+    /* chart layout */
+    .charts-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+
+    .chart-box {
+      flex: 1 1 280px;
+      min-width: 0;
+    }
+
     canvas {
       max-width: 100%;
       height: 320px;
-      margin: 12px 0 8px;
       border: 1px solid #eee;
-      border-radius: 10px
+      border-radius: 10px;
+      background: #fff;
     }
 
     /* Responsive */
@@ -239,6 +253,10 @@
       .zone-card {
         width: 100%;
         margin: 6px 0;
+      }
+
+      .charts-row {
+        flex-direction: column;
       }
     }
 
@@ -346,15 +364,23 @@
     </div>
     <div class="content">
       <div class="row">
-        <h3 id="chartTitle" style="margin-right:auto">สรุปจำนวน “การเทถัง” ต่อเขต</h3>
-        <!-- ปุ่ม Back เดิมซ่อนไว้ ไม่ใช้แล้ว -->
+        <h3 id="chartTitle" style="margin-right:auto">สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต</h3>
         <button id="btnBack" class="ghost" style="display:none">⬅ ย้อนกลับ</button>
       </div>
-      <canvas id="zoneChart"></canvas>
+
+      <!-- 2 กราฟ: จำนวนการเท / เวลาการเดินรถ -->
+      <div class="charts-row">
+        <div class="chart-box">
+          <canvas id="zoneChart"></canvas>
+        </div>
+        <div class="chart-box">
+          <canvas id="timeChart"></canvas>
+        </div>
+      </div>
 
       <hr style="margin:20px 0;">
       <h3>เลือกเขตเพื่อดูรายละเอียด</h3>
-      <p class="muted" id="zonesHint">คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” รายถังในเขตนั้น</p>
+      <p class="muted" id="zonesHint">คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” และเวลาการเดินรถในเขตนั้น</p>
       <div id="zones" class="grid"></div>
 
       <div id="loading" class="muted" style="margin-top:10px;display:none">กำลังคำนวณข้อมูล…</div>
@@ -381,10 +407,11 @@
     }
     const db = firebase.firestore();
 
-    // โครงสร้างที่ใช้สำหรับรายงาน:
+    // collections:
     // zones                              -> รายชื่อเขต
     // smartbins/{zone}/bin_data/{binId}  -> ข้อมูลถัง
     // smartbins/{zone}/Emptythetrash/{binId}/logs/{logId} -> การเทถังแต่ละครั้ง
+    // trucks/{truckDocId}/runs/{runId}   -> รอบการวิ่งรถแต่ละครั้ง (startAt, endAt)
 
     const LOG_COLLECTION = "logs";
 
@@ -394,21 +421,101 @@
     const loadingEl = document.getElementById("loading");
     const langSelect = document.getElementById("langSelect");
 
-    const ctx = document.getElementById("zoneChart").getContext("2d");
-    let chart = null;
+    const ctxCount = document.getElementById("zoneChart").getContext("2d");
+    const ctxTime = document.getElementById("timeChart").getContext("2d");
+    let chartCount = null;
+    let chartTime = null;
 
-    // เก็บข้อมูลโครงสร้างเขต/ถังไว้ใช้ซ้ำเวลาเปลี่ยนภาษา
+    // cache โครงสร้างเขต/ถัง
     // [{zoneId, displayName, bins:[{binId, name}]}]
     let cachedZones = [];
 
-    function renderChart(labels, data, labelText) {
-      if (chart) chart.destroy();
-      chart = new Chart(ctx, {
+    // cache เวลาการวิ่งรถต่อเขต: zoneId -> { totalMinutes, runs: [...] }
+    const driveTimeCache = new Map();
+
+    /* helper: หา zoneId ของ truck จาก field zoneId หรือจากชื่อ doc */
+    function getZoneIdFromTruckDoc(doc) {
+      const d = doc.data() || {};
+      if (d.zoneId) return d.zoneId;
+      const id = doc.id || "";
+      const parts = id.split("_");
+      return parts[0] || "unknown";
+    }
+
+    /* helper: แปลง startAt/endAt เป็นนาที */
+    function diffMinutes(startAt, endAt) {
+      if (!startAt || !endAt || typeof startAt.toDate !== "function" || typeof endAt.toDate !== "function") return 0;
+      const s = startAt.toDate();
+      const e = endAt.toDate();
+      const diffMs = e - s;
+      if (isNaN(diffMs) || diffMs <= 0) return 0;
+      return diffMs / 60000; // ms -> นาที
+    }
+
+    /* ดึงเวลาการวิ่งรถทั้งหมดของ zone หนึ่ง จาก trucks/{}/runs */
+    async function getDriveTimeForZone(zoneId) {
+      if (driveTimeCache.has(zoneId)) {
+        return driveTimeCache.get(zoneId);
+      }
+
+      let trucksSnap;
+      // พยายามใช้ where(zoneId) ก่อน ถ้าไม่มี field นี้ก็ fallback ดึงทั้งหมดแล้ว filter
+      try {
+        trucksSnap = await db.collection("trucks").where("zoneId", "==", zoneId).get();
+        if (trucksSnap.empty) {
+          trucksSnap = null;
+        }
+      } catch (e) {
+        trucksSnap = null;
+      }
+
+      if (!trucksSnap) {
+        const allTrucksSnap = await db.collection("trucks").get();
+        const filtered = [];
+        allTrucksSnap.forEach(doc => {
+          if (getZoneIdFromTruckDoc(doc) === zoneId) filtered.push(doc);
+        });
+        trucksSnap = { docs: filtered };
+      }
+
+      let totalMinutes = 0;
+      const runs = []; // สำหรับตอนแสดงรายละเอียดในเขตนั้น
+
+      for (const truckDoc of trucksSnap.docs) {
+        const runsSnap = await truckDoc.ref.collection("runs").get();
+        runsSnap.forEach(runDoc => {
+          const d = runDoc.data() || {};
+          const m = diffMinutes(d.startAt, d.endAt);
+          if (m > 0) {
+            totalMinutes += m;
+            runs.push({
+              id: runDoc.id,
+              minutes: m,
+              start: d.startAt && typeof d.startAt.toDate === "function" ? d.startAt.toDate() : null
+            });
+          }
+        });
+      }
+
+      runs.sort((a, b) => {
+        if (!a.start || !b.start) return 0;
+        return a.start - b.start;
+      });
+
+      const result = { totalMinutes, runs };
+      driveTimeCache.set(zoneId, result);
+      return result;
+    }
+
+    /* chart helpers */
+    function renderCountChart(labels, data) {
+      if (chartCount) chartCount.destroy();
+      chartCount = new Chart(ctxCount, {
         type: "bar",
         data: {
           labels,
           datasets: [{
-            label: labelText,
+            label: getTranslation("chartLabel"),
             data,
             borderRadius: 8
           }]
@@ -416,14 +523,48 @@
         options: {
           responsive: true,
           scales: {
-            y: { beginAtZero: true, title: { display: true, text: getTranslation("chartYAxis") } },
-            x: { title: { display: true, text: "" } }
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: getTranslation("chartYAxis") }
+            }
           },
           plugins: {
             legend: { display: false },
             tooltip: {
               callbacks: {
                 label: (ctx) => `${ctx.parsed.y} ${getTranslation("times")}`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTimeChart(labels, data) {
+      if (chartTime) chartTime.destroy();
+      chartTime = new Chart(ctxTime, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: getTranslation("chartTimeLabel"),
+            data,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: getTranslation("chartTimeYAxis") }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.parsed.y.toFixed(1)} ${getTranslation("minutes")}`
               }
             }
           }
@@ -442,15 +583,18 @@
         navTruck: "ตำแหน่งรถเก็บขยะ",
         navReport: "รายงานย้อนหลัง",
         mainTitle: "รายงานย้อนหลัง",
-        summaryTitle: "สรุปจำนวน “การเทถัง” ต่อเขต",
+        summaryTitle: "สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต",
         backBtn: "⬅ ย้อนกลับ",
         chartYAxis: "จำนวนครั้ง",
         times: "ครั้ง",
+        chartTimeYAxis: "เวลาการเดินรถ (นาที)",
+        chartTimeLabel: "เวลาการเดินรถรวม",
+        minutes: "นาที",
         selectZoneTitle: "เลือกเขตเพื่อดูรายละเอียด",
-        selectZoneHint: "คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” รายถังในเขตนั้น",
+        selectZoneHint: "คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” และเวลาการเดินรถในเขตนั้น",
         loading: "กำลังคำนวณข้อมูล…",
         noData: "ยังไม่มีข้อมูลเขต/การเทในระบบ",
-        detailTitle: "จำนวน “การเทถัง” ต่อถัง — เขต: ",
+        detailTitle: "รายละเอียดย่อย — เขต: ",
         unspecifiedZone: "ไม่ระบุเขต",
         chartLabel: "จำนวนการเท",
         allEmptyCard: "📊 รายการเทถังขยะทั้งหมด",
@@ -467,15 +611,18 @@
         navTruck: "Truck Location",
         navReport: "Historical Report",
         mainTitle: "Historical Report",
-        summaryTitle: 'Summary of "Bin Empties" per Zone',
+        summaryTitle: 'Summary of "Bin Empties" and Driving Time per Zone',
         backBtn: "⬅ Back",
         chartYAxis: "Count",
         times: "times",
+        chartTimeYAxis: "Driving time (minutes)",
+        chartTimeLabel: "Total driving time",
+        minutes: "minutes",
         selectZoneTitle: "Select a zone to see details",
-        selectZoneHint: 'Click on a zone name to see the number of "bin empties" for each bin in that zone',
+        selectZoneHint: 'Click a zone name to see "bin empties" and driving time for that zone',
         loading: "Calculating data...",
         noData: "No zone/emptying data in the system yet",
-        detailTitle: 'Number of "Bin Empties" per Bin — Zone: ',
+        detailTitle: 'Details — Zone: ',
         unspecifiedZone: "Unspecified Zone",
         chartLabel: "Empty Count",
         allEmptyCard: "📊 All bin emptying records",
@@ -492,15 +639,18 @@
         navTruck: "Lokasi Lori",
         navReport: "Laporan Sejarah",
         mainTitle: "Laporan Sejarah",
-        summaryTitle: 'Ringkasan "Pengosongan Tong" setiap Zon',
+        summaryTitle: 'Ringkasan "Pengosongan Tong" dan Masa Pemanduan setiap Zon',
         backBtn: "⬅ Kembali",
         chartYAxis: "Bilangan",
         times: "kali",
+        chartTimeYAxis: "Masa pemanduan (minit)",
+        chartTimeLabel: "Jumlah masa pemanduan",
+        minutes: "minit",
         selectZoneTitle: "Pilih zon untuk melihat butiran",
-        selectZoneHint: 'Klik pada nama zon untuk melihat bilangan "pengosongan tong" bagi setiap tong di zon itu',
+        selectZoneHint: 'Klik nama zon untuk melihat "pengosongan tong" dan masa pemanduan untuk zon tersebut',
         loading: "Mengira data...",
         noData: "Belum ada data zon/pengosongan dalam sistem",
-        detailTitle: 'Bilangan "Pengosongan Tong" setiap Tong — Zon: ',
+        detailTitle: 'Butiran — Zon: ',
         unspecifiedZone: "Zon Tidak Dinyatakan",
         chartLabel: "Bilangan Pengosongan",
         allEmptyCard: "📊 Senarai pengosongan tong keseluruhan",
@@ -544,7 +694,6 @@
       btnBack.textContent = getTranslation("backBtn");
       loadingEl.textContent = getTranslation("loading");
 
-      // รีโหลดสรุปด้วยภาษาปัจจุบัน
       loadSummaryByZone();
     }
 
@@ -560,7 +709,7 @@
       });
     }
 
-    // โหลดโครงสร้างเขต + ถังจาก zones + smartbins/{zone}/bin_data/{binId}
+    // โหลดเขต + ถัง
     async function loadZonesAndBins() {
       const zonesSnap = await db.collection("zones").orderBy("name").get();
       const zones = [];
@@ -579,7 +728,6 @@
         binsSnap.forEach(bDoc => {
           const d = bDoc.data() || {};
           const binId = d.binId || bDoc.id;
-          // ตั้งชื่อ bin จาก binId หรือ ownerName ก็ได้ แต่ตอนนี้ใช้ binId พอ
           const binName = d.binId || bDoc.id;
           bins.push({ binId, name: binName });
         });
@@ -589,7 +737,7 @@
       return zones;
     }
 
-    // โหลดสรุปจำนวนการเทต่อเขตจาก smartbins/{zone}/Emptythetrash/{binId}/logs/*
+    // สรุปจำนวนการเท + เวลาการวิ่งรถต่อเขต
     async function loadSummaryByZone() {
       loadingEl.style.display = "inline";
 
@@ -597,10 +745,14 @@
         cachedZones = await loadZonesAndBins();
       }
 
-      const zoneToCount = new Map();
+      const zoneCountMap = new Map(); // zoneId -> count
+      const labels = [];
+      const countData = [];
+      const timeData = [];
 
+      // นับจำนวนการเทจาก smartbins
       for (const zone of cachedZones) {
-        let total = 0;
+        let totalEmpty = 0;
 
         for (const bin of zone.bins) {
           const logsSnap = await db
@@ -611,25 +763,28 @@
             .collection(LOG_COLLECTION)
             .get();
 
-          total += logsSnap.size;
+          totalEmpty += logsSnap.size;
         }
 
-        zoneToCount.set(zone.zoneId, { total, displayName: zone.displayName });
+        zoneCountMap.set(zone.zoneId, { totalEmpty, displayName: zone.displayName });
       }
 
-      const labels = [];
-      const data = [];
+      // เติม labels + ดึงเวลาวิ่งรถจาก trucks/runs
+      for (const zone of cachedZones) {
+        const info = zoneCountMap.get(zone.zoneId) || { totalEmpty: 0 };
+        const drive = await getDriveTimeForZone(zone.zoneId);
 
-      zoneToCount.forEach((val, zoneId) => {
-        labels.push(val.displayName || zoneId);
-        data.push(val.total);
-      });
+        labels.push(zone.displayName);
+        countData.push(info.totalEmpty);
+        timeData.push(Number(drive.totalMinutes.toFixed(1)));
+      }
 
       chartTitle.textContent = getTranslation("summaryTitle");
-      renderChart(labels, data, getTranslation("chartLabel"));
+      renderCountChart(labels, countData);
+      renderTimeChart(labels, timeData);
       loadingEl.style.display = "none";
 
-      // การ์ดเขต + การ์ด "รายการเทถังขยะทั้งหมด"
+      // การ์ดเขต + การ์ด "ทั้งหมด"
       zonesDiv.innerHTML = "";
 
       const allCard = document.createElement("div");
@@ -645,10 +800,11 @@
         zonesDiv.appendChild(p);
       } else {
         cachedZones.forEach(z => {
-          const info = zoneToCount.get(z.zoneId) || { total: 0 };
+          const info = zoneCountMap.get(z.zoneId) || { totalEmpty: 0 };
           const card = document.createElement("div");
           card.className = "zone-card";
-          card.textContent = `${z.displayName} • ${info.total} ${getTranslation("times")}`;
+          card.textContent =
+            `${z.displayName} • ${info.totalEmpty} ${getTranslation("times")}`;
           card.onclick = () => showZoneDetail(z.zoneId);
           zonesDiv.appendChild(card);
         });
@@ -658,15 +814,15 @@
       btnBack.onclick = null;
     }
 
-    // แสดงกราฟจำนวนการเทต่อถังในเขตที่เลือก
+    // รายละเอียดในเขต: ซ้าย = จำนวนการเทต่อถัง, ขวา = เวลาการวิ่งแต่ละ run ในเขตนั้น
     async function showZoneDetail(zoneId) {
       const zone = cachedZones.find(z => z.zoneId === zoneId);
       if (!zone) return;
 
       loadingEl.style.display = "inline";
 
-      const labels = [];
-      const data = [];
+      const labelsBins = [];
+      const countData = [];
 
       for (const bin of zone.bins) {
         const logsSnap = await db
@@ -677,16 +833,40 @@
           .collection(LOG_COLLECTION)
           .get();
 
-        labels.push(bin.name);
-        data.push(logsSnap.size);
+        labelsBins.push(bin.name);
+        countData.push(logsSnap.size);
       }
 
+      // เวลาวิ่งรถตาม runs
+      const drive = await getDriveTimeForZone(zone.zoneId);
+      const labelsRuns = [];
+      const timeData = [];
+
+      drive.runs.forEach(r => {
+        let label = r.id;
+        if (r.start instanceof Date) {
+          // label สั้นๆ เช่น 25/11 13:03
+          const d = r.start;
+          const dd = String(d.getDate()).padStart(2, "0");
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mi = String(d.getMinutes()).padStart(2, "0");
+          label = `${dd}/${mm} ${hh}:${mi}`;
+        }
+        labelsRuns.push(label);
+        timeData.push(Number(r.minutes.toFixed(1)));
+      });
+
       chartTitle.textContent = `${getTranslation("detailTitle")}${zone.displayName}`;
-      renderChart(labels, data, getTranslation("chartLabel"));
+      renderCountChart(labelsBins, countData);
+      renderTimeChart(labelsRuns, timeData);
       loadingEl.style.display = "none";
+
+      btnBack.style.display = "inline-flex";
+      btnBack.onclick = () => loadSummaryByZone();
     }
 
-    // เริ่มต้นด้วยภาษาใน localStorage แล้วโหลดข้อมูล
+    // เริ่มต้นจากภาษาใน localStorage แล้วโหลดข้อมูล
     changeLanguage(currentLang);
   </script>
 </body>
