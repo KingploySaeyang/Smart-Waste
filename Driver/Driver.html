@@ -270,7 +270,7 @@
       width:16px;
       height:6px;
       border-radius:999px;
-      background:#e5e5e5;
+      background:#2563eb;
     }
 
     /* Bin pins */
@@ -443,29 +443,51 @@
 
       <div id="map"></div>
 
+      <!-- ลบ legend สีเส้นทาง เหลือเฉพาะสถานะ GPS -->
       <div class="route-legend">
         <div class="legend-row">
-          <span class="legend-color" style="background:#ef4444;"></span>
-          <span id="legendFull">เส้นทางที่มีถังเต็ม</span>
-        </div>
-        <div class="legend-row">
-          <span class="legend-color" style="background:#f97316;"></span>
-          <span id="legendNearFull">เส้นทางถังใกล้เต็ม</span>
-        </div>
-        <div class="legend-row">
-          <span class="legend-color" style="background:#22c55e;"></span>
-          <span id="legendNormal">เส้นทางปกติ</span>
-        </div>
-        <div class="legend-row">
-          <span class="legend-color" style="background:#9ca3af;"></span>
-          <span id="legendTodaySummary">สรุปจำนวนถังที่พบในเส้นทางวันนี้จะแสดงที่นี่ในอนาคต</span>
-        </div>
-        <!-- สถานะ GPS -->
-        <div class="legend-row">
-          <span class="legend-color" style="background:#2563eb;"></span>
+          <span class="legend-color"></span>
           <span id="gpsStatus">-</span>
         </div>
       </div>
+    </section>
+
+    <!-- RFID Simulator สำหรับคนขับ -->
+    <section class="card card-large">
+      <div class="section-title-row">
+        <div>
+          <h2 id="rfidSectionTitle" class="section-title">จำลองการสแกน RFID เทถังขยะ</h2>
+          <p id="rfidSectionSub" class="section-sub">
+            ใช้จำลองการสแกนแท็ก RFID เพื่อบันทึกการเทถัง (ใช้โครงสร้าง Emptythetrash เดียวกับหน้า Simulator)
+          </p>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:6px;">
+        <div style="flex:1 1 220px;min-width:0;">
+          <div class="card-label">เขตงานวันนี้</div>
+          <div class="card-main" id="rfidZoneLabel">-</div>
+          <div class="muted">ระบบจะใช้เขตจากตารางงานวันนี้โดยอัตโนมัติ</div>
+        </div>
+        <div style="flex:2 1 260px;min-width:0;">
+          <label class="card-label" for="rfidBinSelect">เลือกถังขยะ (จำลองแท็ก RFID)</label>
+          <select id="rfidBinSelect">
+            <option value="">กำลังโหลด...</option>
+          </select>
+          <p id="rfidBinInfo" class="muted" style="margin-top:4px;">(ยังไม่ได้เลือกถัง)</p>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label class="card-label" for="rfidFillShown">ระดับความเต็ม (%)</label>
+        <input id="rfidFillShown" type="number" min="0" max="100" readonly />
+        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
+          <button type="button" class="btn btn-primary" id="rfidBtnFillUp">+5%</button>
+          <button type="button" class="btn btn-ghost" id="rfidBtnFillDown">-5%</button>
+          <button type="button" class="btn btn-primary" id="rfidBtnEmpty">เทถัง (จำลองสแกน RFID)</button>
+        </div>
+      </div>
+      <p id="rfidMsg" class="muted" style="margin-top:6px;">-</p>
     </section>
 
     <section class="footer-actions">
@@ -515,6 +537,16 @@
     const gpsStatusEl = document.getElementById("gpsStatus");
     const workTimerEl = document.getElementById("workTimer");
 
+    // DOM สำหรับ RFID simulator
+    const rfidZoneLabel = document.getElementById("rfidZoneLabel");
+    const rfidBinSelect = document.getElementById("rfidBinSelect");
+    const rfidBinInfo   = document.getElementById("rfidBinInfo");
+    const rfidFillInput = document.getElementById("rfidFillShown");
+    const rfidMsg       = document.getElementById("rfidMsg");
+    const rfidBtnFillUp   = document.getElementById("rfidBtnFillUp");
+    const rfidBtnFillDown = document.getElementById("rfidBtnFillDown");
+    const rfidBtnEmpty    = document.getElementById("rfidBtnEmpty");
+
     // ===== i18n =====
     const t = {
       th:{
@@ -540,10 +572,6 @@
         mapSub:"ตำแหน่งรถแบบ Real-time (อ่านจาก Firestore: trucks) แสดงเฉพาะรถที่ได้รับมอบหมายวันนี้",
         tabLive:"เริ่มทำงาน (โหมดปกติ)",
         tabBreak:"งานเสร็จแล้ว (หยุดพัก)",
-        legendFull:"เส้นทางที่มีถังเต็ม",
-        legendNearFull:"เส้นทางถังใกล้เต็ม",
-        legendNormal:"เส้นทางปกติ",
-        legendTodaySummary:"สรุปจำนวนถังที่พบในเส้นทางวันนี้จะแสดงที่นี่ในอนาคต",
         btnBackLogin:"กลับหน้า Login",
         btnEndDay:"จบการทำงานวันนี้",
         btnLogout:"ออกจากระบบ",
@@ -582,10 +610,6 @@
         mapSub:"Real-time truck position (from Firestore: trucks) for today's assigned truck.",
         tabLive:"Working mode",
         tabBreak:"Finished / Break",
-        legendFull:"Route with full bins",
-        legendNearFull:"Route with near-full bins",
-        legendNormal:"Normal route",
-        legendTodaySummary:"Summary of bins along today's route will be shown here later.",
         btnBackLogin:"Back to login",
         btnEndDay:"End today's work",
         btnLogout:"Logout",
@@ -624,10 +648,6 @@
         mapSub:"Lokasi lori masa nyata (dari Firestore: trucks) untuk lori yang diberi tugasan hari ini.",
         tabLive:"Mod bekerja",
         tabBreak:"Selesai / Rehat",
-        legendFull:"Laluan dengan tong penuh",
-        legendNearFull:"Laluan tong hampir penuh",
-        legendNormal:"Laluan biasa",
-        legendTodaySummary:"Ringkasan tong di sepanjang laluan akan dipaparkan di sini kemudian.",
         btnBackLogin:"Kembali ke login",
         btnEndDay:"Tamat kerja hari ini",
         btnLogout:"Log keluar",
@@ -677,10 +697,6 @@
       document.getElementById("mapSectionSub").textContent = tr("mapSub");
       document.getElementById("tabLive").textContent = tr("tabLive");
       document.getElementById("tabBreak").textContent = tr("tabBreak");
-      document.getElementById("legendFull").textContent = tr("legendFull");
-      document.getElementById("legendNearFull").textContent = tr("legendNearFull");
-      document.getElementById("legendNormal").textContent = tr("legendNormal");
-      document.getElementById("legendTodaySummary").textContent = tr("legendTodaySummary");
 
       document.getElementById("btnBackLogin").textContent = tr("btnBackLogin");
       document.getElementById("btnLogout").textContent = tr("btnLogout");
@@ -905,6 +921,207 @@
           console.error("listenBinsForZone error", err);
         });
     }
+
+    // ===== ตัวแปรและฟังก์ชันสำหรับ RFID simulator =====
+    let rfidBinRef = null;
+    let rfidLevelRef = null;
+    let rfidBinData = null;
+
+    function setRfidMsg(text, isError){
+      rfidMsg.textContent = text;
+      rfidMsg.style.color = isError ? "#dc2626" : "#16a34a";
+    }
+
+    function clampPercent(v){
+      if(typeof v !== "number" || Number.isNaN(v)) return 0;
+      return Math.max(0, Math.min(100, Math.round(v)));
+    }
+
+    async function loadRfidBins(zoneId){
+      rfidBinRef = null;
+      rfidLevelRef = null;
+      rfidBinData = null;
+      rfidBinInfo.textContent = "(ยังไม่ได้เลือกถัง)";
+      rfidFillInput.value = "";
+
+      if(!zoneId){
+        rfidZoneLabel.textContent = "-";
+        rfidBinSelect.innerHTML = `<option value="">ยังไม่มีเขตงานวันนี้</option>`;
+        rfidBinSelect.disabled = true;
+        setRfidMsg("ยังไม่มีตารางงานวันนี้", true);
+        return;
+      }
+
+      rfidZoneLabel.textContent = zoneId;
+      rfidBinSelect.disabled = true;
+      rfidBinSelect.innerHTML = `<option value="">กำลังโหลดถัง...</option>`;
+
+      try{
+        const snap = await smartbinsCol
+          .doc(zoneId)
+          .collection("bin_data")
+          .orderBy("binId")
+          .get();
+
+        if(snap.empty){
+          rfidBinSelect.innerHTML = `<option value="">(ยังไม่มีถังในเขตนี้)</option>`;
+          setRfidMsg("ยังไม่มีถังในเขตนี้", true);
+          return;
+        }
+
+        rfidBinSelect.innerHTML = `<option value="">-- เลือกถัง --</option>`;
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          const o = document.createElement("option");
+          o.value = doc.id;
+          o.textContent = (d.binId || doc.id) + (d.details ? " • " + d.details : "");
+          rfidBinSelect.appendChild(o);
+        });
+        rfidBinSelect.disabled = false;
+        setRfidMsg("เลือกถังเพื่อจำลองการสแกน RFID", false);
+      }catch(e){
+        console.error(e);
+        rfidBinSelect.innerHTML = `<option value="">โหลดถังล้มเหลว</option>`;
+        setRfidMsg("โหลดรายการถังไม่สำเร็จ: " + e.message, true);
+      }
+    }
+
+    rfidBinSelect.addEventListener("change", async ()=>{
+      const binDocId = rfidBinSelect.value;
+      if(!zoneTodayId || !binDocId){
+        rfidBinRef = null;
+        rfidLevelRef = null;
+        rfidBinData = null;
+        rfidBinInfo.textContent = "(ยังไม่ได้เลือกถัง)";
+        rfidFillInput.value = "";
+        return;
+      }
+
+      try{
+        rfidBinRef = smartbinsCol
+          .doc(zoneTodayId)
+          .collection("bin_data")
+          .doc(binDocId);
+
+        const doc = await rfidBinRef.get();
+        if(!doc.exists){
+          rfidBinData = null;
+          rfidBinInfo.textContent = "ไม่พบถังในฐานข้อมูล";
+          rfidFillInput.value = "";
+          return;
+        }
+
+        rfidBinData = doc.data() || {};
+        const label = (rfidBinData.binId || binDocId) +
+          (rfidBinData.details ? " • " + rfidBinData.details : "");
+        rfidBinInfo.textContent = label;
+
+        rfidLevelRef = smartbinsCol
+          .doc(zoneTodayId)
+          .collection("bin_level")
+          .doc(binDocId);
+
+        const levelSnap = await rfidLevelRef.get();
+        const currentLevel = levelSnap.exists ?
+          (Number(levelSnap.data().fillLevel) || 0) : 0;
+        rfidFillInput.value = clampPercent(currentLevel);
+        setRfidMsg("โหลดข้อมูลถังสำเร็จ", false);
+      }catch(e){
+        console.error(e);
+        setRfidMsg("โหลดข้อมูลถังไม่สำเร็จ: " + e.message, true);
+      }
+    });
+
+    async function rfidSetFill(v){
+      if(!zoneTodayId || !rfidLevelRef || !rfidBinData){
+        setRfidMsg("เลือกถังในเขตงานวันนี้ก่อน", true);
+        return;
+      }
+      v = clampPercent(v);
+      try{
+        await rfidLevelRef.set({
+          binId: rfidBinData.binId || rfidBinSelect.value,
+          zone: zoneTodayId,
+          fillLevel: v,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+        rfidFillInput.value = v;
+        setRfidMsg("อัปเดตระดับความเต็มแล้ว", false);
+      }catch(e){
+        console.error(e);
+        setRfidMsg("อัปเดตไม่สำเร็จ: " + e.message, true);
+      }
+    }
+
+    rfidBtnFillUp.addEventListener("click", ()=>{
+      const base = Number(rfidFillInput.value) || 0;
+      rfidSetFill(base + 5);
+    });
+
+    rfidBtnFillDown.addEventListener("click", ()=>{
+      const base = Number(rfidFillInput.value) || 0;
+      rfidSetFill(base - 5);
+    });
+
+    async function handleRfidEmpty(){
+      if(!zoneTodayId || !rfidBinRef || !rfidLevelRef || !rfidBinData){
+        setRfidMsg("เลือกถังก่อน", true);
+        return;
+      }
+      if(!currentTruckId || !truckDocRef){
+        setRfidMsg("ยังไม่พบข้อมูลรถในตารางงานวันนี้", true);
+        return;
+      }
+
+      try{
+        const levelBefore = Number(rfidFillInput.value) || 0;
+
+        const tSnap = await truckDocRef.get();
+        const data = tSnap.exists ? (tSnap.data() || {}) : {};
+        const lat = data.lat ?? null;
+        const lng = data.lng ?? null;
+
+        const binId = rfidBinData.binId || rfidBinSelect.value;
+
+        // root: smartbins/{zone}/Emptythetrash/{binId}
+        const emptyRoot = smartbinsCol
+          .doc(zoneTodayId)
+          .collection("Emptythetrash")
+          .doc(binId);
+
+        // sub-collection logs ใต้ binId
+        const logsColl = emptyRoot.collection("logs");
+        const emptyDocId = stampLocal();
+
+        await logsColl.doc(emptyDocId).set({
+          binId,
+          zone: zoneTodayId,
+          truckId: currentTruckId,
+          driverId: driverId || null,
+          driverName: displayName || null,
+          levelBefore,
+          lat,
+          lng,
+          emptiedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // ตั้งระดับถังเป็น 0 ด้วย
+        await rfidLevelRef.set({
+          binId,
+          zone: zoneTodayId,
+          fillLevel: 0,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+
+        rfidFillInput.value = 0;
+        setRfidMsg("เทถัง (จำลองสแกน RFID) แล้ว", false);
+      }catch(e){
+        console.error(e);
+        setRfidMsg("บันทึกการเทถังไม่สำเร็จ: " + e.message, true);
+      }
+    }
+
+    rfidBtnEmpty.addEventListener("click", handleRfidEmpty);
 
     // ===== ตัวแปร GPS =====
     let currentTruckId = null;
@@ -1208,6 +1425,7 @@
 
         zoneTodayId = null;
         listenBinsForZone(null);
+        await loadRfidBins(null);
 
         if(workTimerEl) workTimerEl.textContent = "00:00:00";
         if(driverUsageUnsub){ driverUsageUnsub(); driverUsageUnsub = null; }
@@ -1259,6 +1477,7 @@
       console.log("Final zoneTodayId =", zoneTodayId);
 
       listenBinsForZone(zoneTodayId);
+      await loadRfidBins(zoneTodayId);
 
       manualDayEnded = false;
       manualFrozenMs = null;

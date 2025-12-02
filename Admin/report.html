@@ -141,27 +141,6 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, .08)
     }
 
-    .zone-card {
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 16px;
-      margin: 8px;
-      cursor: pointer;
-      transition: .2s;
-      background: #fff;
-    }
-
-    .zone-card:hover {
-      background: #f0f4ff;
-      border-color: #2563eb;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 12px;
-    }
-
     .muted {
       color: #6b7280;
       font-size: 13px;
@@ -215,6 +194,21 @@
       background: #fff;
     }
 
+    /* Filters */
+    .time-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .time-filter select {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      font-size: 14px;
+    }
+
     /* Responsive */
     @media(max-width:900px) {
       body {
@@ -243,16 +237,6 @@
 
       h1 {
         text-align: center
-      }
-
-      .grid {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .zone-card {
-        width: 100%;
-        margin: 6px 0;
       }
 
       .charts-row {
@@ -362,10 +346,27 @@
         </div>
       </div>
     </div>
+
     <div class="content">
       <div class="row">
-        <h3 id="chartTitle" style="margin-right:auto">สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต</h3>
-        <button id="btnBack" class="ghost" style="display:none">⬅ ย้อนกลับ</button>
+        <h3 id="chartTitle" style="margin-right:auto">
+          สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต
+        </h3>
+
+        <!-- Filters (ช่วงเวลา + เขต) -->
+        <div class="time-filter">
+          <select id="timeFilter">
+            <option value="all">ทั้งหมด</option>
+            <option value="day">วันนี้</option>
+            <option value="week">7 วันล่าสุด</option>
+            <option value="month">30 วันล่าสุด</option>
+            <option value="year">365 วันล่าสุด</option>
+          </select>
+
+          <select id="zoneFilter">
+            <option value="all">ทุกเขต</option>
+          </select>
+        </div>
       </div>
 
       <!-- 2 กราฟ: จำนวนการเท / เวลาการเดินรถ -->
@@ -378,12 +379,9 @@
         </div>
       </div>
 
-      <hr style="margin:20px 0;">
-      <h3>เลือกเขตเพื่อดูรายละเอียด</h3>
-      <p class="muted" id="zonesHint">คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” และเวลาการเดินรถในเขตนั้น</p>
-      <div id="zones" class="grid"></div>
-
-      <div id="loading" class="muted" style="margin-top:10px;display:none">กำลังคำนวณข้อมูล…</div>
+      <div id="loading" class="muted" style="margin-top:10px;display:none">
+        กำลังคำนวณข้อมูล…
+      </div>
     </div>
   </main>
 
@@ -407,19 +405,13 @@
     }
     const db = firebase.firestore();
 
-    // collections:
-    // zones                              -> รายชื่อเขต
-    // smartbins/{zone}/bin_data/{binId}  -> ข้อมูลถัง
-    // smartbins/{zone}/Emptythetrash/{binId}/logs/{logId} -> การเทถังแต่ละครั้ง
-    // trucks/{truckDocId}/runs/{runId}   -> รอบการวิ่งรถแต่ละครั้ง (startAt, endAt)
-
     const LOG_COLLECTION = "logs";
 
-    const zonesDiv = document.getElementById("zones");
     const chartTitle = document.getElementById("chartTitle");
-    const btnBack = document.getElementById("btnBack");
     const loadingEl = document.getElementById("loading");
     const langSelect = document.getElementById("langSelect");
+    const timeFilterSelect = document.getElementById("timeFilter");
+    const zoneFilterSelect = document.getElementById("zoneFilter");
 
     const ctxCount = document.getElementById("zoneChart").getContext("2d");
     const ctxTime = document.getElementById("timeChart").getContext("2d");
@@ -430,8 +422,16 @@
     // [{zoneId, displayName, bins:[{binId, name}]}]
     let cachedZones = [];
 
-    // cache เวลาการวิ่งรถต่อเขต: zoneId -> { totalMinutes, runs: [...] }
+    // cache เวลาการวิ่งรถต่อเขต + ช่วงเวลา: "zoneId|filterKey" -> { totalMinutes, runs: [...] }
     const driveTimeCache = new Map();
+
+    // ฟิลเตอร์ช่วงเวลา: all / day / week / month / year
+    let currentTimeFilter = localStorage.getItem("sw_report_time_filter") || "all";
+    timeFilterSelect.value = currentTimeFilter;
+
+    // ฟิลเตอร์เขต: 'all' หรือ zoneId
+    let selectedZoneId = localStorage.getItem("sw_report_zone_filter") || "all";
+    zoneFilterSelect.value = selectedZoneId;
 
     /* helper: หา zoneId ของ truck จาก field zoneId หรือจากชื่อ doc */
     function getZoneIdFromTruckDoc(doc) {
@@ -452,14 +452,69 @@
       return diffMs / 60000; // ms -> นาที
     }
 
-    /* ดึงเวลาการวิ่งรถทั้งหมดของ zone หนึ่ง จาก trucks/{}/runs */
-    async function getDriveTimeForZone(zoneId) {
-      if (driveTimeCache.has(zoneId)) {
-        return driveTimeCache.get(zoneId);
+    /* ===== Time range helpers ===== */
+    function getCurrentDateRange() {
+      const key = currentTimeFilter || "all";
+      if (key === "all") {
+        return { start: null, end: null };
       }
 
+      const now = new Date();
+      let start, end;
+
+      if (key === "day") {
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        end = new Date(start);
+        end.setDate(end.getDate() + 1);
+      } else if (key === "week") {
+        end = now;
+        start = new Date(end);
+        start.setDate(start.getDate() - 7);
+      } else if (key === "month") {
+        end = now;
+        start = new Date(end);
+        start.setDate(start.getDate() - 30);
+      } else if (key === "year") {
+        end = now;
+        start = new Date(end);
+        start.setDate(start.getDate() - 365);
+      } else {
+        start = null;
+        end = null;
+      }
+
+      return { start, end };
+    }
+
+    function isInRange(date, range) {
+      if (!range || (!range.start && !range.end)) return true;
+      if (!date) return false;
+      if (range.start && date < range.start) return false;
+      if (range.end && date >= range.end) return false;
+      return true;
+    }
+
+    // ดึงเวลาใน log ของการเทถัง
+    // NOTE: ปรับ field ตามที่ใช้จริงใน Firestore เช่น emptiedAt / createdAt
+    function getLogDate(data) {
+      if (!data) return null;
+      const cand = data.timestamp || data.emptiedAt || data.createdAt || data.time;
+      if (cand && typeof cand.toDate === "function") {
+        return cand.toDate();
+      }
+      return null;
+    }
+
+    /* ดึงเวลาการวิ่งรถทั้งหมดของ zone หนึ่ง จาก trucks/{}/runs (ตามช่วงเวลาปัจจุบัน) */
+    async function getDriveTimeForZone(zoneId) {
+      const cacheKey = `${zoneId}|${currentTimeFilter || "all"}`;
+      if (driveTimeCache.has(cacheKey)) {
+        return driveTimeCache.get(cacheKey);
+      }
+
+      const range = getCurrentDateRange();
+
       let trucksSnap;
-      // พยายามใช้ where(zoneId) ก่อน ถ้าไม่มี field นี้ก็ fallback ดึงทั้งหมดแล้ว filter
       try {
         trucksSnap = await db.collection("trucks").where("zoneId", "==", zoneId).get();
         if (trucksSnap.empty) {
@@ -479,19 +534,24 @@
       }
 
       let totalMinutes = 0;
-      const runs = []; // สำหรับตอนแสดงรายละเอียดในเขตนั้น
+      const runs = [];
 
       for (const truckDoc of trucksSnap.docs) {
         const runsSnap = await truckDoc.ref.collection("runs").get();
         runsSnap.forEach(runDoc => {
           const d = runDoc.data() || {};
+          const startDate = d.startAt && typeof d.startAt.toDate === "function"
+            ? d.startAt.toDate()
+            : null;
+          if (!isInRange(startDate, range)) return;
+
           const m = diffMinutes(d.startAt, d.endAt);
           if (m > 0) {
             totalMinutes += m;
             runs.push({
               id: runDoc.id,
               minutes: m,
-              start: d.startAt && typeof d.startAt.toDate === "function" ? d.startAt.toDate() : null
+              start: startDate
             });
           }
         });
@@ -503,7 +563,7 @@
       });
 
       const result = { totalMinutes, runs };
-      driveTimeCache.set(zoneId, result);
+      driveTimeCache.set(cacheKey, result);
       return result;
     }
 
@@ -557,14 +617,37 @@
           scales: {
             y: {
               beginAtZero: true,
-              title: { display: true, text: getTranslation("chartTimeYAxis") }
+              title: { display: true, text: getTranslation("chartTimeYAxis") },
+              ticks: {
+                stepSize: 1
+              }
             }
           },
           plugins: {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: (ctx) => `${ctx.parsed.y.toFixed(1)} ${getTranslation("minutes")}`
+                label: (ctx) => {
+                  const totalMinutes = ctx.parsed.y || 0;
+                  const totalSeconds = Math.round(totalMinutes * 60);
+                  const m = Math.floor(totalSeconds / 60);
+                  const s = totalSeconds % 60;
+
+                  if (currentLang === "en") {
+                    const mLabel = m === 1 ? "minute" : "minutes";
+                    const sLabel = s === 1 ? "second" : "seconds";
+                    if (m > 0 && s > 0) return `${m} ${mLabel} ${s} ${sLabel}`;
+                    if (m > 0) return `${m} ${mLabel}`;
+                    return `${s} ${sLabel}`;
+                  }
+
+                  const minWord = getTranslation("minutes");
+                  const secWord = getTranslation("seconds");
+
+                  if (m > 0 && s > 0) return `${m} ${minWord} ${s} ${secWord}`;
+                  if (m > 0) return `${m} ${minWord}`;
+                  return `${s} ${secWord}`;
+                }
               }
             }
           }
@@ -584,14 +667,12 @@
         navReport: "รายงานย้อนหลัง",
         mainTitle: "รายงานย้อนหลัง",
         summaryTitle: "สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต",
-        backBtn: "⬅ ย้อนกลับ",
         chartYAxis: "จำนวนครั้ง",
         times: "ครั้ง",
         chartTimeYAxis: "เวลาการเดินรถ (นาที)",
         chartTimeLabel: "เวลาการเดินรถรวม",
         minutes: "นาที",
-        selectZoneTitle: "เลือกเขตเพื่อดูรายละเอียด",
-        selectZoneHint: "คลิกชื่อเขตเพื่อดูจำนวน “การเทถัง” และเวลาการเดินรถในเขตนั้น",
+        seconds: "วินาที",
         loading: "กำลังคำนวณข้อมูล…",
         noData: "ยังไม่มีข้อมูลเขต/การเทในระบบ",
         detailTitle: "รายละเอียดย่อย — เขต: ",
@@ -600,7 +681,13 @@
         allEmptyCard: "📊 รายการเทถังขยะทั้งหมด",
         roleAdmin: "ผู้ดูแลระบบ",
         roleUser: "ผู้ใช้ทั่วไป",
-        logout: "ออกจากระบบ"
+        logout: "ออกจากระบบ",
+        timeFilterAll: "ทั้งหมด",
+        timeFilterDay: "วันนี้",
+        timeFilterWeek: "7 วันล่าสุด",
+        timeFilterMonth: "30 วันล่าสุด",
+        timeFilterYear: "365 วันล่าสุด",
+        zoneFilterAll: "ทุกเขต"
       },
       en: {
         pageTitle: "Smart Waste - Historical Report",
@@ -612,14 +699,12 @@
         navReport: "Historical Report",
         mainTitle: "Historical Report",
         summaryTitle: 'Summary of "Bin Empties" and Driving Time per Zone',
-        backBtn: "⬅ Back",
         chartYAxis: "Count",
         times: "times",
         chartTimeYAxis: "Driving time (minutes)",
         chartTimeLabel: "Total driving time",
         minutes: "minutes",
-        selectZoneTitle: "Select a zone to see details",
-        selectZoneHint: 'Click a zone name to see "bin empties" and driving time for that zone',
+        seconds: "seconds",
         loading: "Calculating data...",
         noData: "No zone/emptying data in the system yet",
         detailTitle: 'Details — Zone: ',
@@ -628,7 +713,13 @@
         allEmptyCard: "📊 All bin emptying records",
         roleAdmin: "Administrator",
         roleUser: "User",
-        logout: "Logout"
+        logout: "Logout",
+        timeFilterAll: "All",
+        timeFilterDay: "Today",
+        timeFilterWeek: "Last 7 days",
+        timeFilterMonth: "Last 30 days",
+        timeFilterYear: "Last 365 days",
+        zoneFilterAll: "All zones"
       },
       ms: {
         pageTitle: "Smart Waste - Laporan Sejarah",
@@ -640,14 +731,12 @@
         navReport: "Laporan Sejarah",
         mainTitle: "Laporan Sejarah",
         summaryTitle: 'Ringkasan "Pengosongan Tong" dan Masa Pemanduan setiap Zon',
-        backBtn: "⬅ Kembali",
         chartYAxis: "Bilangan",
         times: "kali",
         chartTimeYAxis: "Masa pemanduan (minit)",
         chartTimeLabel: "Jumlah masa pemanduan",
         minutes: "minit",
-        selectZoneTitle: "Pilih zon untuk melihat butiran",
-        selectZoneHint: 'Klik nama zon untuk melihat "pengosongan tong" dan masa pemanduan untuk zon tersebut',
+        seconds: "saat",
         loading: "Mengira data...",
         noData: "Belum ada data zon/pengosongan dalam sistem",
         detailTitle: 'Butiran — Zon: ',
@@ -656,7 +745,13 @@
         allEmptyCard: "📊 Senarai pengosongan tong keseluruhan",
         roleAdmin: "Pentadbir",
         roleUser: "Pengguna",
-        logout: "Keluar"
+        logout: "Keluar",
+        timeFilterAll: "Semua",
+        timeFilterDay: "Hari ini",
+        timeFilterWeek: "7 hari terakhir",
+        timeFilterMonth: "30 hari terakhir",
+        timeFilterYear: "365 hari terakhir",
+        zoneFilterAll: "Semua zon"
       }
     };
 
@@ -667,6 +762,52 @@
 
     function getTranslation(key) {
       return translations[currentLang][key] || key;
+    }
+
+    function updateFilterTexts() {
+      if (timeFilterSelect) {
+        const optAll = timeFilterSelect.querySelector('option[value="all"]');
+        const optDay = timeFilterSelect.querySelector('option[value="day"]');
+        const optWeek = timeFilterSelect.querySelector('option[value="week"]');
+        const optMonth = timeFilterSelect.querySelector('option[value="month"]');
+        const optYear = timeFilterSelect.querySelector('option[value="year"]');
+
+        if (optAll) optAll.textContent = getTranslation("timeFilterAll");
+        if (optDay) optDay.textContent = getTranslation("timeFilterDay");
+        if (optWeek) optWeek.textContent = getTranslation("timeFilterWeek");
+        if (optMonth) optMonth.textContent = getTranslation("timeFilterMonth");
+        if (optYear) optYear.textContent = getTranslation("timeFilterYear");
+      }
+
+      if (zoneFilterSelect) {
+        const optAllZone = zoneFilterSelect.querySelector('option[value="all"]');
+        if (optAllZone) optAllZone.textContent = getTranslation("zoneFilterAll");
+      }
+    }
+
+    function populateZoneFilter() {
+      if (!zoneFilterSelect) return;
+      const current = selectedZoneId || "all";
+      zoneFilterSelect.innerHTML = "";
+
+      const optAll = document.createElement("option");
+      optAll.value = "all";
+      optAll.textContent = getTranslation("zoneFilterAll");
+      zoneFilterSelect.appendChild(optAll);
+
+      cachedZones.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.zoneId;
+        opt.textContent = z.displayName;
+        zoneFilterSelect.appendChild(opt);
+      });
+
+      if (zoneFilterSelect.querySelector(`option[value="${current}"]`)) {
+        zoneFilterSelect.value = current;
+      } else {
+        zoneFilterSelect.value = "all";
+        selectedZoneId = "all";
+      }
     }
 
     function changeLanguage(lang) {
@@ -689,12 +830,11 @@
         window.AdminUser.setLanguage(currentLang);
       }
       document.querySelector("h1").textContent = getTranslation("mainTitle");
-      document.querySelector("h3:not(#chartTitle)").textContent = getTranslation("selectZoneTitle");
-      document.getElementById("zonesHint").textContent = getTranslation("selectZoneHint");
-      btnBack.textContent = getTranslation("backBtn");
       loadingEl.textContent = getTranslation("loading");
 
-      loadSummaryByZone();
+      updateFilterTexts();
+      populateZoneFilter();
+      refreshChartsByFilters();
     }
 
     langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
@@ -708,6 +848,20 @@
         }
       });
     }
+
+    // Time filter change
+    timeFilterSelect.addEventListener("change", (e) => {
+      currentTimeFilter = e.target.value || "all";
+      localStorage.setItem("sw_report_time_filter", currentTimeFilter);
+      refreshChartsByFilters();
+    });
+
+    // Zone filter change
+    zoneFilterSelect.addEventListener("change", (e) => {
+      selectedZoneId = e.target.value || "all";
+      localStorage.setItem("sw_report_zone_filter", selectedZoneId);
+      refreshChartsByFilters();
+    });
 
     // โหลดเขต + ถัง
     async function loadZonesAndBins() {
@@ -737,20 +891,22 @@
       return zones;
     }
 
-    // สรุปจำนวนการเท + เวลาการวิ่งรถต่อเขต
+    // สรุปจำนวนการเท + เวลาการวิ่งรถต่อเขต (ตามฟิลเตอร์เวลา)
     async function loadSummaryByZone() {
       loadingEl.style.display = "inline";
 
       if (!cachedZones.length) {
         cachedZones = await loadZonesAndBins();
+        populateZoneFilter();
       }
 
-      const zoneCountMap = new Map(); // zoneId -> count
+      const range = getCurrentDateRange();
+
+      const zoneCountMap = new Map();
       const labels = [];
       const countData = [];
       const timeData = [];
 
-      // นับจำนวนการเทจาก smartbins
       for (const zone of cachedZones) {
         let totalEmpty = 0;
 
@@ -763,13 +919,18 @@
             .collection(LOG_COLLECTION)
             .get();
 
-          totalEmpty += logsSnap.size;
+          logsSnap.forEach(logDoc => {
+            const d = logDoc.data() || {};
+            const dt = getLogDate(d);
+            if (isInRange(dt, range)) {
+              totalEmpty += 1;
+            }
+          });
         }
 
         zoneCountMap.set(zone.zoneId, { totalEmpty, displayName: zone.displayName });
       }
 
-      // เติม labels + ดึงเวลาวิ่งรถจาก trucks/runs
       for (const zone of cachedZones) {
         const info = zoneCountMap.get(zone.zoneId) || { totalEmpty: 0 };
         const drive = await getDriveTimeForZone(zone.zoneId);
@@ -783,43 +944,15 @@
       renderCountChart(labels, countData);
       renderTimeChart(labels, timeData);
       loadingEl.style.display = "none";
-
-      // การ์ดเขต + การ์ด "ทั้งหมด"
-      zonesDiv.innerHTML = "";
-
-      const allCard = document.createElement("div");
-      allCard.className = "zone-card";
-      allCard.textContent = getTranslation("allEmptyCard");
-      allCard.onclick = () => loadSummaryByZone();
-      zonesDiv.appendChild(allCard);
-
-      if (!labels.length) {
-        const p = document.createElement("p");
-        p.className = "muted";
-        p.textContent = getTranslation("noData");
-        zonesDiv.appendChild(p);
-      } else {
-        cachedZones.forEach(z => {
-          const info = zoneCountMap.get(z.zoneId) || { totalEmpty: 0 };
-          const card = document.createElement("div");
-          card.className = "zone-card";
-          card.textContent =
-            `${z.displayName} • ${info.totalEmpty} ${getTranslation("times")}`;
-          card.onclick = () => showZoneDetail(z.zoneId);
-          zonesDiv.appendChild(card);
-        });
-      }
-
-      btnBack.style.display = "none";
-      btnBack.onclick = null;
     }
 
-    // รายละเอียดในเขต: ซ้าย = จำนวนการเทต่อถัง, ขวา = เวลาการวิ่งแต่ละ run ในเขตนั้น
+    // รายละเอียดในเขต
     async function showZoneDetail(zoneId) {
       const zone = cachedZones.find(z => z.zoneId === zoneId);
       if (!zone) return;
 
       loadingEl.style.display = "inline";
+      const range = getCurrentDateRange();
 
       const labelsBins = [];
       const countData = [];
@@ -833,11 +966,19 @@
           .collection(LOG_COLLECTION)
           .get();
 
+        let countForBin = 0;
+        logsSnap.forEach(logDoc => {
+          const d = logDoc.data() || {};
+          const dt = getLogDate(d);
+          if (isInRange(dt, range)) {
+            countForBin += 1;
+          }
+        });
+
         labelsBins.push(bin.name);
-        countData.push(logsSnap.size);
+        countData.push(countForBin);
       }
 
-      // เวลาวิ่งรถตาม runs
       const drive = await getDriveTimeForZone(zone.zoneId);
       const labelsRuns = [];
       const timeData = [];
@@ -845,7 +986,6 @@
       drive.runs.forEach(r => {
         let label = r.id;
         if (r.start instanceof Date) {
-          // label สั้นๆ เช่น 25/11 13:03
           const d = r.start;
           const dd = String(d.getDate()).padStart(2, "0");
           const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -861,13 +1001,36 @@
       renderCountChart(labelsBins, countData);
       renderTimeChart(labelsRuns, timeData);
       loadingEl.style.display = "none";
-
-      btnBack.style.display = "inline-flex";
-      btnBack.onclick = () => loadSummaryByZone();
     }
 
-    // เริ่มต้นจากภาษาใน localStorage แล้วโหลดข้อมูล
+    // เลือกว่าจะโหลดแบบรวม หรือรายเขต ตาม dropdown
+    function refreshChartsByFilters() {
+      // เคลียร์ cache เวลาวิ่ง เพราะช่วงเวลาเปลี่ยน
+      driveTimeCache.clear();
+      if (selectedZoneId && selectedZoneId !== "all") {
+        showZoneDetail(selectedZoneId);
+      } else {
+        loadSummaryByZone();
+      }
+    }
+
+    /* ===== Realtime listeners ===== */
+    function initRealtimeListeners() {
+      // ถ้ามีการเปลี่ยนแปลงในทุก log การเทถัง (collectionGroup 'logs')
+      db.collectionGroup(LOG_COLLECTION).onSnapshot(() => {
+        refreshChartsByFilters();
+      });
+
+      // ถ้ามีการเปลี่ยนแปลงในทุก run การวิ่งรถ (collectionGroup 'runs')
+      db.collectionGroup("runs").onSnapshot(() => {
+        refreshChartsByFilters();
+      });
+    }
+
+    // เริ่มต้นจากภาษาใน localStorage แล้วโหลดข้อมูล + ผูก realtime
+    updateFilterTexts();
     changeLanguage(currentLang);
+    initRealtimeListeners();
   </script>
 </body>
 

@@ -1,8 +1,6 @@
 (()=>{
   const MENU_ITEMS = [
-    { id: "home", href: "home.html" },
     { id: "register", href: "addBin.html" },
-    { id: "capacity", href: "capacity.html" },
     { id: "addDriver", href: "addDriver.html" },
     { id: "schedule", href: "schedule.html" },
     { id: "truck", href: "truck.html" },
@@ -11,9 +9,7 @@
 
   const NAV_LABELS = {
     th: {
-      home: "หน้าหลัก",
       register: "ลงทะเบียนถังขยะ",
-      capacity: "ความจุถังขยะ",
       addDriver: "พนักงานขับรถ",
       schedule: "ตารางเก็บขยะ",
       truck: "ตำแหน่งรถเก็บขยะ",
@@ -21,9 +17,7 @@
       logout: "ออกจากระบบ"
     },
     en: {
-      home: "Home",
       register: "Register Bin",
-      capacity: "Bin Capacity",
       addDriver: "Drivers",
       schedule: "Collection Schedule",
       truck: "Truck Tracking",
@@ -31,9 +25,7 @@
       logout: "Logout"
     },
     ms: {
-      home: "Laman Utama",
       register: "Daftar Tong",
-      capacity: "Kapasiti Tong",
       addDriver: "Pemandu",
       schedule: "Jadual Kutipan",
       truck: "Lokasi Lori",

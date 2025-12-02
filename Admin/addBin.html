@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="th">
+
 <head>
   <meta charset="utf-8" />
   <title>Smart Waste - ลงทะเบียนถังขยะ</title>
@@ -17,13 +18,18 @@
   </script>
 
   <style>
-    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+    }
 
-    body{
-      display:flex;
-      min-height:100vh;
-      background:#f5f6fa;
-      flex-direction:row;
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
     }
 
     /* ─ Sidebar ─ */
@@ -37,12 +43,13 @@
       padding-top: 20px;
       transition: .3s;
     }
-    .sidebar h2{
-      text-align:center;
-      color:#00a8ff;
-      margin-bottom:25px;
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px;
     }
-    
+
     .menu {
       display: flex;
       flex-direction: column;
@@ -57,352 +64,643 @@
       margin-bottom: 24px;
       padding: 0;
     }
-    .menu a{
-      display:block;
-      color:#f5f6fa;
-      padding:14px 20px;
-      text-decoration:none;
-      border-left:4px solid transparent;
-      transition:.3s;
-    }
-    .menu a:hover,
-    .menu a.active{
-      background:#353b48;
-      border-left:4px solid #00a8ff;
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
     }
 
-    .sidebar .sw-logout-slot .sw-logout-btn{
-      display:block;
-      width:100%;
-      text-align:left;
-      padding:14px 20px;
-      margin-top:6px;
-      border:none;
-      border-radius:10px;
-      background:#dc2626;
-      color:#fff;
-      font-size:15px;
-      font-weight:600;
-      box-shadow:none !important;
-      transform:none !important;
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff;
     }
+
+    .sidebar .sw-logout-slot .sw-logout-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px 20px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 10px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
     .sidebar .sw-logout-slot .sw-logout-btn:hover,
-    .sidebar .sw-logout-slot .sw-logout-btn:focus{
-      background:#b91c1c;
-      border-left:0;
+    .sidebar .sw-logout-slot .sw-logout-btn:focus {
+      background: #b91c1c;
+      border-left: 0;
     }
 
     /* ─ ปุ่มเปิด/ปิดเมนู (มือถือ) ─ */
-    .toggle-btn{
-      display:none;
-      position:fixed;
-      top:14px;
-      left:14px;
-      background:#00a8ff;
-      color:#fff;
-      border:none;
-      padding:8px 12px;
-      border-radius:6px;
-      cursor:pointer;
-      z-index:1000;
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 1000;
     }
 
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      flex-wrap:wrap;
-      gap:16px;
-      margin-bottom:18px;
-    }
-    .topbar-right{
-      display:flex;
-      align-items:center;
-      gap:12px;
-    }
-    .lang-switcher{
-      position:static;
-    }
-    .lang-switcher select{
-      padding:6px 10px;
-      border-radius:10px;
-      border:1px solid #d1d5db;
-      background:#fff;
-      font-size:14px;
-    }
-    .user-chip{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      background:#fff;
-      border-radius:999px;
-      border:1px solid #e5e7eb;
-      padding:8px 12px;
-      box-shadow:0 6px 18px rgba(15,23,42,.08);
-    }
-    .user-chip .avatar{
-      width:32px;
-      height:32px;
-      border-radius:50%;
-      background:linear-gradient(135deg,#38bdf8,#1d4ed8);
-      color:#0f172a;
-      font-weight:600;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .user-chip__label{
-      margin:0;
-      font-size:12px;
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
     }
 
-    main{
-      flex:1;
-      padding:30px;
-      overflow-y:auto;
-    }
-    h1{
-      color:#2f3640;
-      margin-bottom:16px;
-    }
-    .content{
-      background:#fff;padding:24px;border-radius:12px;
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
-      position:static;
+    h1 {
+      color: #2f3640;
+      margin-bottom: 16px;
     }
 
-    fieldset{
-      border:1px solid #e3e3e3;
-      border-radius:12px;
-      margin:16px 0;
-      padding:16px;
-    }
-    legend{
-      font-weight:bold;
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08)
     }
 
-    label{
-      display:block;
-      margin:10px 0 6px;
-      font-size:14px;
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* ---------- ไอคอนภาษา + โปรไฟล์ ---------- */
+    .icon-btn {
+      background: transparent;
+      border: none;
+      padding: 4px;
+      min-height: auto;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .top-icon {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .lang-switcher {
+      position: relative;
+    }
+
+    .lang-switcher select {
+      display: none;
+    }
+
+    .lang-menu {
+      position: absolute;
+      right: 0;
+      top: 120%;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      padding: 4px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, .2);
+      min-width: 150px;
+      display: none;
+      z-index: 1100;
+    }
+
+    .lang-menu.show {
+      display: block;
+    }
+
+    .lang-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .lang-menu button:hover {
+      background: #f3f4f6;
+    }
+
+    .lang-menu button.active {
+      background: #e0edff;
+      font-weight: 600;
+    }
+
+    /* user-chip ยังอยู่ แต่ให้ลิงก์ไปหน้าโปรไฟล์ได้ */
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 6px 10px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .user-chip .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      /* ใช้รูปโปรไฟล์ที่แนบมา – แก้ src ให้ตรงกับไฟล์ของคุณด้วย */
+      background: url("images/profile-icon.png") center/contain no-repeat;
+    }
+
+    .user-chip__label {
+      margin: 0;
+      font-size: 12px;
+    }
+
+    /* ถ้าอยากซ่อนข้อความชื่อ/role ให้ใช้บรรทัดนี้ */
+    .user-chip div {
+      display: none;
+    }
+
+    fieldset {
+      border: 1px solid #e3e3e3;
+      border-radius: 12px;
+      margin: 16px 0;
+      padding: 16px;
+    }
+
+    legend {
+      font-weight: bold;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 6px;
+      font-size: 14px;
     }
 
     input[type="text"],
     input[type="number"],
     input[type="file"],
     select,
-    textarea{
-      width:100%;
-      padding:10px;
-      border:1px solid #d7d7d7;
-      border-radius:10px;
-      box-sizing:border-box;
-      font-size:16px;
-    }
-    textarea{
-      min-height:60px;
-      white-space:pre-wrap;
-    }
-    #posDms{ resize:none; }
-
-    .row{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      align-items:flex-start;
-    }
-    .row>div{
-      flex:1 1 240px;
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d7d7d7;
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-size: 16px;
     }
 
-    button{
-      padding:10px 14px;
-      border:0;
-      border-radius:10px;
-      cursor:pointer;
-      font-size:14px;
-    }
-    .primary{background:#2563eb;color:#fff;}
-    .ghost{background:#f4f4f5;}
-
-    .muted{color:#6b7280;font-size:12px;}
-    .ok{color:#16a34a;}
-    .err{color:#dc2626;}
-    .error{border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.15);}
-
-    .actions{display:flex;gap:8px;}
-    .gps-actions{margin-top:8px;text-align:right;}
-    .gps-actions>button{width:100%;}
-
-    .preview{
-      display:block;
-      margin-top:8px;
-      max-width:100%;
-      width:100%;
-      height:auto;
-      border-radius:10px;
-      border:1px solid #e5e7eb;
+    textarea {
+      min-height: 60px;
+      white-space: pre-wrap;
     }
 
-    /* Modal zones */
-    .modal-backdrop{
-      position:fixed;
-      inset:0;
-      background:rgba(15,23,42,.45);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:1500;
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-start;
     }
-    .modal-backdrop.show{display:flex;}
-    .modal{
-      background:#fff;
-      border-radius:16px;
-      padding:18px 18px 12px;
-      max-width:520px;
-      width:100%;
-      box-shadow:0 20px 40px rgba(15,23,42,.35);
-      max-height:90vh;
-      overflow-y:auto;
+
+    .row>div {
+      flex: 1 1 240px;
     }
-    .modal-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:10px;
+
+    button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
     }
-    .modal-title{
-      font-size:18px;
-      font-weight:600;
-      color:#111827;
+
+    .primary {
+      background: #2563eb;
+      color: #fff;
     }
-    .modal-close{
-      border:none;
-      background:transparent;
-      font-size:20px;
-      cursor:pointer;
-      line-height:1;
-      padding:4px 8px;
+
+    .ghost {
+      background: #f4f4f5;
     }
-    .zone-row{
-      display:flex;
-      gap:8px;
-      margin-bottom:8px;
+
+    .muted {
+      color: #6b7280;
+      font-size: 12px;
     }
-    .zone-row input{
-      flex:1;
-      padding:7px 10px;
-      font-size:14px;
-      border-radius:10px;
-      border:1px solid #d4d4d8;
+
+    .ok {
+      color: #16a34a;
     }
-    .zone-row button{
-      font-size:12px;
-      padding:6px 9px;
-      border-radius:8px;
+
+    .err {
+      color: #dc2626;
     }
-    .zone-row .danger{
-      background:#ef4444;
-      color:#fff;
+
+    .error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
     }
-    .zone-row .primary{
-      background:#2563eb;
-      color:#fff;
+
+    .actions {
+      display: flex;
+      gap: 8px;
     }
-    .modal-footer{
-      margin-top:10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
+
+    .gps-actions {
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    .gps-actions>button {
+      width: 100%;
+    }
+
+    .preview {
+      display: block;
+      margin-top: 8px;
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* ========== ส่วนรายการถัง + ตัวกรอง ========== */
+    .section-title {
+      margin-top: 24px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .section-hint {
+      margin: 4px 0 10px;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 8px;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .filter-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      width: 100%;
+    }
+
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1 1 0;
+      min-width: 180px;
+    }
+
+    .filter-field span {
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .filter-field select,
+    .filter-field input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #d4d4d8;
+      font-size: 14px;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 6px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: #cbd5f5;
+      border-radius: 999px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 8px 10px;
+      text-align: left;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    th {
+      background: #fafafa;
+    }
+
+    .bin-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .icon-edit-btn svg {
+      fill: #2563eb;
+    }
+
+    .icon-delete-btn svg {
+      fill: #dc2626;
+    }
+
+    .icon-btn:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    /* Modal zones + edit bin ใช้สไตล์เดียวกัน */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 12px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, .35);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+
+    .zone-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .zone-row input {
+      flex: 1;
+      padding: 7px 10px;
+      font-size: 14px;
+      border-radius: 10px;
+      border: 1px solid #d4d4d8;
+    }
+
+    .zone-row button {
+      font-size: 12px;
+      padding: 6px 9px;
+      border-radius: 8px;
+    }
+
+    .zone-row .danger {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .zone-row .primary {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .modal-footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     /* ========== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า (เหมือน home) ========== */
-    :root{
-      --btn-min-h:44px;
-      --btn-pad-x:16px;
-      --btn-pad-y:10px;
-      --btn-radius:12px;
-      --btn-font:16px;
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
     }
 
-    h1{ margin:0 0 16px; line-height:1.25; }
-    legend{ line-height:1.35; }
+    h1 {
+      margin: 0 0 16px;
+      line-height: 1.25;
+    }
+
+    legend {
+      line-height: 1.35;
+    }
 
     input[type="text"],
     input[type="number"],
     input[type="file"],
     select,
     textarea,
-    button{
-      min-height:var(--btn-min-h);
-      padding:var(--btn-pad-y) var(--btn-pad-x);
-      border-radius:var(--btn-radius);
-      font-size:var(--btn-font);
-      line-height:1.2;
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      line-height: 1.2;
     }
 
     button,
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      cursor:pointer;
-      transition:transform .06s ease, box-shadow .2s ease, background-color .2s ease;
-      border:0;
-    }
-    .primary:hover{filter:brightness(1.05);}
-    .primary:active{transform:translateY(1px);}
-    .ghost:hover{filter:brightness(0.98);}
-    .ghost:active{transform:translateY(1px);}
-
-    .toggle-btn{
-      min-height:var(--btn-min-h);
-      padding:var(--btn-pad-y) var(--btn-pad-x);
-      border-radius:var(--btn-radius);
-      font-size:var(--btn-font);
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+      border: 0;
     }
 
-    button:focus, .toggle-btn:focus,
-    input:focus, select:focus, textarea:focus{
-      outline:3px solid #93c5fd;
-      outline-offset:2px;
+    .primary:hover {
+      filter: brightness(1.05);
     }
 
-    @media(max-width:900px){
-      .menu-open .toggle-btn{display:none;}
-      .lang-switcher select{
-        min-height:var(--btn-min-h);
-        padding:4px 10px;
+    .primary:active {
+      transform: translateY(1px);
+    }
+
+    .ghost:hover {
+      filter: brightness(0.98);
+    }
+
+    .ghost:active {
+      transform: translateY(1px);
+    }
+
+    .toggle-btn {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    button:focus,
+    .toggle-btn:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    @media(max-width:900px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
+      }
+
+      .sidebar.show {
+        left: 0;
+      }
+
+      .toggle-btn {
+        display: block;
+      }
+
+      main {
+        padding: 70px 16px 20px;
+      }
+
+      .row>div {
+        flex: 1 1 100%;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      .modal {
+        max-width: 100%;
+        margin: 0 10px;
+      }
+
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filter-inputs {
+        width: 100%;
+      }
+
+      .filter-field {
+        min-width: 100%;
+      }
+
+      .table-wrapper {
+        margin-top: 4px;
+        border-radius: 14px;
+      }
+
+      table {
+        font-size: 12px;
+        min-width: 580px;
+      }
+
+      th,
+      td {
+        padding: 6px 8px;
       }
     }
 
-    @media (max-width: 900px){
-      body{flex-direction:column;}
-      .sidebar{
-        position:fixed;
-        left:-250px;
-        top:0;
-        height:100%;
-        z-index:999;
-      }
-      .sidebar.show{left:0;}
-      .toggle-btn{display:block;}
-      main{
-        padding:70px 16px 20px;
-      }
-      .row>div{flex:1 1 100%;}
-      h1{text-align:center;}
-      .modal{
-        max-width:100%;
-        margin:0 10px;
+    @media(max-width:900px) {
+      .menu-open .toggle-btn {
+        display: none;
       }
     }
   </style>
 </head>
+
 <body>
   <button class="toggle-btn" id="menuToggleBtn">☰ เมนู</button>
 
@@ -418,39 +716,45 @@
         <h1 id="pageTitleHeading">ลงทะเบียนถังขยะ</h1>
       </div>
       <div class="topbar-right">
+        <!-- ไอคอนเลือกภาษา -->
         <div class="lang-switcher">
-          <select id="langSelect">
+          <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+            <!-- เปลี่ยน src ให้เป็นพาธรูปไอคอนลูกโลกของคุณ -->
+            <img src="images/lang-icon.png" alt="Language" class="top-icon">
+          </button>
+          <div class="lang-menu" id="langMenu">
+            <button type="button" data-lang="th">ไทย</button>
+            <button type="button" data-lang="en">English</button>
+            <button type="button" data-lang="ms">Bahasa Melayu</button>
+          </div>
+          <!-- select เดิม เอาไว้ให้ระบบภาษาใช้งาน แต่ซ่อนไว้ -->
+          <select id="langSelect" style="display:none;">
             <option value="th">ไทย</option>
             <option value="en">English</option>
             <option value="ms">Bahasa Melayu</option>
           </select>
         </div>
-        <div class="user-chip">
-          <span class="avatar" id="adminAvatar">A</span>
+
+        <!-- ปุ่มไปหน้าโปรไฟล์ -->
+        <a href="profile.html" class="user-chip" id="profileBtn">
+          <span class="avatar" id="adminAvatar"></span>
           <div>
             <p class="muted user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
             <strong id="adminName">-</strong>
           </div>
-        </div>
+        </a>
       </div>
     </div>
+
     <div class="content">
 
+      <!-- ฟอร์มเพิ่มถัง -->
       <fieldset>
         <legend>เพิ่มข้อมูลถังขยะ</legend>
-        <p class="muted" id="formHint">
-          บันทึกใน Firestore ที่
-          <code>smartbins / [เขต] / bin_data / [BINID]</code><br>
-          และมีคอลเลกชัน <code>bin_level</code> และ <code>Emptythetrash</code>
-          ภายใต้เขตเดียวกันสำหรับระดับถังและบันทึกการเทถัง<br>
-          ฟิลด์ใน <code>bin_data</code>:
-          <code>binId, zone, ownerUsername, ownerName, RFID, lng, lat, details, createdAt, updatedAt</code><br>
-          ฟิลด์ใน <code>bin_level</code>:
-          <code>binId, zone, fillLevel, updatedAt</code>
-        </p>
+
+        <!-- ลบคำอธิบาย Firestore ออกแล้ว -->
 
         <form id="binForm" autocomplete="off">
-
           <div class="row">
             <div style="flex:1 1 260px">
               <label id="labelZone" for="zone">เขตพื้นที่</label>
@@ -511,6 +815,50 @@
           </div>
         </form>
       </fieldset>
+
+      <!-- เส้นแบ่งก่อนเข้าส่วนรายการถัง -->
+      <hr style="margin:24px 0 16px;border:none;border-top:1px solid #e5e7eb;">
+
+      <!-- ส่วนเลือกโซน + ตารางรายการถัง -->
+      <div class="section-title" id="binsSectionTitle">รายการถังขยะ</div>
+      <p class="muted section-hint" id="binsSectionHint"></p>
+
+      <div class="filters">
+        <div class="filter-inputs">
+          <label class="filter-field">
+            <span class="muted" id="filterZoneLabel">เขตพื้นที่</span>
+            <select id="filterZone">
+              <option value="">เขตทั้งหมด</option>
+            </select>
+          </label>
+
+          <label class="filter-field">
+            <span class="muted" id="filterBinLabel">BIN / เจ้าของ</span>
+            <input id="filterBinText" type="text"
+              placeholder="กรองตาม BIN หรือชื่อเจ้าของ เช่น BIN001 หรือคุณเอ">
+          </label>
+        </div>
+        <span id="binsStatus" class="muted"></span>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th id="thZone">เขต</th>
+              <th id="thBin">BIN</th>
+              <th id="thOwner">เจ้าของถัง</th>
+              <th id="thRfid">RFID</th>
+              <th id="thCoords">พิกัด (lat,lng)</th>
+              <th id="thDetails">รายละเอียด</th>
+              <th id="thUpdated">อัปเดตเมื่อ</th>
+              <th id="thManage">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="binsRows"></tbody>
+        </table>
+      </div>
+
     </div>
   </main>
 
@@ -538,51 +886,133 @@
     </div>
   </div>
 
+  <!-- Modal แก้ไขข้อมูลถัง -->
+  <div class="modal-backdrop" id="editModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="editModalTitle">แก้ไขข้อมูลถังขยะ</div>
+        <button type="button" class="modal-close" id="btnEditClose">✕</button>
+      </div>
+
+      <form id="editForm" autocomplete="off">
+        <input type="hidden" id="editDocZone">
+        <input type="hidden" id="editDocBinId">
+
+        <div class="row">
+          <div>
+            <label id="editLabelZone">เขตพื้นที่</label>
+            <input id="editZoneDisplay" type="text" readonly />
+          </div>
+          <div>
+            <label id="editLabelBinId">ชื่อถัง (BIN)</label>
+            <input id="editBinIdDisplay" type="text" readonly />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label id="editLabelRfid">RFID Tag</label>
+            <input id="editRfid" type="text" />
+          </div>
+        </div>
+
+        <label id="editLabelPosition">ตำแหน่ง</label>
+        <div class="row">
+          <div>
+            <input id="editLng" type="number" step="any" placeholder="ลองจิจูด (longitude)" />
+          </div>
+          <div>
+            <input id="editLat" type="number" step="any" placeholder="ละติจูด (latitude)" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div style="flex:1 1 100%">
+            <label id="editLabelDetails">รายละเอียดเพิ่มเติม</label>
+            <textarea id="editDetails"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <span id="editMsg" class="muted"></span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="ghost" id="editCancel">ยกเลิก</button>
+            <button type="submit" class="primary" id="btnSaveChanges">บันทึกการแก้ไข</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     // ---------- Firebase ----------
     var firebaseConfig = {
-      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
-      authDomain:"smart-waste-a2bf4.firebaseapp.com",
-      projectId:"smart-waste-a2bf4",
-      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
-      messagingSenderId:"522733244689",
-      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
     };
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
 
-    // zones, users, และ collectionGroup สำหรับเช็คว่ามีถังในเขตนั้นไหม
-    const zonesCol   = db.collection("zones");
-    const usersCol   = db.collection("users");
-    const allBinsGroup = db.collectionGroup("bin_data"); // ✅ ใช้ตามโครงสร้างใหม่
+    const zonesCol = db.collection("zones");
+    const usersCol = db.collection("users");
+    const allBinsGroup = db.collectionGroup("bin_data");
 
-    // ---------- DOM ----------
     const $ = id => document.getElementById(id);
-    const adminNameEl = $("adminName");
-    const adminAvatarEl = $("adminAvatar");
-    const adminRoleEl = $("adminRole");
 
-    const binForm        = $("binForm");
-    const binIdEl        = $("binId");
-    const zoneEl         = $("zone");
-    const ownerEl        = $("owner");
-    const rfidEl         = $("rfid");
-    const latEl          = $("lat");
-    const lngEl          = $("lng");
-    const detailsEl      = $("details");
-    const msg            = $("msg");
-    const btnReset       = $("btnReset");
-    const btnGetPos      = $("btnGetPos");
-    const menuToggleBtn  = $("menuToggleBtn");
-    const sidebarEl      = $("sidebar");
-    const langSelect     = $("langSelect");
-    const formHintEl     = $("formHint");
-    const labelZoneEl    = $("labelZone");
-    const labelBinIdEl   = $("labelBinId");
-    const labelOwnerEl   = $("labelOwner");
-    const labelRfidEl    = $("labelRfid");
-    const labelPositionEl= $("labelPosition");
-    const labelDetailsEl = $("labelDetails");
+    const binForm = $("binForm");
+    const binIdEl = $("binId");
+    const zoneEl = $("zone");
+    const ownerEl = $("owner");
+    const rfidEl = $("rfid");
+    const latEl = $("lat");
+    const lngEl = $("lng");
+    const detailsEl = $("details");
+    const msg = $("msg");
+    const btnReset = $("btnReset");
+    const btnGetPos = $("btnGetPos");
+    const menuToggleBtn = $("menuToggleBtn");
+    const sidebarEl = $("sidebar");
+    const langSelect = $("langSelect");
+
+    // filter controls
+    const binsStatusEl = $("binsStatus");
+    const binsRowsEl = $("binsRows");
+    const filterBinText = $("filterBinText");
+    const filterZoneSelect = $("filterZone");
+
+    // zone modal
+    const zoneModalBackdrop = $("zoneModalBackdrop");
+    const zoneListEl = $("zoneList");
+    const newZoneNameEl = $("newZoneName");
+    const btnAddZone = $("btnAddZone");
+    const btnCloseZoneModal = $("btnCloseZoneModal");
+    const btnZoneDone = $("btnZoneDone");
+    const zoneModalMsg = $("zoneModalMsg");
+
+    // edit modal
+    const editModalBackdrop = $("editModalBackdrop");
+    const editForm = $("editForm");
+    const editDocZone = $("editDocZone");
+    const editDocBinId = $("editDocBinId");
+    const editZoneDisplay = $("editZoneDisplay");
+    const editBinIdDisplay = $("editBinIdDisplay");
+    const editRfid = $("editRfid");
+    const editLat = $("editLat");
+    const editLng = $("editLng");
+    const editDetails = $("editDetails");
+    const editMsg = $("editMsg");
+    const btnEditClose = $("btnEditClose");
+    const btnEditCancel = $("editCancel");
+
+    // language icon + menu
+    const langIconBtn = $("langIconBtn");
+    const langMenu = $("langMenu");
 
     const translations = {
       th: {
@@ -597,7 +1027,6 @@
         navBins: "รายการถังขยะ",
         mainTitle: "ลงทะเบียนถังขยะ",
         formLegend: "เพิ่มข้อมูลถังขยะ",
-        formHint: "บันทึกใน Firestore ที่ <code>smartbins / [เขต] / bin_data / [BINID]</code><br>และมีคอลเลกชัน <code>bin_level</code> และ <code>Emptythetrash</code> สำหรับข้อมูลระดับถังและบันทึกการเทถัง<br>ฟิลด์ใน <code>bin_data</code>: <code>binId, zone, ownerUsername, ownerName, RFID, lng, lat, details, createdAt, updatedAt</code><br>ฟิลด์ใน <code>bin_level</code>: <code>binId, zone, fillLevel, updatedAt</code>",
         labelZone: "เขตพื้นที่",
         labelBinId: "ชื่อถัง (อัตโนมัติ: BIN + เลขรัน 3 หลักตามเขต)",
         labelOwner: "ผู้ใช้เจ้าของถัง",
@@ -648,9 +1077,43 @@
         ownerSelectError: "-- โหลดรายชื่อผู้ใช้ไม่สำเร็จ --",
         statusSelectOwner: "กรุณาเลือกผู้ใช้เจ้าของถัง",
         ownerLoadError: "ไม่สามารถโหลดรายชื่อผู้ใช้ได้:",
-        roleAdmin: "ผู้ดูแลระบบ",
-        roleUser: "ผู้ใช้ทั่วไป",
-        logout: "ออกจากระบบ"
+
+        binsSectionTitle: "รายการถังขยะ",
+        binsSectionHint: "",
+        filterZoneLabel: "เขตพื้นที่",
+        filterZoneAll: "เขตทั้งหมด",
+        filterBinLabel: "BIN / เจ้าของ",
+        filterBinPlaceholder: "กรองตาม BIN หรือชื่อเจ้าของ เช่น BIN001 หรือคุณเอ",
+        tableHeaderZone: "เขต",
+        tableHeaderBin: "BIN",
+        tableHeaderOwner: "เจ้าของถัง",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "พิกัด (lat,lng)",
+        tableHeaderDetails: "รายละเอียด",
+        tableHeaderUpdated: "อัปเดตเมื่อ",
+        tableHeaderManage: "จัดการ",
+        noData: "ไม่พบข้อมูลถังขยะตามเงื่อนไขที่กรอง",
+        loading: "กำลังโหลดข้อมูลถังขยะ...",
+        showing: "แสดง",
+        items: "รายการ",
+        btnEdit: "แก้ไข",
+        btnDelete: "ลบ",
+        inZone: "ในเขต",
+        confirmDelete: "แน่ใจหรือไม่ว่าต้องการลบถัง",
+        deleteSuccess: "ลบถังสำเร็จ",
+        deleteError: "ลบถังไม่สำเร็จ:",
+
+        editModalTitle: "แก้ไขข้อมูลถังขยะ",
+        editLabelZone: "เขตพื้นที่",
+        editLabelBinId: "ชื่อถัง (BIN)",
+        editLabelRfid: "RFID Tag",
+        editLabelPosition: "ตำแหน่ง",
+        editLabelDetails: "รายละเอียดเพิ่มเติม",
+        editSaving: "กำลังบันทึกการแก้ไข...",
+        editSaveSuccess: "✅ บันทึกการแก้ไขสำเร็จ",
+        editSaveError: "❌ บันทึกไม่สำเร็จ:",
+        btnCancel: "ยกเลิก",
+        btnSaveChanges: "บันทึกการแก้ไข"
       },
       en: {
         pageTitle: "Smart Waste - Register Bin",
@@ -664,7 +1127,6 @@
         navBins: "Bin List",
         mainTitle: "Register Bin",
         formLegend: "Add Bin Information",
-        formHint: "Saves to Firestore at <code>smartbins / [zone] / bin_data / [BINID]</code><br>and uses <code>bin_level</code> and <code>Emptythetrash</code> under the same zone for fill-level and emptying records<br>Fields in <code>bin_data</code>: <code>binId, zone, ownerUsername, ownerName, RFID, lng, lat, details, createdAt, updatedAt</code><br>Fields in <code>bin_level</code>: <code>binId, zone, fillLevel, updatedAt</code>",
         labelZone: "Zone Area",
         labelBinId: "Bin Name (Auto: BIN + 3-digit number per zone)",
         labelOwner: "Bin Owner",
@@ -687,6 +1149,7 @@
         statusGetPosError: "Failed to get location:",
         statusNoGps: "Geolocation is not supported by this device",
         statusSelectZone: "Please select a zone",
+
         zoneModalTitle: "Manage Zones",
         zoneModalNoZones: "No zones yet. Add a new zone below.",
         zoneModalNewZonePlaceholder: "New zone name, e.g., City, Zone1",
@@ -715,9 +1178,43 @@
         ownerSelectError: "-- Failed to load users --",
         statusSelectOwner: "Please select a bin owner",
         ownerLoadError: "Unable to load user list:",
-        roleAdmin: "Administrator",
-        roleUser: "User",
-        logout: "Logout"
+
+        binsSectionTitle: "Bin List",
+        binsSectionHint: "",
+        filterZoneLabel: "Zone",
+        filterZoneAll: "All zones",
+        filterBinLabel: "BIN / Owner",
+        filterBinPlaceholder: "Filter by BIN or owner, e.g. BIN001 or John",
+        tableHeaderZone: "Zone",
+        tableHeaderBin: "BIN",
+        tableHeaderOwner: "Owner",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "Coords (lat,lng)",
+        tableHeaderDetails: "Details",
+        tableHeaderUpdated: "Updated At",
+        tableHeaderManage: "Manage",
+        noData: "No bins match the current filters",
+        loading: "Loading bin data...",
+        showing: "Showing",
+        items: "items",
+        btnEdit: "Edit",
+        btnDelete: "Delete",
+        inZone: "in zone",
+        confirmDelete: "Are you sure you want to delete bin",
+        deleteSuccess: "Bin deleted successfully",
+        deleteError: "Failed to delete bin:",
+
+        editModalTitle: "Edit Bin Information",
+        editLabelZone: "Zone Area",
+        editLabelBinId: "Bin Name (BIN)",
+        editLabelRfid: "RFID Tag",
+        editLabelPosition: "Position",
+        editLabelDetails: "Additional Details",
+        editSaving: "Saving changes...",
+        editSaveSuccess: "✅ Changes saved successfully",
+        editSaveError: "❌ Save failed:",
+        btnCancel: "Cancel",
+        btnSaveChanges: "Save Changes"
       },
       ms: {
         pageTitle: "Smart Waste - Daftar Tong",
@@ -731,7 +1228,6 @@
         navBins: "Senarai Tong",
         mainTitle: "Daftar Tong",
         formLegend: "Tambah Maklumat Tong",
-        formHint: "Simpan ke Firestore di <code>smartbins / [zon] / bin_data / [BINID]</code><br>dan menggunakan <code>bin_level</code> dan <code>Emptythetrash</code> di zon yang sama untuk tahap isi dan rekod pengosongan<br>Medan dalam <code>bin_data</code>: <code>binId, zone, ownerUsername, ownerName, RFID, lng, lat, details, createdAt, updatedAt</code><br>Medan dalam <code>bin_level</code>: <code>binId, zone, fillLevel, updatedAt</code>",
         labelZone: "Kawasan Zon",
         labelBinId: "Nama Tong (Auto: BIN + 3 digit nombor setiap zon)",
         labelOwner: "Pemilik Tong",
@@ -754,6 +1250,7 @@
         statusGetPosError: "Gagal mendapatkan lokasi:",
         statusNoGps: "Geolokasi tidak disokong oleh peranti ini",
         statusSelectZone: "Sila pilih zon",
+
         zoneModalTitle: "Urus Zon",
         zoneModalNoZones: "Belum ada zon. Tambah zon baharu di bawah.",
         zoneModalNewZonePlaceholder: "Nama zon baharu, cth., Bandar, Zon1",
@@ -782,9 +1279,43 @@
         ownerSelectError: "-- Gagal memuatkan pengguna --",
         statusSelectOwner: "Sila pilih pemilik tong",
         ownerLoadError: "Tidak dapat memuatkan senarai pengguna:",
-        roleAdmin: "Pentadbir",
-        roleUser: "Pengguna",
-        logout: "Keluar"
+
+        binsSectionTitle: "Senarai Tong",
+        binsSectionHint: "",
+        filterZoneLabel: "Zon",
+        filterZoneAll: "Semua zon",
+        filterBinLabel: "BIN / Pemilik",
+        filterBinPlaceholder: "Tapis BIN atau pemilik, cth. BIN001 atau Ali",
+        tableHeaderZone: "Zon",
+        tableHeaderBin: "BIN",
+        tableHeaderOwner: "Pemilik",
+        tableHeaderRfid: "RFID",
+        tableHeaderCoords: "Koordinat (lat,lng)",
+        tableHeaderDetails: "Butiran",
+        tableHeaderUpdated: "Dikemas Kini",
+        tableHeaderManage: "Tindakan",
+        noData: "Tiada tong yang sepadan dengan penapis semasa",
+        loading: "Memuatkan data tong...",
+        showing: "Menunjukkan",
+        items: "rekod",
+        btnEdit: "Ubah",
+        btnDelete: "Padam",
+        inZone: "di zon",
+        confirmDelete: "Adakah anda pasti mahu memadam tong",
+        deleteSuccess: "Tong berjaya dipadam",
+        deleteError: "Gagal memadam tong:",
+
+        editModalTitle: "Ubah Maklumat Tong",
+        editLabelZone: "Zon",
+        editLabelBinId: "Nama Tong (BIN)",
+        editLabelRfid: "Tag RFID",
+        editLabelPosition: "Posisi",
+        editLabelDetails: "Butiran Tambahan",
+        editSaving: "Menyimpan perubahan...",
+        editSaveSuccess: "✅ Berjaya disimpan",
+        editSaveError: "❌ Gagal menyimpan:",
+        btnCancel: "Batal",
+        btnSaveChanges: "Simpan Perubahan"
       }
     };
 
@@ -792,73 +1323,70 @@
     let currentLang = (LangState && typeof LangState.getLang === "function")
       ? LangState.getLang()
       : (localStorage.getItem('sw_lang') || 'th');
-    function getTranslation(key){ return translations[currentLang][key] || key; }
+
+    function getTranslation(key) { return translations[currentLang][key] || key; }
     function t(key) { return getTranslation(key); }
 
-    const zoneModalBackdrop = $("zoneModalBackdrop");
-    const zoneListEl        = $("zoneList");
-    const newZoneNameEl     = $("newZoneName");
-    const btnAddZone        = $("btnAddZone");
-    const btnCloseZoneModal = $("btnCloseZoneModal");
-    const btnZoneDone       = $("btnZoneDone");
-    const zoneModalMsg      = $("zoneModalMsg");
-
-    function setStatus(text, type){
+    function setStatusForm(text, type) {
       msg.textContent = text || "";
-      msg.className = "muted" + (type==="ok" ? " ok" : type==="err" ? " err" : "");
+      msg.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
     }
-    function errStr(e){
+    function setBinsStatus(text, type) {
+      binsStatusEl.textContent = text || "";
+      binsStatusEl.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
+    }
+    function errStr(e) {
       return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
     }
 
-    // --------- รายชื่อผู้ใช้งาน ----------
+    // ---------- owners ----------
     let owners = [];
     let ownerMap = new Map();
     let ownerSelectState = "loading";
 
-    function renderOwnerSelect(){
-      if(!ownerEl) return;
+    function renderOwnerSelect() {
+      if (!ownerEl) return;
       const selected = ownerEl.value;
       ownerEl.innerHTML = "";
       const opt = document.createElement("option");
       opt.value = "";
       const state = ownerSelectState;
-      if(state === "loading"){
+      if (state === "loading") {
         opt.textContent = getTranslation('ownerSelectLoading');
         ownerEl.disabled = true;
-      }else if(state === "error"){
+      } else if (state === "error") {
         opt.textContent = getTranslation('ownerSelectError');
         ownerEl.disabled = true;
-      }else if(!owners.length){
+      } else if (!owners.length) {
         opt.textContent = getTranslation('ownerSelectEmpty');
         ownerEl.disabled = true;
-      }else{
+      } else {
         opt.textContent = getTranslation('ownerSelectDefault');
         ownerEl.disabled = false;
       }
       ownerEl.appendChild(opt);
-      if(state === "ready" && owners.length){
+      if (state === "ready" && owners.length) {
         owners.forEach(user => {
           const option = document.createElement("option");
           option.value = user.username;
           option.textContent = `${user.displayName} (${user.username})`;
           ownerEl.appendChild(option);
         });
-        if(selected && ownerMap.has(selected)){
+        if (selected && ownerMap.has(selected)) {
           ownerEl.value = selected;
-        }else{
+        } else {
           ownerEl.value = "";
         }
-      }else{
+      } else {
         ownerEl.value = "";
       }
     }
 
-    async function loadOwners(){
+    async function loadOwners() {
       ownerSelectState = "loading";
       renderOwnerSelect();
-      try{
-        const snap = await usersCol.where("status","==", 2).get();
+      try {
+        const snap = await usersCol.where("status", "==", 2).get();
         const locale = currentLang === "en" ? "en" : currentLang === "ms" ? "ms" : "th";
         owners = snap.docs.map(doc => {
           const data = doc.data() || {};
@@ -869,22 +1397,22 @@
             displayName: fullName || username,
             fullName
           };
-        }).sort((a,b) => a.displayName.localeCompare(b.displayName, locale, { sensitivity:"base" }));
+        }).sort((a, b) => a.displayName.localeCompare(b.displayName, locale, { sensitivity: "base" }));
         ownerMap = new Map(owners.map(user => [user.username, user]));
         ownerSelectState = "ready";
         renderOwnerSelect();
-      }catch(err){
+      } catch (err) {
         console.error("loadOwners error", err);
         ownerSelectState = "error";
         renderOwnerSelect();
-        setStatus(`${getTranslation('ownerLoadError')} ${errStr(err)}`,"err");
+        setStatusForm(`${getTranslation('ownerLoadError')} ${errStr(err)}`, "err");
       }
     }
 
-    // --------- จัดการเขต ----------
-    let zones = []; // [{id,name}]
+    // ---------- zones ----------
+    let zones = [];
 
-    function renderZoneSelect(){
+    function renderZoneSelect() {
       const selected = zoneEl.value;
       zoneEl.innerHTML = "";
       const opt0 = document.createElement("option");
@@ -904,12 +1432,35 @@
       addOpt.textContent = getTranslation('zoneSelectAdd');
       zoneEl.appendChild(addOpt);
 
-      if(selected) zoneEl.value = selected;
+      if (selected) zoneEl.value = selected;
     }
 
-    function renderZoneList(){
+    function renderZoneFilterOptions() {
+      if (!filterZoneSelect) return;
+      const prev = filterZoneSelect.value;
+      filterZoneSelect.innerHTML = "";
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = t('filterZoneAll');
+      filterZoneSelect.appendChild(allOpt);
+
+      zones.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.id;
+        opt.textContent = z.name;
+        filterZoneSelect.appendChild(opt);
+      });
+
+      if (prev && zones.some(z => z.id === prev)) {
+        filterZoneSelect.value = prev;
+      } else {
+        filterZoneSelect.value = "";
+      }
+    }
+
+    function renderZoneList() {
       zoneListEl.innerHTML = "";
-      if(!zones.length){
+      if (!zones.length) {
         zoneListEl.innerHTML = `<p class="muted">${getTranslation('zoneModalNoZones')}</p>`;
         return;
       }
@@ -935,20 +1486,20 @@
         btnSaveZone.addEventListener("click", async () => {
           const oldId = input.dataset.oldId;
           const newName = input.value.trim();
-          if(!newName){
+          if (!newName) {
             zoneModalMsg.textContent = getTranslation('zoneModalEmptyName');
             zoneModalMsg.className = "muted err";
             return;
           }
-          if(oldId === newName){
+          if (oldId === newName) {
             zoneModalMsg.textContent = getTranslation('zoneModalNoChange');
             zoneModalMsg.className = "muted";
             return;
           }
 
-          try{
-            const binsSnap = await allBinsGroup.where("zone","==", oldId).limit(1).get();
-            if(!binsSnap.empty){
+          try {
+            const binsSnap = await allBinsGroup.where("zone", "==", oldId).limit(1).get();
+            if (!binsSnap.empty) {
               zoneModalMsg.textContent = getTranslation('zoneModalCannotChange');
               zoneModalMsg.className = "muted err";
               return;
@@ -965,7 +1516,7 @@
 
             zoneModalMsg.textContent = getTranslation('zoneModalSaveSuccess');
             zoneModalMsg.className = "muted ok";
-          }catch(e){
+          } catch (e) {
             zoneModalMsg.textContent = `${getTranslation('zoneModalSaveError')} ${e.message || e}`;
             zoneModalMsg.className = "muted err";
           }
@@ -973,10 +1524,10 @@
 
         btnDeleteZone.addEventListener("click", async () => {
           const id = input.dataset.oldId;
-          if(!confirm(`${getTranslation('zoneModalConfirmDelete')} "${id}"?`)) return;
-          try{
-            const binsSnap = await allBinsGroup.where("zone","==", id).limit(1).get();
-            if(!binsSnap.empty){
+          if (!confirm(`${getTranslation('zoneModalConfirmDelete')} "${id}"?`)) return;
+          try {
+            const binsSnap = await allBinsGroup.where("zone", "==", id).limit(1).get();
+            if (!binsSnap.empty) {
               zoneModalMsg.textContent = getTranslation('zoneModalCannotDelete');
               zoneModalMsg.className = "muted err";
               return;
@@ -984,7 +1535,7 @@
             await zonesCol.doc(id).delete();
             zoneModalMsg.textContent = getTranslation('zoneModalDeleteSuccess');
             zoneModalMsg.className = "muted ok";
-          }catch(e){
+          } catch (e) {
             zoneModalMsg.textContent = `${getTranslation('zoneModalDeleteError')} ${e.message || e}`;
             zoneModalMsg.className = "muted err";
           }
@@ -997,24 +1548,13 @@
       });
     }
 
-    zonesCol.orderBy("name").onSnapshot(snap => {
-      zones = [];
-      snap.forEach(doc => {
-        const d = doc.data() || {};
-        zones.push({ id: doc.id, name: d.name || doc.id });
-      });
-      renderZoneSelect();
-      renderZoneList();
-      changeLanguage(currentLang, true);
-    });
-
-    function openZoneModal(){
+    function openZoneModal() {
       zoneModalMsg.textContent = "";
       zoneModalMsg.className = "muted";
       newZoneNameEl.value = "";
       zoneModalBackdrop.classList.add("show");
     }
-    function closeZoneModal(){
+    function closeZoneModal() {
       zoneModalBackdrop.classList.remove("show");
     }
 
@@ -1023,15 +1563,15 @@
 
     btnAddZone.addEventListener("click", async () => {
       const name = newZoneNameEl.value.trim();
-      if(!name){
+      if (!name) {
         zoneModalMsg.textContent = getTranslation('zoneModalEmptyName');
         zoneModalMsg.className = "muted err";
         return;
       }
-      try{
+      try {
         const docRef = zonesCol.doc(name);
         const snap = await docRef.get();
-        if(snap.exists){
+        if (snap.exists) {
           zoneModalMsg.textContent = getTranslation('zoneModalExists');
           zoneModalMsg.className = "muted err";
           return;
@@ -1043,19 +1583,18 @@
         newZoneNameEl.value = "";
         zoneModalMsg.textContent = getTranslation('zoneModalAddSuccess');
         zoneModalMsg.className = "muted ok";
-      }catch(e){
+      } catch (e) {
         zoneModalMsg.textContent = `${getTranslation('zoneModalAddError')} ${e.message || e}`;
         zoneModalMsg.className = "muted err";
       }
     });
 
-    // --------- BIN ID ต่อเขต ----------
-    function pad3(n){ return n.toString().padStart(3,"0"); }
+    // ---------- BIN ID ----------
+    function pad3(n) { return n.toString().padStart(3, "0"); }
 
-    // ใช้ smartbins/{zone}/bin_data เพื่อดูเลขสูงสุดในเขตนั้นแล้ว +1
-    async function assignBinIdForZone(zoneName){
-      if(!zoneName) return "";
-      try{
+    async function assignBinIdForZone(zoneName) {
+      if (!zoneName) return "";
+      try {
         const binsCol = db
           .collection("smartbins")
           .doc(zoneName)
@@ -1063,23 +1602,26 @@
 
         const snap = await binsCol.get();
 
-        let maxNum = 0;
+        const usedNumbers = new Set();
         snap.forEach(doc => {
           const data = doc.data() || {};
           const binCode = (data.binId || doc.id || "").toString();
           const match = /(\d+)$/.exec(binCode);
-          if(match){
+          if (match) {
             const num = Number(match[1]);
-            if(!Number.isNaN(num)){
-              maxNum = Math.max(maxNum, num);
+            if (!Number.isNaN(num)) {
+              usedNumbers.add(num);
             }
           }
         });
 
-        const binId = "BIN" + pad3(maxNum + 1);
+        let candidate = 1;
+        while (usedNumbers.has(candidate)) candidate++;
+
+        const binId = "BIN" + pad3(candidate);
         binIdEl.value = binId;
         return binId;
-      }catch(err){
+      } catch (err) {
         console.error("assignBinIdForZone error", err);
         const fallback = "BIN001";
         binIdEl.value = fallback;
@@ -1090,82 +1632,82 @@
     zoneEl.addEventListener("change", async () => {
       const z = zoneEl.value;
 
-      if(z === "__add_zone__"){
+      if (z === "__add_zone__") {
         zoneEl.value = "";
         binIdEl.value = "";
-        setStatus("", "");
+        setStatusForm("", "");
         openZoneModal();
         return;
       }
 
-      if(!z){
+      if (!z) {
         binIdEl.value = "";
-        setStatus(getTranslation('statusSelectZone'),"");
+        setStatusForm(getTranslation('statusSelectZone'), "err");
         return;
       }
 
-      setStatus("","");
+      setStatusForm("", "");
       await assignBinIdForZone(z);
     });
 
     // ---------- GPS ----------
     btnGetPos.addEventListener("click", () => {
-      if(!navigator.geolocation){
-        setStatus(getTranslation('statusNoGps'),"err");
+      if (!navigator.geolocation) {
+        setStatusForm(getTranslation('statusNoGps'), "err");
         return;
       }
-      setStatus(getTranslation('statusGettingPos'),"");
-      navigator.geolocation.getCurrentPosition(pos=>{
+      setStatusForm(getTranslation('statusGettingPos'), "");
+      navigator.geolocation.getCurrentPosition(pos => {
         const { latitude, longitude } = pos.coords;
         latEl.value = latitude.toFixed(6);
         lngEl.value = longitude.toFixed(6);
-        setStatus(getTranslation('statusGetPosSuccess'),"ok");
-      }, err=>{
-        setStatus(`${getTranslation('statusGetPosError')} ${err.message}`,"err");
-      }, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
+        setStatusForm(getTranslation('statusGetPosSuccess'), "ok");
+      }, err => {
+        setStatusForm(`${getTranslation('statusGetPosError')} ${err.message}`, "err");
+      }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     });
 
-    // ---------- เคลียร์ฟอร์ม ----------
-    function clearForm(){
+    // ---------- clear form ----------
+    function clearForm() {
       binForm.reset();
       binIdEl.value = "";
       ownerEl.classList.remove("error");
       zoneEl.classList.remove("error");
-      setStatus("","");
+      setStatusForm("", "");
     }
 
     btnReset.addEventListener("click", clearForm);
 
-    // ---------- Submit ----------
+    // ---------- submit ----------
     binForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      try{
+      try {
         const zone = zoneEl.value.trim();
-        if(!zone){
+        if (!zone) {
           zoneEl.classList.add("error");
-          setStatus(getTranslation('statusSelectZone'),"err");
+          setStatusForm(getTranslation('statusSelectZone'), "err");
           return;
-        }else{
+        } else {
           zoneEl.classList.remove("error");
         }
 
         const ownerUsername = ownerEl.value.trim();
-        if(!ownerUsername){
+        if (!ownerUsername) {
           ownerEl.classList.add("error");
-          setStatus(getTranslation('statusSelectOwner'),"err");
+          setStatusForm(getTranslation('statusSelectOwner'), "err");
           return;
-        }else{
+        } else {
           ownerEl.classList.remove("error");
         }
 
         let binId = binIdEl.value.trim();
-        if(!binId){
+        if (!binId) {
           binId = await assignBinIdForZone(zone);
         }
 
         const rfid = rfidEl.value.trim() || null;
-        const lng  = lngEl.value ? Number(lngEl.value) : null;
-        const lat  = latEl.value ? Number(latEl.value) : null;
+        const lng = lngEl.value ? Number(lngEl.value) : null;
+        const lat = latEl.value ? Number(latEl.value) : null;
         const details = detailsEl.value.trim() || null;
 
         const ownerInfo = ownerMap.get(ownerUsername);
@@ -1178,22 +1720,22 @@
           zone,
           ownerUsername,
           ownerName,
-          RFID: rfid, // ✅ ชื่อฟิลด์ตามที่กำหนด
+          RFID: rfid,
+          rfid: rfid,
           lng,
           lat,
           details,
-          createdAt : firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt : firebase.firestore.FieldValue.serverTimestamp()
+          isHidden: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        setStatus(getTranslation('statusSaving'),"");
-        // 1) บันทึกข้อมูลถังที่ smartbins/{zone}/bin_data/{BINID}
+        setStatusForm(getTranslation('statusSaving'), "");
         await zoneDocRef
           .collection("bin_data")
           .doc(binId)
-          .set(data, { merge:false });
+          .set(data, { merge: false });
 
-        // 2) สร้าง/อัปเดตระดับถังเริ่มต้นที่ smartbins/{zone}/bin_level/{BINID}
         await zoneDocRef
           .collection("bin_level")
           .doc(binId)
@@ -1202,20 +1744,279 @@
             zone: zone,
             fillLevel: 0,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge:true });
+          }, { merge: true });
 
-        // 3) Emptythetrash จะไปใช้ตอนคนขับกดเทถัง (หน้าอื่น)
-        setStatus(`${getTranslation('statusSaveSuccess')} (${binId})`,"ok");
+        setStatusForm(`${getTranslation('statusSaveSuccess')} (${binId})`, "ok");
         clearForm();
-      }catch(err){
+      } catch (err) {
         console.error(err);
-        setStatus(`${getTranslation('statusSaveError')} ${errStr(err)}`,"err");
+        setStatusForm(`${getTranslation('statusSaveError')} ${errStr(err)}`, "err");
       }
     });
 
-    // ---------- เปลี่ยนภาษา ----------
-    function changeLanguage(lang, isUpdate=false){
-      if(!translations[lang]) return;
+    // ---------- bins list ----------
+    let zoneUnsubMap = {};
+    let bins = [];
+
+    function renderBinsTable() {
+      binsRowsEl.innerHTML = "";
+
+      let filtered = bins.slice();
+
+      const zoneFilterVal = filterZoneSelect.value;
+      if (zoneFilterVal) {
+        filtered = filtered.filter(item => item.zone === zoneFilterVal);
+      }
+
+      const search = filterBinText.value.trim().toLowerCase();
+      if (search) {
+        filtered = filtered.filter(item => {
+          const d = item.data || {};
+          const binId = (d.binId || item.binId || "").toString().toLowerCase();
+          const ownerName = (d.ownerName || "").toString().toLowerCase();
+          const ownerUsername = (d.ownerUsername || "").toString().toLowerCase();
+          return (
+            binId.includes(search) ||
+            ownerName.includes(search) ||
+            ownerUsername.includes(search)
+          );
+        });
+      }
+
+      filtered.sort((a, b) => b.createdAtMs - a.createdAtMs);
+
+      if (!filtered.length) {
+        binsRowsEl.innerHTML = `<tr><td colspan="8" class="muted">${t('noData')}</td></tr>`;
+        setBinsStatus("", "");
+        return;
+      }
+
+      filtered.forEach(item => {
+        const d = item.data || {};
+        const zone = d.zone || item.zone;
+        const binId = d.binId || item.binId;
+        const rfidVal = d.RFID || d.rfid || "—";
+        const lat = (d.lat !== undefined && d.lat !== null) ? d.lat : "—";
+        const lng = (d.lng !== undefined && d.lng !== null) ? d.lng : "—";
+        const det = d.details || "—";
+        const ownerName = d.ownerName || d.owner || "";
+        const ownerUsername = d.ownerUsername || "";
+        const ownerDisplay = ownerName || ownerUsername || "—";
+        const updatedAt = item.updatedAt ? item.updatedAt.toLocaleString() : "—";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${zone}</td>
+          <td><code>${binId}</code></td>
+          <td>${ownerDisplay}</td>
+          <td>${rfidVal}</td>
+          <td>${lat}, ${lng}</td>
+          <td>${det}</td>
+          <td class="muted">${updatedAt}</td>
+          <td>
+            <div class="bin-actions">
+              <button class="icon-btn icon-edit-btn"
+                      onclick="editBin('${zone}','${binId}')"
+                      aria-label="${t('btnEdit')}">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71
+                           7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003
+                           1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
+                </svg>
+              </button>
+
+              <button class="icon-btn icon-delete-btn"
+                      onclick="deleteBin('${zone}','${binId}')"
+                      aria-label="${t('btnDelete')}">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 3h6a1 1 0 0 1 1 1v1h4v2h-1v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7H3V5h4V4a1 1 0 0 1 1-1zm1 2v1h4V5h-4zm-2 4h2v9H8V9zm4 0h2v9h-2V9z"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        `;
+        binsRowsEl.appendChild(tr);
+      });
+
+      setBinsStatus(`${t('showing')} ${filtered.length} ${t('items')}`, "ok");
+    }
+
+    filterBinText.addEventListener("input", renderBinsTable);
+    filterZoneSelect.addEventListener("change", renderBinsTable);
+
+    zonesCol.orderBy("name").onSnapshot(snap => {
+      zones = [];
+      Object.values(zoneUnsubMap).forEach(fn => fn && fn());
+      zoneUnsubMap = {};
+      bins = [];
+
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        zones.push({ id: doc.id, name: d.name || doc.id });
+      });
+
+      renderZoneSelect();
+      renderZoneList();
+      renderZoneFilterOptions();
+
+      if (zones.length) {
+        setBinsStatus(t('loading'), "");
+      } else {
+        setBinsStatus("", "");
+      }
+
+      zones.forEach(z => {
+        const col = db
+          .collection("smartbins")
+          .doc(z.id)
+          .collection("bin_data");
+
+        const unsub = col.onSnapshot(zoneSnap => {
+          bins = bins.filter(b => b.zone !== z.id);
+          zoneSnap.forEach(doc => {
+            const d = doc.data() || {};
+            if (d.isHidden === true) return;
+
+            const createdAt =
+              d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() :
+                (d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().getTime() : 0);
+            const updatedAt = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : null;
+            bins.push({
+              zone: z.id,
+              binId: doc.id,
+              data: d,
+              createdAtMs: createdAt || 0,
+              updatedAt: updatedAt
+            });
+          });
+          renderBinsTable();
+        });
+        zoneUnsubMap[z.id] = unsub;
+      });
+
+      changeLanguage(currentLang, true);
+    });
+
+    // ---------- Edit modal ----------
+    function openEditModal() {
+      editModalBackdrop.classList.add("show");
+    }
+    function closeEditModal() {
+      editModalBackdrop.classList.remove("show");
+      editForm.reset();
+      setBinsStatus("", "");
+      editMsg.textContent = "";
+      editMsg.className = "muted";
+    }
+    btnEditClose.addEventListener("click", closeEditModal);
+    btnEditCancel.addEventListener("click", closeEditModal);
+
+    window.editBin = async function (zone, binId) {
+      try {
+        const docRef = db
+          .collection("smartbins")
+          .doc(zone)
+          .collection("bin_data")
+          .doc(binId);
+
+        const snap = await docRef.get();
+        if (!snap.exists) {
+          setBinsStatus("ไม่พบข้อมูลถัง " + binId, "err");
+          return;
+        }
+        const d = snap.data() || {};
+        editDocZone.value = zone;
+        editDocBinId.value = binId;
+        editZoneDisplay.value = zone;
+        editBinIdDisplay.value = binId;
+
+        editRfid.value = d.RFID || d.rfid || "";
+        editLat.value = d.lat !== undefined && d.lat !== null ? d.lat : "";
+        editLng.value = d.lng !== undefined && d.lng !== null ? d.lng : "";
+        editDetails.value = d.details || "";
+
+        openEditModal();
+      } catch (e) {
+        setBinsStatus("อ่านข้อมูลไม่สำเร็จ: " + errStr(e), "err");
+      }
+    };
+
+    editForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      try {
+        const zone = editDocZone.value;
+        const binId = editDocBinId.value;
+        if (!zone || !binId) {
+          editMsg.textContent = t('editSaveError');
+          editMsg.className = "muted err";
+          return;
+        }
+        const rfid = editRfid.value.trim() || null;
+        const lng = editLng.value ? Number(editLng.value) : null;
+        const lat = editLat.value ? Number(editLat.value) : null;
+        const det = editDetails.value.trim() || null;
+
+        const data = {
+          RFID: rfid,
+          rfid: rfid,
+          lng,
+          lat,
+          details: det,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        editMsg.textContent = t('editSaving');
+        editMsg.className = "muted";
+
+        const docRef = db
+          .collection("smartbins")
+          .doc(zone)
+          .collection("bin_data")
+          .doc(binId);
+
+        await docRef.set(data, { merge: true });
+        editMsg.textContent = t('editSaveSuccess');
+        editMsg.className = "muted ok";
+        setBinsStatus(`${t('editSaveSuccess')} ${binId}`, "ok");
+        setTimeout(closeEditModal, 600);
+      } catch (e) {
+        editMsg.textContent = `${t('editSaveError')} ${errStr(e)}`;
+        editMsg.className = "muted err";
+      }
+    });
+
+    // ---------- Delete bin (soft delete) ----------
+    window.deleteBin = async function (zone, binId) {
+      if (!confirm(`${t('confirmDelete')} ${binId} ${t('inZone')} ${zone}?`)) return;
+      try {
+        const docRef = db
+          .collection("smartbins")
+          .doc(zone)
+          .collection("bin_data")
+          .doc(binId);
+
+        await docRef.set({
+          isHidden: true,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        setBinsStatus(`${t('deleteSuccess')} ${binId}`, "ok");
+      } catch (e) {
+        setBinsStatus(`${t('deleteError')} ${errStr(e)}`, "err");
+      }
+    };
+
+    // ---------- Language ----------
+    function updateLangMenuActive() {
+      if (!langMenu) return;
+      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === currentLang);
+      });
+    }
+
+    function changeLanguage(lang, isUpdate = false) {
+      if (!translations[lang]) return;
       currentLang = lang;
       if (LangState && typeof LangState.setLang === "function") {
         LangState.setLang(lang);
@@ -1228,10 +2029,9 @@
       document.title = getTranslation('pageTitle');
       menuToggleBtn.textContent = getTranslation('menuBtn');
 
-      if(window.AdminNav){
+      if (window.AdminNav) {
         window.AdminNav.setLanguage(currentLang);
       }
-
       if (window.AdminUser) {
         window.AdminUser.setLanguage(currentLang);
       }
@@ -1239,22 +2039,19 @@
       document.querySelector('h1').textContent = getTranslation('mainTitle');
 
       const fieldset = document.querySelector('fieldset');
-      fieldset.querySelector('legend').textContent = getTranslation('formLegend');
-      if(formHintEl){
-        formHintEl.innerHTML = getTranslation('formHint');
-      }
+      if (fieldset) fieldset.querySelector('legend').textContent = getTranslation('formLegend');
 
-      if(labelZoneEl) labelZoneEl.textContent = getTranslation('labelZone');
-      if(labelBinIdEl) labelBinIdEl.textContent = getTranslation('labelBinId');
-      if(labelOwnerEl) labelOwnerEl.textContent = getTranslation('labelOwner');
-      if(labelRfidEl) labelRfidEl.textContent = getTranslation('labelRfid');
-      if(labelPositionEl) labelPositionEl.textContent = getTranslation('labelPosition');
-      if(labelDetailsEl) labelDetailsEl.textContent = getTranslation('labelDetails');
+      $("labelZone").textContent = getTranslation('labelZone');
+      $("labelBinId").textContent = getTranslation('labelBinId');
+      $("labelOwner").textContent = getTranslation('labelOwner');
+      $("labelRfid").textContent = getTranslation('labelRfid');
+      $("labelPosition").textContent = getTranslation('labelPosition');
+      $("labelDetails").textContent = getTranslation('labelDetails');
 
       binIdEl.placeholder = getTranslation('placeholderBinId');
       rfidEl.placeholder = getTranslation('placeholderRfid');
-      lngEl.placeholder   = getTranslation('placeholderLng');
-      latEl.placeholder   = getTranslation('placeholderLat');
+      lngEl.placeholder = getTranslation('placeholderLng');
+      latEl.placeholder = getTranslation('placeholderLat');
       detailsEl.placeholder = getTranslation('placeholderDetails');
 
       btnGetPos.textContent = getTranslation('btnGetGps');
@@ -1262,18 +2059,51 @@
       btnReset.textContent = getTranslation('btnReset');
       renderOwnerSelect();
 
-      $("zoneModalBackdrop").querySelector('.modal-title').textContent = getTranslation('zoneModalTitle');
-      newZoneNameEl.placeholder = getTranslation('zoneModalNewZonePlaceholder');
-      btnAddZone.textContent = getTranslation('zoneModalAddBtn');
-      btnZoneDone.textContent = getTranslation('zoneModalConfirmBtn');
+      $("binsSectionTitle").textContent = t('binsSectionTitle');
+      $("binsSectionHint").innerHTML = t('binsSectionHint');
+      $("filterZoneLabel").textContent = t('filterZoneLabel');
+      $("filterBinLabel").textContent = t('filterBinLabel');
+      filterBinText.placeholder = t('filterBinPlaceholder');
 
-      if(!isUpdate){
+      $("thZone").textContent = t('tableHeaderZone');
+      $("thBin").textContent = t('tableHeaderBin');
+      $("thOwner").textContent = t('tableHeaderOwner');
+      $("thRfid").textContent = t('tableHeaderRfid');
+      $("thCoords").textContent = t('tableHeaderCoords');
+      $("thDetails").textContent = t('tableHeaderDetails');
+      $("thUpdated").textContent = t('tableHeaderUpdated');
+      $("thManage").textContent = t('tableHeaderManage');
+
+      $("editModalTitle").textContent = t('editModalTitle');
+      $("editLabelZone").textContent = t('editLabelZone');
+      $("editLabelBinId").textContent = t('editLabelBinId');
+      $("editLabelRfid").textContent = t('editLabelRfid');
+      $("editLabelPosition").textContent = t('editLabelPosition');
+      $("editLabelDetails").textContent = t('editLabelDetails');
+      $("editCancel").textContent = t('btnCancel');
+      $("btnSaveChanges").textContent = t('btnSaveChanges');
+
+      renderZoneFilterOptions();
+      renderBinsTable();
+      updateLangMenuActive();
+
+      if (!isUpdate) {
         renderZoneSelect();
         renderZoneList();
       }
     }
 
-    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+    langIconBtn.addEventListener("click", () => {
+      langMenu.classList.toggle("show");
+    });
+
+    langMenu.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      const lang = btn.dataset.lang;
+      changeLanguage(lang);
+      langMenu.classList.remove("show");
+    });
 
     if (LangState && typeof LangState.onChange === "function") {
       LangState.onChange(lang => {
@@ -1286,11 +2116,11 @@
     }
 
     // ---------- เมนู 3 ขีด ----------
-    function toggleMenu(){
+    function toggleMenu() {
       const isOpen = sidebarEl.classList.toggle('show');
-      if(isOpen){
+      if (isOpen) {
         document.body.classList.add('menu-open');
-      }else{
+      } else {
         document.body.classList.remove('menu-open');
       }
     }
@@ -1298,13 +2128,18 @@
     menuToggleBtn.addEventListener("click", toggleMenu);
 
     document.addEventListener("click", (e) => {
-      if(window.innerWidth > 900) return;
-      if(!sidebarEl.classList.contains("show")) return;
+      if (window.innerWidth > 900) {
+        langMenu.classList.remove("show");
+        return;
+      }
+      if (!sidebarEl.classList.contains("show") && !langMenu.classList.contains("show")) return;
       const withinSidebar = sidebarEl.contains(e.target);
       const withinBtn = menuToggleBtn.contains(e.target);
-      if(!withinSidebar && !withinBtn){
+      const withinLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+      if (!withinLang) langMenu.classList.remove("show");
+      if (!withinSidebar && !withinBtn) {
         sidebarEl.classList.remove("show");
-        document.body.classList.remove("menu-open");
+        document.body.classList.remove('menu-open');
       }
     });
 
@@ -1312,4 +2147,5 @@
     loadOwners();
   </script>
 </body>
+
 </html>
