@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
@@ -41,6 +41,13 @@
       --btn-pad-y: 10px;
       --btn-radius: 12px;
       --btn-font: 16px;
+    }
+
+    /* ล็อกหน้าเว็บไม่ให้เลื่อนตอนเปิดโมดอล */
+    body.modal-open {
+      overflow: hidden;
+      height: 100vh;
+      touch-action: none;
     }
 
     /* ---------- Sidebar ---------- */
@@ -121,11 +128,12 @@
       background: #00a8ff;
       color: #fff;
       border: none;
-      padding: 10px 16px;
-      border-radius: 12px;
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
       cursor: pointer;
       z-index: 1000;
-      font-size: 16px;
+      font-size: var(--btn-font);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
     }
 
     /* ---------- Main ---------- */
@@ -403,6 +411,83 @@
       color:#16a34a;
     }
 
+    /* ===== Header + ปุ่มเพิ่มคนขับ (สไตล์แบบ addBin) ===== */
+    .add-driver-header {
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:4px;
+      margin-top:4px;
+    }
+
+    .add-driver-title {
+      font-size:18px;
+      font-weight:600;
+      color:#111827;
+      margin-right:auto;
+    }
+
+    .add-driver-hint {
+      font-size:13px;
+      color:#6b7280;
+      margin-top:4px;
+    }
+
+    /* ===== Modal (เหมือนหน้า addBin) ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 12px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, .35);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+
+    .modal-footer-row {
+      margin-top:10px;
+      align-items:center;
+    }
+
     /* Responsive */
     @media(max-width:900px){
       body{flex-direction:column;}
@@ -419,6 +504,26 @@
       .row{flex-direction:column;}
       .row > div{width:100%;}
       .page-header{max-width:100%;}
+
+      /* Modal บนมือถือ */
+      .modal-backdrop {
+        align-items:flex-start;
+        padding:32px 0;
+      }
+      .modal {
+        max-width:100%;
+        margin:0 16px 24px;
+        -webkit-overflow-scrolling:touch;
+      }
+
+      .add-driver-header{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .add-driver-header button{
+        width:100%;
+        justify-content:center;
+      }
     }
 
     @media(min-width:901px){
@@ -465,54 +570,15 @@
 
     <div class="content">
 
-      <!-- ฟอร์มเพิ่มคนขับ -->
+      <!-- การ์ดหัวข้อ + ปุ่มเพิ่มคนขับ (แบบหน้า addBin) -->
       <div class="card">
-        <h3 style="margin-bottom:10px;" id="addDriverTitle">เพิ่มคนขับใหม่</h3>
-        <form id="driverForm">
-          <div class="row">
-            <div>
-              <label for="zoneSelect" id="labelZone">เขตพื้นที่ (โซนการทำงาน)</label>
-              <select id="zoneSelect" required>
-                <option value="">เลือกเขต...</option>
-              </select>
-              <p class="muted" id="zoneHelp">เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ</p>
-            </div>
-            <div>
-              <label for="driverId" id="labelDriverId">Driver ID</label>
-              <input id="driverId" type="text" readonly placeholder="เลือกเขตก่อน" />
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:8px;">
-            <div>
-              <label for="fullName" id="labelFullName">ชื่อ - นามสกุล</label>
-              <input id="fullName" type="text" required placeholder="เช่น นายสมชาย ขับรถดี" />
-            </div>
-            <div>
-              <label for="phone" id="labelPhone">เบอร์โทรศัพท์</label>
-              <input id="phone" type="text" required placeholder="เช่น 0812345678" />
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:8px;">
-            <div>
-              <label for="username" id="labelUsername">ชื่อผู้ใช้ (ใช้เข้าสู่ระบบ)</label>
-              <input id="username" type="text" required placeholder="เช่น drv_somchai หรือหมายเลขโทรศัพท์" />
-            </div>
-            <div>
-              <label for="password" id="labelPassword">รหัสผ่านเริ่มต้น</label>
-              <input id="password" type="password" required placeholder="กำหนดรหัสผ่านสำหรับคนขับ" />
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:10px;align-items:center;">
-            <div class="muted" id="formStatus"></div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;flex:1;">
-              <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
-              <button type="submit" class="primary" id="btnSaveDriver">บันทึกคนขับ</button>
-            </div>
-          </div>
-        </form>
+        <div class="add-driver-header">
+          <div class="add-driver-title" id="addDriverHeaderTitle">เพิ่มคนขับใหม่</div>
+          <button type="button" class="primary" id="btnOpenDriverForm">เพิ่มคนขับ</button>
+        </div>
+        <p class="add-driver-hint" id="addDriverHeaderHint">
+          กดปุ่มเพื่อเพิ่ม / ลงทะเบียนคนขับใหม่ในระบบ
+        </p>
       </div>
 
       <!-- ตารางคนขับ -->
@@ -557,6 +623,62 @@
     </div>
   </main>
 
+  <!-- Modal เพิ่มคนขับ (ฟอร์มเด้งขึ้นมา) -->
+  <div class="modal-backdrop" id="driverModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="driverModalTitle">เพิ่มคนขับใหม่</div>
+        <button type="button" class="modal-close" id="btnCloseDriverModal">✕</button>
+      </div>
+
+      <form id="driverForm">
+        <div class="row">
+          <div>
+            <label for="zoneSelect" id="labelZone">เขตพื้นที่ (โซนการทำงาน)</label>
+            <select id="zoneSelect" required>
+              <option value="">เลือกเขต...</option>
+            </select>
+            <p class="muted" id="zoneHelp">เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ</p>
+          </div>
+          <div>
+            <label for="driverId" id="labelDriverId">Driver ID</label>
+            <input id="driverId" type="text" readonly placeholder="เลือกเขตก่อน" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label for="fullName" id="labelFullName">ชื่อ - นามสกุล</label>
+            <input id="fullName" type="text" required placeholder="เช่น นายสมชาย ขับรถดี" />
+          </div>
+          <div>
+            <label for="phone" id="labelPhone">เบอร์โทรศัพท์</label>
+            <input id="phone" type="text" required placeholder="เช่น 0812345678" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label for="username" id="labelUsername">ชื่อผู้ใช้ (ใช้เข้าสู่ระบบ)</label>
+            <input id="username" type="text" required placeholder="เช่น drv_somchai หรือหมายเลขโทรศัพท์" />
+          </div>
+          <div>
+            <label for="password" id="labelPassword">รหัสผ่านเริ่มต้น</label>
+            <input id="password" type="password" required placeholder="กำหนดรหัสผ่านสำหรับคนขับ" />
+          </div>
+        </div>
+
+        <div class="row modal-footer-row">
+          <div class="muted" id="formStatus"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;flex:1;">
+            <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
+            <button type="submit" class="primary" id="btnSaveDriver">บันทึกคนขับ</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     /* ---------- Firebase ---------- */
     var firebaseConfig = {
@@ -571,6 +693,7 @@
     const fs = firebase.firestore();
     const usersCol = fs.collection("users");
     const ACTIVE_DRIVER_STATUS = new Set([1, "1"]);
+    const zonesCol = fs.collection("zones");
 
     function isActiveDriver(data){
       if(!data) return false;
@@ -607,7 +730,6 @@
       }
       return false;
     }
-    const zonesCol = fs.collection("zones");
 
     /* ---------- Auth UI ---------- */
     const adminNameEl = document.getElementById('adminName');
@@ -625,6 +747,13 @@
     const driverForm = document.getElementById('driverForm');
     const btnClear = document.getElementById('btnClear');
     const menuToggleBtn = document.getElementById('menuToggleBtn');
+
+    const addDriverHeaderTitle = document.getElementById('addDriverHeaderTitle');
+    const addDriverHeaderHint = document.getElementById('addDriverHeaderHint');
+    const btnOpenDriverForm = document.getElementById('btnOpenDriverForm');
+    const driverModalBackdrop = document.getElementById('driverModalBackdrop');
+    const btnCloseDriverModal = document.getElementById('btnCloseDriverModal');
+    const driverModalTitle = document.getElementById('driverModalTitle');
 
     const zoneChips = document.getElementById('zoneChips');
     const searchInput = document.getElementById('searchInput');
@@ -646,6 +775,9 @@
         pageHint: "เพิ่ม / จัดการบัญชีผู้ใช้ของพนักงานขับรถเก็บขยะในแต่ละเขตพื้นที่",
 
         addDriverTitle: "เพิ่มคนขับใหม่",
+        addDriverHint: "กดปุ่มเพื่อเพิ่ม / ลงทะเบียนคนขับใหม่ในระบบ",
+        btnOpenDriverForm: "เพิ่มคนขับ",
+
         labelZone: "เขตพื้นที่ (โซนการทำงาน)",
         zoneHelp: "เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ",
         labelDriverId: "Driver ID",
@@ -716,6 +848,9 @@
         pageHint: "Create and manage driver accounts for each operation zone.",
 
         addDriverTitle: "Add New Driver",
+        addDriverHint: "Click the button to register a new driver.",
+        btnOpenDriverForm: "Add Driver",
+
         labelZone: "Zone (Operation Area)",
         zoneHelp: "Select a zone first and the system will generate a Driver ID automatically.",
         labelDriverId: "Driver ID",
@@ -786,6 +921,9 @@
         pageHint: "Cipta dan urus akaun pemandu mengikut zon operasi.",
 
         addDriverTitle: "Tambah Pemandu Baharu",
+        addDriverHint: "Klik butang untuk daftar pemandu baharu.",
+        btnOpenDriverForm: "Tambah Pemandu",
+
         labelZone: "Zon (Kawasan Operasi)",
         zoneHelp: "Pilih zon dahulu, sistem akan jana ID Pemandu secara automatik.",
         labelDriverId: "ID Pemandu",
@@ -880,6 +1018,11 @@
       return Array.from(new Uint8Array(hashBuffer))
         .map(b => b.toString(16).padStart(2,"0"))
         .join("");
+    }
+
+    /* ---------- lock scroll ตอนเปิด modal ---------- */
+    function lockBodyScroll(lock){
+      document.body.classList.toggle("modal-open", !!lock);
     }
 
     /* ---------- Load zones ---------- */
@@ -1086,11 +1229,11 @@
 
       try{
         // ตรวจว่ามี username นี้อยู่แล้วหรือยัง
-          const existed = await usersCol.doc(username).get();
-          if(existed.exists && existed.data() && existed.data().isDeleted !== true){
-            setFormStatus(tr("statusUsernameExists"), "err");
-            return;
-          }
+        const existed = await usersCol.doc(username).get();
+        if(existed.exists && existed.data() && existed.data().isDeleted !== true){
+          setFormStatus(tr("statusUsernameExists"), "err");
+          return;
+        }
 
         const phoneConflict = await hasPhoneConflict(phoneDigits, phone);
         if(phoneConflict){
@@ -1098,20 +1241,20 @@
           return;
         }
 
-          const passwordHash = await hashPassword(password);
+        const passwordHash = await hashPassword(password);
 
         // ใช้ docId = username เพื่อให้หน้า login ใช้ username เป็น key ได้
         const docId = username;
 
-          await usersCol.doc(docId).set({
-            username,
-            driverId,
-            fullName,
-            phone: phoneDigits,
-            phoneNormalized: phoneDigits,
-            status: 1,           // 1 = คนขับรถ
-            zoneId,
-            zoneName,
+        await usersCol.doc(docId).set({
+          username,
+          driverId,
+          fullName,
+          phone: phoneDigits,
+          phoneNormalized: phoneDigits,
+          status: 1,           // 1 = คนขับรถ
+          zoneId,
+          zoneName,
           passwordHash,
           isDeleted: false,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1125,6 +1268,7 @@
         passwordInput.value = "";
 
         await loadDrivers();
+        setTimeout(closeDriverModal, 600);
       }catch(err){
         console.error(err);
         setFormStatus(tr("statusSaveErrorPrefix") + (err.message || err), "err");
@@ -1207,50 +1351,80 @@
       }
     });
 
+    /* ---------- เปิด/ปิด Modal เพิ่มคนขับ ---------- */
+    function openDriverModal(){
+      driverModalBackdrop.classList.add('show');
+      lockBodyScroll(true);
+      setFormStatus("", "");
+    }
+
+    function closeDriverModal(){
+      driverModalBackdrop.classList.remove('show');
+      lockBodyScroll(false);
+      driverForm.reset();
+      driverIdInput.value = "";
+      setFormStatus("", "");
+    }
+
+    btnOpenDriverForm.addEventListener("click", openDriverModal);
+    btnCloseDriverModal.addEventListener("click", closeDriverModal);
+
+    driverModalBackdrop.addEventListener("click", (e) => {
+      if(e.target === driverModalBackdrop){
+        closeDriverModal();
+      }
+    });
+
     /* ---------- apply language ---------- */
     function applyLanguage() {
-      const t = translations[currentLang] || translations.th;
+      const tMap = translations[currentLang] || translations.th;
 
-      document.title = t.pageTitle;
-      document.getElementById("mainTitle").textContent = t.mainTitle;
-      document.getElementById("pageHint").textContent = t.pageHint;
-      document.getElementById("addDriverTitle").textContent = t.addDriverTitle;
-      document.getElementById("labelZone").textContent = t.labelZone;
-      document.getElementById("zoneHelp").textContent = t.zoneHelp;
-      document.getElementById("labelDriverId").textContent = t.labelDriverId;
-      document.getElementById("labelFullName").textContent = t.labelFullName;
-      document.getElementById("labelPhone").textContent = t.labelPhone;
-      document.getElementById("labelUsername").textContent = t.labelUsername;
-      document.getElementById("labelPassword").textContent = t.labelPassword;
-      document.getElementById("btnClear").textContent = t.btnClear;
-      document.getElementById("btnSaveDriver").textContent = t.btnSaveDriver;
+      document.title = tMap.pageTitle;
+      document.getElementById("mainTitle").textContent = tMap.mainTitle;
+      document.getElementById("pageHint").textContent = tMap.pageHint;
 
-      document.getElementById("labelZoneFilter").textContent = t.labelZoneFilter;
-      document.getElementById("chipAllZones").textContent = t.chipAllZones;
-      document.getElementById("labelSearch").textContent = t.labelSearch;
+      // หัวข้อ + hint + ปุ่มของหัวการ์ด
+      if(addDriverHeaderTitle) addDriverHeaderTitle.textContent = tMap.addDriverTitle;
+      if(addDriverHeaderHint) addDriverHeaderHint.textContent = tMap.addDriverHint;
+      if(btnOpenDriverForm) btnOpenDriverForm.textContent = tMap.btnOpenDriverForm;
+      if(driverModalTitle) driverModalTitle.textContent = tMap.addDriverTitle;
 
-      document.getElementById("thZone").textContent = t.thZone;
-      document.getElementById("thDriverId").textContent = t.thDriverId;
-      document.getElementById("thUsername").textContent = t.thUsername;
-      document.getElementById("thFullName").textContent = t.thFullName;
-      document.getElementById("thPhone").textContent = t.thPhone;
-      document.getElementById("thUpdated").textContent = t.thUpdated;
-      document.getElementById("thActions").textContent = t.thActions;
-      document.getElementById("loadingText").textContent = t.loadingText;
+      document.getElementById("labelZone").textContent = tMap.labelZone;
+      document.getElementById("zoneHelp").textContent = tMap.zoneHelp;
+      document.getElementById("labelDriverId").textContent = tMap.labelDriverId;
+      document.getElementById("labelFullName").textContent = tMap.labelFullName;
+      document.getElementById("labelPhone").textContent = tMap.labelPhone;
+      document.getElementById("labelUsername").textContent = tMap.labelUsername;
+      document.getElementById("labelPassword").textContent = tMap.labelPassword;
+      document.getElementById("btnClear").textContent = tMap.btnClear;
+      document.getElementById("btnSaveDriver").textContent = tMap.btnSaveDriver;
+
+      document.getElementById("labelZoneFilter").textContent = tMap.labelZoneFilter;
+      document.getElementById("chipAllZones").textContent = tMap.chipAllZones;
+      document.getElementById("labelSearch").textContent = tMap.labelSearch;
+
+      document.getElementById("thZone").textContent = tMap.thZone;
+      document.getElementById("thDriverId").textContent = tMap.thDriverId;
+      document.getElementById("thUsername").textContent = tMap.thUsername;
+      document.getElementById("thFullName").textContent = tMap.thFullName;
+      document.getElementById("thPhone").textContent = tMap.thPhone;
+      document.getElementById("thUpdated").textContent = tMap.thUpdated;
+      document.getElementById("thActions").textContent = tMap.thActions;
+      document.getElementById("loadingText").textContent = tMap.loadingText;
 
       // placeholders
       if (zoneSelect.options.length > 0) {
-        zoneSelect.options[0].textContent = t.zonePlaceholder;
+        zoneSelect.options[0].textContent = tMap.zonePlaceholder;
       }
-      driverIdInput.placeholder = t.driverIdPlaceholder;
-      fullNameInput.placeholder = t.fullNamePh;
-      phoneInput.placeholder = t.phonePh;
-      usernameInput.placeholder = t.usernamePh;
-      passwordInput.placeholder = t.passwordPh;
-      searchInput.placeholder = t.searchPh;
+      driverIdInput.placeholder = tMap.driverIdPlaceholder;
+      fullNameInput.placeholder = tMap.fullNamePh;
+      phoneInput.placeholder = tMap.phonePh;
+      usernameInput.placeholder = tMap.usernamePh;
+      passwordInput.placeholder = tMap.passwordPh;
+      searchInput.placeholder = tMap.searchPh;
 
       // ปุ่มเมนู
-      menuToggleBtn.textContent = t.menuBtn;
+      menuToggleBtn.textContent = tMap.menuBtn;
 
       // ให้เมนูซ้ายเปลี่ยนภาษาด้วย
       if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {

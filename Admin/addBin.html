@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Smart Waste - ลงทะเบียนถังขยะ</title>
+  <title>Smart Waste - รายการถัง</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Firebase v8 SDKs (App + Firestore) -->
@@ -31,6 +31,15 @@
       background: #f5f6fa;
       flex-direction: row;
     }
+
+    /* ล็อกหน้าเว็บไม่ให้เลื่อนตอนเปิดโมดอล */
+    body.modal-open {
+      overflow: hidden;
+      height: 100vh;
+      touch-action: none;
+      /* กันเลื่อนในมือถือ */
+    }
+
 
     /* ─ Sidebar ─ */
     .sidebar {
@@ -138,7 +147,7 @@
     .topbar {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       flex-wrap: wrap;
       gap: 16px;
       margin-bottom: 18px;
@@ -152,20 +161,33 @@
 
     /* ---------- ไอคอนภาษา + โปรไฟล์ ---------- */
     .icon-btn {
-      background: transparent;
-      border: none;
-      padding: 4px;
-      min-height: auto;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 6px 10px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+      width: 45px;
+      height: 45px;
+    }
+
+    .icon-btn,
+    .user-chip {
+      width: 45px;
+      height: 45px;
+      padding: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .top-icon {
-      width: 28px;
-      height: 28px;
+      width: 20px;
+      height: 30px;
       object-fit: contain;
       display: block;
     }
@@ -216,37 +238,56 @@
       font-weight: 600;
     }
 
-    /* user-chip ยังอยู่ แต่ให้ลิงก์ไปหน้าโปรไฟล์ได้ */
+    /* โปรไฟล์มุมขวา */
     .user-chip {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      background: #fff;
-      border-radius: 999px;
-      border: 1px solid #e5e7eb;
-      padding: 6px 10px;
-      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+      width: 45px;
+      height: 45px;
+      padding: 0;
       text-decoration: none;
-      color: inherit;
-      cursor: pointer;
+      color: #111827;
     }
 
-    .user-chip .avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      /* ใช้รูปโปรไฟล์ที่แนบมา – แก้ src ให้ตรงกับไฟล์ของคุณด้วย */
-      background: url("images/profile-icon.png") center/contain no-repeat;
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
     }
 
-    .user-chip__label {
-      margin: 0;
-      font-size: 12px;
-    }
-
-    /* ถ้าอยากซ่อนข้อความชื่อ/role ให้ใช้บรรทัดนี้ */
-    .user-chip div {
+    .user-chip-text {
       display: none;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.2;
+    }
+
+    .user-chip-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .user-chip-role {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    @media (min-width: 901px) {
+      .user-chip {
+        width: auto;
+        padding: 4px 12px;
+        justify-content: flex-start;
+      }
+
+      .user-chip-text {
+        display: flex;
+      }
     }
 
     fieldset {
@@ -354,6 +395,28 @@
       border: 1px solid #e5e7eb;
     }
 
+    /* ========== ส่วนหัวฟอร์มเพิ่มถัง + ปุ่มเพิ่มถัง ========== */
+    .add-bin-header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+
+    /* ซ่อนหัวข้อ "เพิ่มข้อมูลถังขยะ" ให้เหลือแค่ปุ่ม */
+    .add-bin-title {
+      display: none;
+    }
+
+    .add-bin-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
     /* ========== ส่วนรายการถัง + ตัวกรอง ========== */
     .section-title {
       margin-top: 24px;
@@ -449,6 +512,24 @@
     .bin-actions {
       display: flex;
       gap: 6px;
+      align-items: center;
+    }
+
+    /* ปรับขนาดไอคอน แก้ไข/ลบ ให้เล็กลง และให้แสดงในมือถือ */
+    .bin-actions .icon-btn {
+      width: 32px;
+      height: 32px;
+      padding: 4px;
+      border-radius: 999px;
+      border: none;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .bin-actions .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
     }
 
     .icon-edit-btn svg {
@@ -464,7 +545,20 @@
       outline-offset: 2px;
     }
 
-    /* Modal zones + edit bin ใช้สไตล์เดียวกัน */
+    @media (max-width: 900px) {
+      .bin-actions .icon-btn {
+        width: 28px;
+        height: 28px;
+        padding: 3px;
+      }
+
+      .bin-actions .icon-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    /* Modal zones + edit bin + add bin ใช้สไตล์เดียวกัน */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -494,12 +588,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
+      /* ลดช่องว่างหัวข้อ ↔ เขตพื้นที่ ให้ชิดขึ้น */
     }
 
     .modal-title {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 20px;
+      /* ขยายขนาดตัวอักษร “เพิ่มข้อมูลถังขยะ” */
+      font-weight: 700;
       color: #111827;
     }
 
@@ -626,6 +722,7 @@
       outline-offset: 2px;
     }
 
+    /* ========== MOBILE LAYOUT ========== */
     @media(max-width:900px) {
       body {
         flex-direction: column;
@@ -659,9 +756,19 @@
         text-align: center;
       }
 
+      /* ให้ backdrop ขยับลง และใช้แบบ top-align เพื่อเลื่อนง่าย */
+      .modal-backdrop {
+        align-items: flex-start;
+        padding: 32px 0px;
+        /* มีระยะห่างทั้งบนและล่าง */
+
+      }
+
+      /* ฟอร์มเพิ่มถังบนมือถือ: ไม่ชิดขอบจอ และเลื่อนลื่นขึ้น */
       .modal {
         max-width: 100%;
-        margin: 0 10px;
+        margin: 0 16px 24px;
+        -webkit-overflow-scrolling: touch;
       }
 
       .filters {
@@ -697,6 +804,16 @@
       .menu-open .toggle-btn {
         display: none;
       }
+
+      .add-bin-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .add-bin-header button {
+        width: 100%;
+        justify-content: center;
+      }
     }
   </style>
 </head>
@@ -713,13 +830,12 @@
   <main>
     <div class="topbar">
       <div>
-        <h1 id="pageTitleHeading">ลงทะเบียนถังขยะ</h1>
+        <h1 id="pageTitleHeading">รายการถัง</h1>
       </div>
       <div class="topbar-right">
         <!-- ไอคอนเลือกภาษา -->
         <div class="lang-switcher">
           <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
-            <!-- เปลี่ยน src ให้เป็นพาธรูปไอคอนลูกโลกของคุณ -->
             <img src="images/lang-icon.png" alt="Language" class="top-icon">
           </button>
           <div class="lang-menu" id="langMenu">
@@ -727,7 +843,6 @@
             <button type="button" data-lang="en">English</button>
             <button type="button" data-lang="ms">Bahasa Melayu</button>
           </div>
-          <!-- select เดิม เอาไว้ให้ระบบภาษาใช้งาน แต่ซ่อนไว้ -->
           <select id="langSelect" style="display:none;">
             <option value="th">ไทย</option>
             <option value="en">English</option>
@@ -735,94 +850,25 @@
           </select>
         </div>
 
-        <!-- ปุ่มไปหน้าโปรไฟล์ -->
+        <!-- ปุ่มไปหน้าโปรไฟล์ (ดึงชื่อ + role จาก Firestore) -->
         <a href="profile.html" class="user-chip" id="profileBtn">
-          <span class="avatar" id="adminAvatar"></span>
-          <div>
-            <p class="muted user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
-            <strong id="adminName">-</strong>
+          <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
+          <div class="user-chip-text">
+            <div class="user-chip-name" id="profileName">User Name</div>
+            <div class="user-chip-role" id="profileRole">Role</div>
           </div>
         </a>
       </div>
     </div>
 
     <div class="content">
-
-      <!-- ฟอร์มเพิ่มถัง -->
-      <fieldset>
-        <legend>เพิ่มข้อมูลถังขยะ</legend>
-
-        <!-- ลบคำอธิบาย Firestore ออกแล้ว -->
-
-        <form id="binForm" autocomplete="off">
-          <div class="row">
-            <div style="flex:1 1 260px">
-              <label id="labelZone" for="zone">เขตพื้นที่</label>
-              <select id="zone">
-                <option value="">-- ยังไม่มีเขต --</option>
-              </select>
-            </div>
-
-            <div>
-              <label id="labelBinId" for="binId">ชื่อถัง (อัตโนมัติ: BIN + เลขรัน 3 หลักตามเขต)</label>
-              <input id="binId" type="text" readonly placeholder="เลือกเขตก่อน ระบบจะสร้าง BINxxx ให้" />
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label id="labelOwner" for="owner">ผู้ใช้เจ้าของถัง</label>
-              <select id="owner">
-                <option value="">กำลังโหลดรายชื่อ...</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label id="labelRfid" for="rfid">RFID Tag</label>
-              <input id="rfid" type="text" placeholder="เช่น 04A1B2C3D4" />
-            </div>
-          </div>
-
-          <label id="labelPosition">ตำแหน่ง</label>
-          <div class="row">
-            <div>
-              <input id="lng" type="number" step="any" placeholder="ลองจิจูด (longitude)" />
-            </div>
-            <div>
-              <input id="lat" type="number" step="any" placeholder="ละติจูด (latitude)" />
-            </div>
-          </div>
-
-          <div class="gps-actions">
-            <button type="button" id="btnGetPos" class="primary">ดึงพิกัดจาก GPS</button>
-          </div>
-
-          <div class="row" style="margin-top:8px">
-            <div style="flex:1 1 100%">
-              <label id="labelDetails" for="details">รายละเอียดเพิ่มเติม</label>
-              <textarea id="details" placeholder="เช่น หน้าอาคารวิทย์ คณะ..."></textarea>
-            </div>
-          </div>
-
-          <div style="margin-top:12px" class="row">
-            <div class="actions">
-              <button type="submit" class="primary" id="btnSave">บันทึก</button>
-              <button type="button" class="ghost" id="btnReset">เคลียร์ฟอร์ม</button>
-            </div>
-            <span id="msg" class="muted" style="margin-left:10px"></span>
-          </div>
-        </form>
-      </fieldset>
-
-      <!-- เส้นแบ่งก่อนเข้าส่วนรายการถัง -->
-      <hr style="margin:24px 0 16px;border:none;border-top:1px solid #e5e7eb;">
+      <!-- แถบหัวข้อ + ปุ่ม “เพิ่มถังขยะ” (จะเปิด modal) -->
+      <div class="add-bin-header">
+        <div class="add-bin-title" id="addBinHeaderTitle">เพิ่มข้อมูลถังขยะ</div>
+        <button type="button" class="primary" id="btnToggleForm">เพิ่มถังขยะ</button>
+      </div>
 
       <!-- ส่วนเลือกโซน + ตารางรายการถัง -->
-      <div class="section-title" id="binsSectionTitle">รายการถังขยะ</div>
-      <p class="muted section-hint" id="binsSectionHint"></p>
-
       <div class="filters">
         <div class="filter-inputs">
           <label class="filter-field">
@@ -834,8 +880,7 @@
 
           <label class="filter-field">
             <span class="muted" id="filterBinLabel">BIN / เจ้าของ</span>
-            <input id="filterBinText" type="text"
-              placeholder="กรองตาม BIN หรือชื่อเจ้าของ เช่น BIN001 หรือคุณเอ">
+            <input id="filterBinText" type="text" placeholder="กรองตาม BIN หรือชื่อเจ้าของ เช่น BIN001 หรือคุณเอ">
           </label>
         </div>
         <span id="binsStatus" class="muted"></span>
@@ -858,7 +903,6 @@
           <tbody id="binsRows"></tbody>
         </table>
       </div>
-
     </div>
   </main>
 
@@ -883,6 +927,77 @@
         <span class="muted" id="zoneModalMsg"></span>
         <button type="button" class="ghost" id="btnZoneDone">ยืนยัน</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal เพิ่มถังขยะ (ฟอร์มเด้งขึ้นมา) -->
+  <div class="modal-backdrop" id="addBinBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="addBinModalTitle">เพิ่มข้อมูลถังขยะ</div>
+        <button type="button" class="modal-close" id="btnAddClose">✕</button>
+      </div>
+
+      <form id="binForm" autocomplete="off">
+        <div class="row">
+          <div style="flex:1 1 260px">
+            <label id="labelZone" for="zone">เขตพื้นที่</label>
+            <select id="zone">
+              <option value="">-- ยังไม่มีเขต --</option>
+            </select>
+          </div>
+
+          <div>
+            <label id="labelBinId" for="binId">ชื่อถัง</label>
+            <input id="binId" type="text" readonly placeholder="เลือกเขตก่อน ระบบจะสร้าง BINxxx ให้" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label id="labelOwner" for="owner">ผู้ใช้เจ้าของถัง</label>
+            <select id="owner">
+              <option value="">กำลังโหลดรายชื่อ...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label id="labelRfid" for="rfid">RFID Tag</label>
+            <input id="rfid" type="text" placeholder="เช่น 04A1B2C3D4" />
+          </div>
+        </div>
+
+        <label id="labelPosition">ตำแหน่ง</label>
+        <div class="row">
+          <div>
+            <input id="lng" type="number" step="any" placeholder="ลองจิจูด (longitude)" />
+          </div>
+          <div>
+            <input id="lat" type="number" step="any" placeholder="ละติจูด (latitude)" />
+          </div>
+        </div>
+
+        <div class="gps-actions">
+          <button type="button" id="btnGetPos" class="primary">ดึงพิกัดจาก GPS</button>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <div style="flex:1 1 100%">
+            <label id="labelDetails" for="details">รายละเอียดเพิ่มเติม</label>
+            <textarea id="details" placeholder="เช่น หน้าอาคารวิทย์ คณะ..."></textarea>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="row">
+          <div class="actions">
+            <button type="submit" class="primary" id="btnSave">บันทึก</button>
+            <button type="button" class="ghost" id="btnReset">เคลียร์ฟอร์ม</button>
+          </div>
+          <span id="msg" class="muted" style="margin-left:10px"></span>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -965,6 +1080,7 @@
 
     const $ = id => document.getElementById(id);
 
+    // ฟอร์ม + ปุ่ม
     const binForm = $("binForm");
     const binIdEl = $("binId");
     const zoneEl = $("zone");
@@ -979,6 +1095,10 @@
     const menuToggleBtn = $("menuToggleBtn");
     const sidebarEl = $("sidebar");
     const langSelect = $("langSelect");
+    const btnToggleForm = $("btnToggleForm");
+    const addBinHeaderTitle = $("addBinHeaderTitle");
+    const addBinBackdrop = $("addBinBackdrop");
+    const btnAddClose = $("btnAddClose");
 
     // filter controls
     const binsStatusEl = $("binsStatus");
@@ -1014,25 +1134,57 @@
     const langIconBtn = $("langIconBtn");
     const langMenu = $("langMenu");
 
+    // โปรไฟล์บนมุมขวา
+    const profileNameEl = $("profileName");
+    const profileRoleEl = $("profileRole");
+
+    // แปลงสถานะเป็นชื่อ role ตามภาษา
+    const ROLE_LABELS = {
+      th: {
+        0: "ผู้ดูแลระบบ",
+        1: "พนักงานขับรถ",
+        2: "ผู้ใช้งานทั่วไป"
+      },
+      en: {
+        0: "Administrator",
+        1: "Driver",
+        2: "Resident User"
+      },
+      ms: {
+        0: "Pentadbir",
+        1: "Pemandu",
+        2: "Pengguna"
+      }
+    };
+
+    function lockBodyScroll(lock) {
+      document.body.classList.toggle("modal-open", !!lock);
+    }
+
+    let currentUserProfile = null;
+
     const translations = {
       th: {
-        pageTitle: "Smart Waste - ลงทะเบียนถังขยะ",
+        pageTitle: "Smart Waste - รายการถังขยะ",
         menuBtn: "☰ เมนู",
         navHome: "หน้าหลัก",
         navRegister: "ลงทะเบียนถังขยะ",
-        navaddDriver: "พนักงานขับรถ",
+        navaddDriver: "พนักงานขับรขยะ",
         navCapacity: "ความจุถังขยะ",
         navTruck: "ตำแหน่งรถเก็บขยะ",
         navReport: "รายงานย้อนหลัง",
         navBins: "รายการถังขยะ",
-        mainTitle: "ลงทะเบียนถังขยะ",
+        mainTitle: "รายการถังขยะ",
         formLegend: "เพิ่มข้อมูลถังขยะ",
+        addBinHeaderTitle: "เพิ่มข้อมูลถังขยะ",
+        btnShowForm: "เพิ่มถังขยะ",
+        btnHideForm: "ซ่อนฟอร์มเพิ่มถังขยะ",
         labelZone: "เขตพื้นที่",
-        labelBinId: "ชื่อถัง (อัตโนมัติ: BIN + เลขรัน 3 หลักตามเขต)",
-        labelOwner: "ผู้ใช้เจ้าของถัง",
+        labelBinId: "ชื่อถังขยะ",
+        labelOwner: "ผู้ใช้เจ้าของถังขยะ",
         labelRfid: "RFID Tag",
-        labelPosition: "ตำแหน่ง",
-        labelDetails: "รายละเอียดเพิ่มเติม",
+        labelPosition: "ตำแหน่ง (ที่อยู่)",
+        labelDetails: "รายละเอียดเพิ่มเติมของถังขยะ",
         placeholderBinId: "เลือกเขตก่อน ระบบจะสร้าง BINxxx ให้",
         placeholderRfid: "เช่น 04A1B2C3D4",
         placeholderLng: "ลองจิจูด (longitude)",
@@ -1077,7 +1229,6 @@
         ownerSelectError: "-- โหลดรายชื่อผู้ใช้ไม่สำเร็จ --",
         statusSelectOwner: "กรุณาเลือกผู้ใช้เจ้าของถัง",
         ownerLoadError: "ไม่สามารถโหลดรายชื่อผู้ใช้ได้:",
-
         binsSectionTitle: "รายการถังขยะ",
         binsSectionHint: "",
         filterZoneLabel: "เขตพื้นที่",
@@ -1102,7 +1253,6 @@
         confirmDelete: "แน่ใจหรือไม่ว่าต้องการลบถัง",
         deleteSuccess: "ลบถังสำเร็จ",
         deleteError: "ลบถังไม่สำเร็จ:",
-
         editModalTitle: "แก้ไขข้อมูลถังขยะ",
         editLabelZone: "เขตพื้นที่",
         editLabelBinId: "ชื่อถัง (BIN)",
@@ -1116,7 +1266,7 @@
         btnSaveChanges: "บันทึกการแก้ไข"
       },
       en: {
-        pageTitle: "Smart Waste - Register Bin",
+        pageTitle: "Smart Waste - Bin List",
         menuBtn: "☰ Menu",
         navHome: "Home",
         navRegister: "Register bin",
@@ -1125,10 +1275,13 @@
         navTruck: "Truck Location",
         navReport: "Historical Report",
         navBins: "Bin List",
-        mainTitle: "Register Bin",
+        mainTitle: "Bin List",
         formLegend: "Add Bin Information",
+        addBinHeaderTitle: "Add Bin Information",
+        btnShowForm: "Add Bin",
+        btnHideForm: "Hide Add Bin Form",
         labelZone: "Zone Area",
-        labelBinId: "Bin Name (Auto: BIN + 3-digit number per zone)",
+        labelBinId: "Bin Name",
         labelOwner: "Bin Owner",
         labelRfid: "RFID Tag",
         labelPosition: "Position",
@@ -1149,7 +1302,6 @@
         statusGetPosError: "Failed to get location:",
         statusNoGps: "Geolocation is not supported by this device",
         statusSelectZone: "Please select a zone",
-
         zoneModalTitle: "Manage Zones",
         zoneModalNoZones: "No zones yet. Add a new zone below.",
         zoneModalNewZonePlaceholder: "New zone name, e.g., City, Zone1",
@@ -1178,7 +1330,6 @@
         ownerSelectError: "-- Failed to load users --",
         statusSelectOwner: "Please select a bin owner",
         ownerLoadError: "Unable to load user list:",
-
         binsSectionTitle: "Bin List",
         binsSectionHint: "",
         filterZoneLabel: "Zone",
@@ -1203,7 +1354,6 @@
         confirmDelete: "Are you sure you want to delete bin",
         deleteSuccess: "Bin deleted successfully",
         deleteError: "Failed to delete bin:",
-
         editModalTitle: "Edit Bin Information",
         editLabelZone: "Zone Area",
         editLabelBinId: "Bin Name (BIN)",
@@ -1217,7 +1367,7 @@
         btnSaveChanges: "Save Changes"
       },
       ms: {
-        pageTitle: "Smart Waste - Daftar Tong",
+        pageTitle: "Smart Waste - Senarai Tong",
         menuBtn: "☰ Menu",
         navHome: "Halaman Utama",
         navRegister: "Daftar Tong",
@@ -1226,10 +1376,13 @@
         navTruck: "Lokasi Lori",
         navReport: "Laporan Sejarah",
         navBins: "Senarai Tong",
-        mainTitle: "Daftar Tong",
+        mainTitle: "Senarai Tong",
         formLegend: "Tambah Maklumat Tong",
+        addBinHeaderTitle: "Tambah Maklumat Tong",
+        btnShowForm: "Tambah Tong",
+        btnHideForm: "Sembunyi Borang Tambah Tong",
         labelZone: "Kawasan Zon",
-        labelBinId: "Nama Tong (Auto: BIN + 3 digit nombor setiap zon)",
+        labelBinId: "Nama Tong",
         labelOwner: "Pemilik Tong",
         labelRfid: "Tag RFID",
         labelPosition: "Posisi",
@@ -1250,7 +1403,6 @@
         statusGetPosError: "Gagal mendapatkan lokasi:",
         statusNoGps: "Geolokasi tidak disokong oleh peranti ini",
         statusSelectZone: "Sila pilih zon",
-
         zoneModalTitle: "Urus Zon",
         zoneModalNoZones: "Belum ada zon. Tambah zon baharu di bawah.",
         zoneModalNewZonePlaceholder: "Nama zon baharu, cth., Bandar, Zon1",
@@ -1279,7 +1431,6 @@
         ownerSelectError: "-- Gagal memuatkan pengguna --",
         statusSelectOwner: "Sila pilih pemilik tong",
         ownerLoadError: "Tidak dapat memuatkan senarai pengguna:",
-
         binsSectionTitle: "Senarai Tong",
         binsSectionHint: "",
         filterZoneLabel: "Zon",
@@ -1304,7 +1455,6 @@
         confirmDelete: "Adakah anda pasti mahu memadam tong",
         deleteSuccess: "Tong berjaya dipadam",
         deleteError: "Gagal memadam tong:",
-
         editModalTitle: "Ubah Maklumat Tong",
         editLabelZone: "Zon",
         editLabelBinId: "Nama Tong (BIN)",
@@ -1337,6 +1487,47 @@
     }
     function errStr(e) {
       return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
+    }
+
+    // ---------- ดึงข้อมูลผู้ใช้ปัจจุบันจาก /users/{username} ----------
+    async function loadCurrentUserProfile() {
+      try {
+        let usernameKey = currentUser && (currentUser.username || currentUser.uid || currentUser.email);
+        if (!usernameKey) return;
+
+        const docSnap = await usersCol.doc(usernameKey).get();
+        if (docSnap.exists) {
+          const data = docSnap.data() || {};
+          currentUserProfile = {
+            ...data,
+            username: data.username || docSnap.id
+          };
+        } else {
+          currentUserProfile = {
+            username: usernameKey,
+            status: currentUser && typeof currentUser.status === "number" ? currentUser.status : 0
+          };
+        }
+        applyProfileInfo();
+      } catch (e) {
+        console.error("loadCurrentUserProfile error", e);
+      }
+    }
+
+    function applyProfileInfo() {
+      if (!profileNameEl || !profileRoleEl) return;
+      if (!currentUserProfile) return;
+
+      const fullName = (currentUserProfile.fullName || "").trim();
+      const username = currentUserProfile.username || currentUser?.username || "";
+      const statusVal = typeof currentUserProfile.status === "number"
+        ? currentUserProfile.status
+        : (currentUser && typeof currentUser.status === "number" ? currentUser.status : 0);
+
+      const roleMap = ROLE_LABELS[currentLang] || ROLE_LABELS.th;
+
+      profileNameEl.textContent = fullName || username || "—";
+      profileRoleEl.textContent = roleMap[statusVal] || "";
     }
 
     // ---------- owners ----------
@@ -1553,10 +1744,14 @@
       zoneModalMsg.className = "muted";
       newZoneNameEl.value = "";
       zoneModalBackdrop.classList.add("show");
+      lockBodyScroll(true);      // ล็อก scroll หน้าเว็บ
     }
+
     function closeZoneModal() {
       zoneModalBackdrop.classList.remove("show");
+      lockBodyScroll(false);     // ปลดล็อก scroll หน้าเว็บ
     }
+
 
     btnCloseZoneModal.addEventListener("click", closeZoneModal);
     btnZoneDone.addEventListener("click", closeZoneModal);
@@ -1747,7 +1942,10 @@
           }, { merge: true });
 
         setStatusForm(`${getTranslation('statusSaveSuccess')} (${binId})`, "ok");
-        clearForm();
+        // บันทึกเสร็จแล้วปิด modal + เคลียร์ฟอร์ม
+        setTimeout(() => {
+          closeAddModal();
+        }, 600);
       } catch (err) {
         console.error(err);
         setStatusForm(`${getTranslation('statusSaveError')} ${errStr(err)}`, "err");
@@ -1816,6 +2014,7 @@
           <td>
             <div class="bin-actions">
               <button class="icon-btn icon-edit-btn"
+                      type="button"
                       onclick="editBin('${zone}','${binId}')"
                       aria-label="${t('btnEdit')}">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1826,6 +2025,7 @@
               </button>
 
               <button class="icon-btn icon-delete-btn"
+                      type="button"
                       onclick="deleteBin('${zone}','${binId}')"
                       aria-label="${t('btnDelete')}">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1900,14 +2100,18 @@
     // ---------- Edit modal ----------
     function openEditModal() {
       editModalBackdrop.classList.add("show");
+      lockBodyScroll(true);      // ล็อก scroll หน้าเว็บ
     }
+
     function closeEditModal() {
       editModalBackdrop.classList.remove("show");
       editForm.reset();
       setBinsStatus("", "");
       editMsg.textContent = "";
       editMsg.className = "muted";
+      lockBodyScroll(false);     // ปลดล็อก scroll หน้าเว็บ
     }
+
     btnEditClose.addEventListener("click", closeEditModal);
     btnEditCancel.addEventListener("click", closeEditModal);
 
@@ -2007,6 +2211,29 @@
       }
     };
 
+    // ---------- Add Bin Modal ----------
+    function openAddModal() {
+      addBinBackdrop.classList.add("show");
+      lockBodyScroll(true);      // ล็อก scroll หน้าเว็บ
+    }
+
+    function closeAddModal() {
+      addBinBackdrop.classList.remove("show");
+      clearForm();
+      lockBodyScroll(false);     // ปลดล็อก scroll หน้าเว็บ
+    }
+
+
+    btnToggleForm.addEventListener("click", openAddModal);
+    btnAddClose.addEventListener("click", closeAddModal);
+
+    // ปิด modal ถ้าคลิกนอกกล่อง
+    addBinBackdrop.addEventListener("click", (e) => {
+      if (e.target === addBinBackdrop) {
+        closeAddModal();
+      }
+    });
+
     // ---------- Language ----------
     function updateLangMenuActive() {
       if (!langMenu) return;
@@ -2036,10 +2263,7 @@
         window.AdminUser.setLanguage(currentLang);
       }
 
-      document.querySelector('h1').textContent = getTranslation('mainTitle');
-
-      const fieldset = document.querySelector('fieldset');
-      if (fieldset) fieldset.querySelector('legend').textContent = getTranslation('formLegend');
+      $("pageTitleHeading").textContent = getTranslation('mainTitle');
 
       $("labelZone").textContent = getTranslation('labelZone');
       $("labelBinId").textContent = getTranslation('labelBinId');
@@ -2057,10 +2281,15 @@
       btnGetPos.textContent = getTranslation('btnGetGps');
       $("btnSave").textContent = getTranslation('btnSave');
       btnReset.textContent = getTranslation('btnReset');
+
+      // หัวข้อ + ปุ่มเพิ่มถัง (แม้หัวข้อจะถูกซ่อนใน CSS แต่ให้ซิงก์ข้อความไว้)
+      if (addBinHeaderTitle) addBinHeaderTitle.textContent = t('addBinHeaderTitle');
+      if (btnToggleForm) btnToggleForm.textContent = t('btnShowForm');
+      const addBinModalTitle = $("addBinModalTitle");
+      if (addBinModalTitle) addBinModalTitle.textContent = t('addBinHeaderTitle');
+
       renderOwnerSelect();
 
-      $("binsSectionTitle").textContent = t('binsSectionTitle');
-      $("binsSectionHint").innerHTML = t('binsSectionHint');
       $("filterZoneLabel").textContent = t('filterZoneLabel');
       $("filterBinLabel").textContent = t('filterBinLabel');
       filterBinText.placeholder = t('filterBinPlaceholder');
@@ -2086,6 +2315,7 @@
       renderZoneFilterOptions();
       renderBinsTable();
       updateLangMenuActive();
+      applyProfileInfo();
 
       if (!isUpdate) {
         renderZoneSelect();
@@ -2128,23 +2358,27 @@
     menuToggleBtn.addEventListener("click", toggleMenu);
 
     document.addEventListener("click", (e) => {
-      if (window.innerWidth > 900) {
-        langMenu.classList.remove("show");
-        return;
-      }
-      if (!sidebarEl.classList.contains("show") && !langMenu.classList.contains("show")) return;
-      const withinSidebar = sidebarEl.contains(e.target);
-      const withinBtn = menuToggleBtn.contains(e.target);
-      const withinLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
-      if (!withinLang) langMenu.classList.remove("show");
-      if (!withinSidebar && !withinBtn) {
-        sidebarEl.classList.remove("show");
-        document.body.classList.remove('menu-open');
+      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+
+      // ปิดเมนูภาษาเมื่อคลิกที่อื่น
+      if (!clickedInLang) langMenu.classList.remove("show");
+
+      // ปิด sidebar บนจอเล็ก
+      if (window.innerWidth <= 900) {
+        const withinSidebar = sidebarEl.contains(e.target);
+        const withinBtn = menuToggleBtn.contains(e.target);
+
+        if (!withinSidebar && !withinBtn) {
+          sidebarEl.classList.remove("show");
+          document.body.classList.remove("menu-open");
+        }
       }
     });
 
+    // เรียกใช้ตอนโหลดหน้า
     changeLanguage(currentLang);
     loadOwners();
+    loadCurrentUserProfile();
   </script>
 </body>
 

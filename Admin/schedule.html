@@ -35,6 +35,13 @@
       overflow-x: hidden;
     }
 
+    /* ล็อกหน้าเว็บเวลาเปิด modal */
+    body.modal-open {
+      overflow: hidden;
+      height: 100vh;
+      touch-action: none;
+    }
+
     :root {
       --btn-min-h: 44px;
       --btn-pad-x: 16px;
@@ -112,6 +119,14 @@
       border-left: 0;
     }
 
+    /* ฉากหลังของ sidebar บนมือถือ (เหมือนหน้าเพิ่มถัง) */
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      display: none;
+    }
+
     .toggle-btn {
       display: none;
       position: fixed;
@@ -123,8 +138,9 @@
       padding: 10px 16px;
       border-radius: 12px;
       cursor: pointer;
-      z-index: 1000;
+      z-index: 1100;
       font-size: 16px;
+      min-height: var(--btn-min-h);
     }
 
     main {
@@ -165,41 +181,128 @@
       gap: 12px;
     }
 
-    .lang-switcher select {
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
+    /* ---------- ไอคอนภาษา + โปรไฟล์ (เหมือนหน้า bins) ---------- */
+    .icon-btn {
       background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 6px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+      width: 45px;
+      height: 45px;
+    }
+
+    .top-icon {
+      width: 20px;
+      height: 30px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .lang-switcher {
+      position: relative;
+    }
+
+    .lang-switcher select {
+      display: none;
+    }
+
+    .lang-menu {
+      position: absolute;
+      right: 0;
+      top: 120%;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      padding: 4px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, .2);
+      min-width: 150px;
+      display: none;
+      z-index: 1200;
+    }
+
+    .lang-menu.show {
+      display: block;
+    }
+
+    .lang-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .lang-menu button:hover {
+      background: #f3f4f6;
+    }
+
+    .lang-menu button.active {
+      background: #e0edff;
+      font-weight: 600;
     }
 
     .user-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       background: #fff;
-      border-radius: 999px;
       border: 1px solid #e5e7eb;
-      padding: 8px 12px;
+      border-radius: 999px;
       box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
-    }
-
-    .user-chip .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
-      color: #0f172a;
-      font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
+      width: 45px;
+      height: 45px;
+      padding: 0;
+      text-decoration: none;
+      color: #111827;
     }
 
-    .user-chip__label {
-      margin: 0;
-      font-size: 12px;
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+    }
+
+    .user-chip-text {
+      display: none;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.2;
+    }
+
+    .user-chip-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .user-chip-role {
+      font-size: 11px;
       color: #6b7280;
+    }
+
+    @media (min-width: 901px) {
+      .user-chip {
+        width: auto;
+        padding: 4px 12px;
+        justify-content: flex-start;
+      }
+
+      .user-chip-text {
+        display: flex;
+      }
+
+      /* ไม่ต้องใช้ backdrop บน desktop */
+      .sidebar-backdrop {
+        display: none !important;
+      }
     }
 
     .content {
@@ -207,6 +310,24 @@
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    /* แถบหัวข้อ + ปุ่มเปิดฟอร์ม (เหมือน add-bin-header) */
+    .add-schedule-header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      margin-top: 4px;
+    }
+
+    .add-schedule-title {
+      display: none;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
     }
 
     .card {
@@ -338,6 +459,54 @@
       color: #dc2626;
     }
 
+    /* ---------- Modal ฟอร์มจัดตาราง (เหมือนหน้า addBin) ---------- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 12px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, .35);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+
     @media(max-width:900px) {
       body {
         flex-direction: column;
@@ -348,11 +517,16 @@
         left: -250px;
         top: 0;
         height: 100%;
-        z-index: 999;
+        z-index: 1000;
       }
 
       .sidebar.show {
         left: 0;
+      }
+
+      .sidebar-backdrop.show {
+        display: block;
+        z-index: 900;
       }
 
       .toggle-btn {
@@ -365,6 +539,28 @@
 
       h1 {
         text-align: center;
+      }
+
+      .add-schedule-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .add-schedule-header button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* modal บนมือถือ – ไม่ให้ชิดขอบจอ และเลื่อนได้เฉพาะในกล่อง */
+      .modal-backdrop {
+        align-items: flex-start;
+        padding: 32px 0;
+      }
+
+      .modal {
+        max-width: 100%;
+        margin: 0 16px 24px;
+        -webkit-overflow-scrolling: touch;
       }
     }
 
@@ -385,6 +581,8 @@
     <nav class="menu" data-admin-menu data-active="schedule"></nav>
     <div class="sw-logout-slot" data-sw-logout-slot></div>
   </aside>
+  <!-- ฉากหลังของ sidebar บนมือถือ -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <main>
     <div class="page-wrap">
@@ -396,73 +594,42 @@
           </p>
         </div>
         <div class="topbar-right">
+          <!-- ไอคอนเลือกภาษา -->
           <div class="lang-switcher">
-            <select id="langSelect">
+            <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+              <img src="images/lang-icon.png" alt="Language" class="top-icon">
+            </button>
+            <div class="lang-menu" id="langMenu">
+              <button type="button" data-lang="th">ไทย</button>
+              <button type="button" data-lang="en">English</button>
+              <button type="button" data-lang="ms">Bahasa Melayu</button>
+            </div>
+            <select id="langSelect" style="display:none;">
               <option value="th">ไทย</option>
               <option value="en">English</option>
               <option value="ms">Bahasa Melayu</option>
             </select>
           </div>
-          <div class="user-chip">
-            <span class="avatar" id="adminAvatar">A</span>
-            <div>
-              <p class="user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
-              <strong id="adminName">-</strong>
+
+          <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
+          <a href="profile.html" class="user-chip" id="profileBtn">
+            <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
+            <div class="user-chip-text">
+              <div class="user-chip-name" id="profileName">User Name</div>
+              <div class="user-chip-role" id="profileRole">Role</div>
             </div>
-          </div>
+          </a>
         </div>
       </div>
 
       <div class="content">
-
-        <div class="card">
-          <h3 id="formTitle">สร้างตารางขับรถ</h3>
-
-          <form id="scheduleForm">
-            <div class="row">
-              <div>
-                <label id="labelStart">วันเริ่มต้น</label>
-                <input id="startDate" type="date" required />
-              </div>
-              <div>
-                <label id="labelEnd">วันสิ้นสุด</label>
-                <input id="endDate" type="date" required />
-              </div>
-            </div>
-
-            <div class="row" style="margin-top:10px;">
-              <div>
-                <label id="labelZone">เขตพื้นที่</label>
-                <select id="zoneSelect" required>
-                  <option value="">เลือกเขต...</option>
-                </select>
-              </div>
-
-              <div>
-                <label id="labelTruck">เลือกรถ</label>
-                <select id="truckSelect" required disabled>
-                  <option value="">เลือกเขตก่อน...</option>
-                </select>
-              </div>
-
-              <div>
-                <label id="labelDriver">เลือกคนขับ</label>
-                <select id="driverSelect" required disabled>
-                  <option value="">เลือกเขตก่อน...</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="row" style="margin-top:12px;">
-              <div id="formStatus" class="muted"></div>
-              <div style="flex:1;text-align:right">
-                <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
-                <button type="submit" class="primary" id="btnSave">บันทึกตาราง</button>
-              </div>
-            </div>
-          </form>
+        <!-- แถบหัวข้อ + ปุ่มเปิดฟอร์ม (แทน card ฟอร์มเดิม) -->
+        <div class="add-schedule-header">
+          <div class="add-schedule-title" id="addScheduleHeaderTitle">สร้างตารางขับรถ</div>
+          <button type="button" class="primary" id="btnOpenScheduleForm">สร้างตารางขับรถ</button>
         </div>
 
+        <!-- การ์ดตารางล่าสุด ให้ขนาด/สไตล์เหมือนหน้าอื่น -->
         <div class="card">
           <h3 id="tableTitle">ตารางขับรถล่าสุด</h3>
           <p class="muted" id="countLabel">แสดง 0 รายการ</p>
@@ -491,20 +658,77 @@
     </div>
   </main>
 
+  <!-- Modal ฟอร์มจัดตาราง (เหมือนฟอร์มเพิ่มถัง) -->
+  <div class="modal-backdrop" id="scheduleModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="scheduleModalTitle">สร้างตารางขับรถ</div>
+        <button type="button" class="modal-close" id="btnScheduleClose">✕</button>
+      </div>
+
+      <form id="scheduleForm">
+        <div class="row">
+          <div>
+            <label id="labelStart">วันเริ่มต้น</label>
+            <input id="startDate" type="date" required />
+          </div>
+          <div>
+            <label id="labelEnd">วันสิ้นสุด</label>
+            <input id="endDate" type="date" required />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label id="labelZone">เขตพื้นที่</label>
+            <select id="zoneSelect" required>
+              <option value="">เลือกเขต...</option>
+            </select>
+          </div>
+
+          <div>
+            <label id="labelTruck">เลือกรถ</label>
+            <select id="truckSelect" required disabled>
+              <option value="">เลือกเขตก่อน...</option>
+            </select>
+          </div>
+
+          <div>
+            <label id="labelDriver">เลือกคนขับ</label>
+            <select id="driverSelect" required disabled>
+              <option value="">เลือกเขตก่อน...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <div id="formStatus" class="muted"></div>
+          <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
+          <button type="submit" class="primary" id="btnSave">บันทึกตาราง</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    /* -------- เมนูมือถือ -------- */
+    /* -------- เมนูมือถือ + sidebar backdrop (เหมือนหน้าเพิ่มถัง) -------- */
     function toggleMenu(force) {
       const sidebar = document.getElementById('sidebar');
       const btn = document.getElementById('menuToggle');
+      const backdrop = document.getElementById('sidebarBackdrop');
       let show;
 
       if (typeof force === 'boolean') {
         show = force;
-        sidebar.classList.toggle('show', show);
       } else {
         show = !sidebar.classList.contains('show');
-        sidebar.classList.toggle('show');
       }
+
+      sidebar.classList.toggle('show', show);
+      if (backdrop) {
+        backdrop.classList.toggle('show', show);
+      }
+
       if (window.innerWidth <= 900) {
         btn.style.display = show ? 'none' : 'inline-flex';
       }
@@ -516,17 +740,31 @@
           if (window.innerWidth <= 900) toggleMenu(false);
         });
       });
+
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (backdrop) {
+        backdrop.addEventListener('click', () => toggleMenu(false));
+      }
     });
 
     window.addEventListener('resize', () => {
       const btn = document.getElementById('menuToggle');
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+
       if (window.innerWidth > 900) {
         btn.style.display = 'none';
+        sidebar.classList.remove('show');
+        if (backdrop) backdrop.classList.remove('show');
       } else {
-        const sidebar = document.getElementById('sidebar');
         btn.style.display = sidebar.classList.contains('show') ? 'none' : 'inline-flex';
       }
     });
+
+    /* ล็อก/ปลดล็อก scroll ของ body เวลาเปิด modal */
+    function lockBodyScroll(lock) {
+      document.body.classList.toggle("modal-open", !!lock);
+    }
 
     /* -------- Firebase -------- */
     var firebaseConfig = {
@@ -556,8 +794,17 @@
     const endDate = document.getElementById("endDate");
     const btnClear = document.getElementById("btnClear");
 
+    const btnOpenScheduleForm = document.getElementById("btnOpenScheduleForm");
+    const scheduleModalBackdrop = document.getElementById("scheduleModalBackdrop");
+    const btnScheduleClose = document.getElementById("btnScheduleClose");
+
+    // โปรไฟล์
+    const profileNameEl = document.getElementById("profileName");
+    const profileRoleEl = document.getElementById("profileRole");
+
     let zones = [];
     let schedules = [];
+    let currentUserProfile = null;
 
     /* -------- i18n -------- */
     const translations = {
@@ -582,6 +829,8 @@
         driverNoData: "ยังไม่มีคนขับในเขตนี้",
         btnClear: "ล้างฟอร์ม",
         btnSave: "บันทึกตาราง",
+        addScheduleHeaderTitle: "สร้างตารางขับรถ",
+        btnOpenSchedule: "สร้างตารางขับรถ",
 
         tableTitle: "ตารางขับรถล่าสุด",
         countPrefix: "แสดง",
@@ -623,6 +872,8 @@
         driverNoData: "No drivers in this zone",
         btnClear: "Reset form",
         btnSave: "Save schedule",
+        addScheduleHeaderTitle: "Create schedule",
+        btnOpenSchedule: "Create schedule",
 
         tableTitle: "Latest Schedules",
         countPrefix: "Showing",
@@ -664,6 +915,8 @@
         driverNoData: "Tiada pemandu dalam zon ini",
         btnClear: "Kosongkan borang",
         btnSave: "Simpan jadual",
+        addScheduleHeaderTitle: "Cipta jadual",
+        btnOpenSchedule: "Cipta jadual",
 
         tableTitle: "Jadual Terkini",
         countPrefix: "Menunjukkan",
@@ -691,6 +944,8 @@
       ? LangState.getLang()
       : (localStorage.getItem("sw_lang") || "th");
     const langSelect = document.getElementById("langSelect");
+    const langIconBtn = document.getElementById("langIconBtn");
+    const langMenu = document.getElementById("langMenu");
 
     function tr(key) {
       const t = translations[currentLang] || translations.th;
@@ -702,13 +957,79 @@
       formStatus.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
     }
 
+    /* role label ตามภาษา (เหมือนหน้า bins) */
+    const ROLE_LABELS = {
+      th: {
+        0: "ผู้ดูแลระบบ",
+        1: "พนักงานขับรถ",
+        2: "ผู้ใช้งานทั่วไป"
+      },
+      en: {
+        0: "Administrator",
+        1: "Driver",
+        2: "Resident User"
+      },
+      ms: {
+        0: "Pentadbir",
+        1: "Pemandu",
+        2: "Pengguna"
+      }
+    };
+
+    async function loadCurrentUserProfile() {
+      try {
+        let usernameKey = currentUser && (currentUser.username || currentUser.uid || currentUser.email);
+        if (!usernameKey) return;
+
+        const docSnap = await usersCol.doc(usernameKey).get();
+        if (docSnap.exists) {
+          const data = docSnap.data() || {};
+          currentUserProfile = {
+            ...data,
+            username: data.username || docSnap.id
+          };
+        } else {
+          currentUserProfile = {
+            username: usernameKey,
+            status: currentUser && typeof currentUser.status === "number" ? currentUser.status : 0
+          };
+        }
+        applyProfileInfo();
+      } catch (e) {
+        console.error("loadCurrentUserProfile error", e);
+      }
+    }
+
+    function applyProfileInfo() {
+      if (!profileNameEl || !profileRoleEl || !currentUserProfile) return;
+
+      const fullName = (currentUserProfile.fullName || "").trim();
+      const username = currentUserProfile.username || currentUser?.username || "";
+      const statusVal = typeof currentUserProfile.status === "number"
+        ? currentUserProfile.status
+        : (currentUser && typeof currentUser.status === "number" ? currentUser.status : 0);
+
+      const roleMap = ROLE_LABELS[currentLang] || ROLE_LABELS.th;
+
+      profileNameEl.textContent = fullName || username || "—";
+      profileRoleEl.textContent = roleMap[statusVal] || "";
+    }
+
+    function updateLangMenuActive() {
+      if (!langMenu) return;
+      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === currentLang);
+      });
+    }
+
     function applyLanguage() {
       document.title = tr("pageTitle");
       document.getElementById("menuToggle").textContent = tr("menuBtn");
 
       document.getElementById("mainTitle").textContent = tr("mainTitle");
       document.getElementById("pageHint").textContent = tr("pageHint");
-      document.getElementById("formTitle").textContent = tr("formTitle");
+
+      document.getElementById("scheduleModalTitle").textContent = tr("formTitle");
       document.getElementById("labelStart").textContent = tr("labelStart");
       document.getElementById("labelEnd").textContent = tr("labelEnd");
       document.getElementById("labelZone").textContent = tr("labelZone");
@@ -716,6 +1037,9 @@
       document.getElementById("labelDriver").textContent = tr("labelDriver");
       document.getElementById("btnClear").textContent = tr("btnClear");
       document.getElementById("btnSave").textContent = tr("btnSave");
+
+      document.getElementById("addScheduleHeaderTitle").textContent = tr("addScheduleHeaderTitle");
+      document.getElementById("btnOpenScheduleForm").textContent = tr("btnOpenSchedule");
 
       document.getElementById("tableTitle").textContent = tr("tableTitle");
       document.getElementById("thZone").textContent = tr("thZone");
@@ -735,19 +1059,61 @@
         driverSelect.options[0].textContent = tr("driverPlaceholder");
       }
 
+      // sync กับ AdminNav/AdminUser ถ้ามี
+      if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {
+        window.AdminNav.setLanguage(currentLang);
+      }
+      if (window.AdminUser && typeof window.AdminUser.setLanguage === "function") {
+        window.AdminUser.setLanguage(currentLang);
+      }
+
       renderSchedules();
+      applyProfileInfo();
+      updateLangMenuActive();
     }
 
     function changeLanguage(lang) {
       if (!translations[lang]) return;
-      currentLang = lang;
-      localStorage.setItem("sw_lang", lang);
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        currentLang = lang;
+        localStorage.setItem("sw_lang", lang);
+      }
       langSelect.value = currentLang;
       applyLanguage();
     }
 
     langSelect.addEventListener("change", e => changeLanguage(e.target.value));
     langSelect.value = currentLang;
+
+    langIconBtn.addEventListener("click", () => {
+      langMenu.classList.toggle("show");
+    });
+
+    langMenu.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      changeLanguage(btn.dataset.lang);
+      langMenu.classList.remove("show");
+    });
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
+
+    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
+    document.addEventListener("click", e => {
+      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+      if (!clickedInLang) langMenu.classList.remove("show");
+    });
 
     /* โหลดเขต */
     async function loadZones() {
@@ -890,7 +1256,7 @@
       return `${zone}_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}-${ms}`;
     }
 
-    /* บันทึกตาราง */
+    /* บันทึกตาราง (เหมือนเดิม ไม่เปลี่ยน logic) */
     document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -1047,6 +1413,25 @@
       setFormStatusText(tr("cleared"), "");
     });
 
+    /* Modal ฟอร์มจัดตาราง */
+    function openScheduleModal() {
+      scheduleModalBackdrop.classList.add("show");
+      lockBodyScroll(true);
+    }
+    function closeScheduleModal() {
+      scheduleModalBackdrop.classList.remove("show");
+      lockBodyScroll(false);
+    }
+
+    btnOpenScheduleForm.addEventListener("click", openScheduleModal);
+    btnScheduleClose.addEventListener("click", closeScheduleModal);
+
+    scheduleModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === scheduleModalBackdrop) {
+        closeScheduleModal();
+      }
+    });
+
     /* โหลดตาราง */
     function setupScheduleListener() {
       scheduleCol.orderBy("createdAt", "desc").limit(100)
@@ -1100,6 +1485,7 @@
       applyLanguage();
       await loadZones();
       setupScheduleListener();
+      await loadCurrentUserProfile();
     })();
   </script>
 

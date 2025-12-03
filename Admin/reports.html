@@ -199,17 +199,17 @@
     /* Filters */
     .time-filter {
       display: flex;
-      align-items: flex-end;
-      gap: 10px;
+      align-items: center;
+      gap: 8px;
       flex-wrap: wrap;
       justify-content: flex-end;
+      max-width: 480px;
     }
 
     .filter-group {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      min-width: 140px;
     }
 
     .filter-label {
@@ -224,6 +224,7 @@
       background: #fff;
       font-size: 14px;
       min-height: 40px;
+      min-width: 120px;
     }
 
     /* Responsive */
@@ -249,7 +250,7 @@
       }
 
       main {
-        padding: 70px 16px 20px
+        padding: 70px 16px 20px;
       }
 
       h1 {
@@ -271,10 +272,7 @@
         flex-direction: column;
         align-items: stretch;
         justify-content: flex-start;
-      }
-
-      .filter-group {
-        width: 100%;
+        max-width: none;
       }
 
       .time-filter select {
@@ -300,6 +298,7 @@
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .lang-switcher {
@@ -400,23 +399,26 @@
           สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต
         </h3>
 
-        <!-- Filters (ช่วงเวลา + เขต) -->
+        <!-- Filters: เขต + เดือน + ปี -->
         <div class="time-filter">
-          <div class="filter-group">
-            <span class="filter-label">ช่วงเวลา</span>
-            <select id="timeFilter">
-              <option value="all">ทั้งหมด</option>
-              <option value="day">วันนี้</option>
-              <option value="week">7 วันล่าสุด</option>
-              <option value="month">30 วันล่าสุด</option>
-              <option value="year">365 วันล่าสุด</option>
-            </select>
-          </div>
-
           <div class="filter-group">
             <span class="filter-label">เขต</span>
             <select id="zoneFilter">
               <option value="all">ทุกเขต</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <span class="filter-label">เดือน</span>
+            <select id="monthFilter">
+              <option value="all">ทุกเดือน</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <span class="filter-label">ปี</span>
+            <select id="yearFilter">
+              <option value="all">ทุกปี</option>
             </select>
           </div>
         </div>
@@ -463,8 +465,9 @@
     const chartTitle = document.getElementById("chartTitle");
     const loadingEl = document.getElementById("loading");
     const langSelect = document.getElementById("langSelect");
-    const timeFilterSelect = document.getElementById("timeFilter");
     const zoneFilterSelect = document.getElementById("zoneFilter");
+    const monthFilterSelect = document.getElementById("monthFilter");
+    const yearFilterSelect = document.getElementById("yearFilter");
 
     const ctxCount = document.getElementById("zoneChart").getContext("2d");
     const ctxTime = document.getElementById("timeChart").getContext("2d");
@@ -475,16 +478,19 @@
     // [{zoneId, displayName, bins:[{binId, name}]}]
     let cachedZones = [];
 
-    // cache เวลาการวิ่งรถต่อเขต + ช่วงเวลา: "zoneId|filterKey" -> { totalMinutes, runs: [...] }
+    // cache เวลาการวิ่งรถต่อเขต + ช่วงเวลา: "zoneId|month|year" -> { totalMinutes, runs: [...] }
     const driveTimeCache = new Map();
-
-    // ฟิลเตอร์ช่วงเวลา: all / day / week / month / year
-    let currentTimeFilter = localStorage.getItem("sw_report_time_filter") || "all";
-    timeFilterSelect.value = currentTimeFilter;
 
     // ฟิลเตอร์เขต: 'all' หรือ zoneId
     let selectedZoneId = localStorage.getItem("sw_report_zone_filter") || "all";
-    zoneFilterSelect.value = selectedZoneId;
+
+    // ฟิลเตอร์เดือน/ปี (ค่าใน localStorage เป็น string เช่น "all", "1", "2", ...)
+    let currentMonth = localStorage.getItem("sw_report_month_filter") || "all";
+    let currentYear = localStorage.getItem("sw_report_year_filter") || "all";
+
+    // รายการเดือน/ปีที่มีจริงในดาต้าเบส
+    let availableMonths = [];
+    let availableYears = [];
 
     /* helper: หา zoneId ของ truck จาก field zoneId หรือจากชื่อ doc */
     function getZoneIdFromTruckDoc(doc) {
@@ -493,6 +499,16 @@
       const id = doc.id || "";
       const parts = id.split("_");
       return parts[0] || "unknown";
+    }
+
+    /* helper: ดึง timestamp จาก log */
+    function getLogDate(data) {
+      if (!data) return null;
+      const cand = data.timestamp || data.emptiedAt || data.createdAt || data.time;
+      if (cand && typeof cand.toDate === "function") {
+        return cand.toDate();
+      }
+      return null;
     }
 
     /* helper: แปลง startAt/endAt เป็นนาที */
@@ -505,122 +521,290 @@
       return diffMs / 60000; // ms -> นาที
     }
 
-    /* ===== Time range helpers ===== */
-    function getCurrentDateRange() {
-      const key = currentTimeFilter || "all";
-      if (key === "all") {
-        return { start: null, end: null };
-      }
-
-      const now = new Date();
-      let start, end;
-
-      if (key === "day") {
-        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        end = new Date(start);
-        end.setDate(end.getDate() + 1);
-      } else if (key === "week") {
-        end = now;
-        start = new Date(end);
-        start.setDate(start.getDate() - 7);
-      } else if (key === "month") {
-        end = now;
-        start = new Date(end);
-        start.setDate(start.getDate() - 30);
-      } else if (key === "year") {
-        end = now;
-        start = new Date(end);
-        start.setDate(start.getDate() - 365);
-      } else {
-        start = null;
-        end = null;
-      }
-
-      return { start, end };
-    }
-
-    function isInRange(date, range) {
-      if (!range || (!range.start && !range.end)) return true;
+    /* ===== ฟังก์ชันตรวจว่าตรงกับเดือน/ปีที่กรองไหม ===== */
+    function matchCurrentFilters(date) {
       if (!date) return false;
-      if (range.start && date < range.start) return false;
-      if (range.end && date >= range.end) return false;
+      if (currentYear !== "all" && date.getFullYear() !== Number(currentYear)) return false;
+      if (currentMonth !== "all" && (date.getMonth() + 1) !== Number(currentMonth)) return false;
       return true;
     }
 
-    // ดึงเวลาใน log ของการเทถัง
-    // NOTE: ปรับ field ตามที่ใช้จริงใน Firestore เช่น emptiedAt / createdAt
-    function getLogDate(data) {
-      if (!data) return null;
-      const cand = data.timestamp || data.emptiedAt || data.createdAt || data.time;
-      if (cand && typeof cand.toDate === "function") {
-        return cand.toDate();
+    /* ===== Internationalization (i18n) ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - รายงานย้อนหลัง",
+        menuBtn: "☰ เมนู",
+        navHome: "หน้าหลัก",
+        navRegister: "ลงทะเบียน",
+        navCapacity: "ความจุถังขยะ",
+        navTruck: "ตำแหน่งรถเก็บขยะ",
+        navReport: "รายงานย้อนหลัง",
+        mainTitle: "รายงานย้อนหลัง",
+        summaryTitle: "สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต",
+        chartYAxis: "จำนวนครั้ง",
+        times: "ครั้ง",
+        chartTimeYAxis: "เวลาการเดินรถ (นาที)",
+        chartTimeLabel: "เวลาการเดินรถรวม",
+        minutes: "นาที",
+        seconds: "วินาที",
+        loading: "กำลังคำนวณข้อมูล…",
+        noData: "ยังไม่มีข้อมูลเขต/การเทในระบบ",
+        detailTitle: "รายละเอียดย่อย — เขต: ",
+        unspecifiedZone: "ไม่ระบุเขต",
+        chartLabel: "จำนวนการเท",
+        allEmptyCard: "📊 รายการเทถังขยะทั้งหมด",
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ",
+        zoneFilterAll: "ทุกเขต",
+        monthFilterAll: "ทุกเดือน",
+        yearFilterAll: "ทุกปี"
+      },
+      en: {
+        pageTitle: "Smart Waste - Historical Report",
+        menuBtn: "☰ Menu",
+        navHome: "Home",
+        navRegister: "Register",
+        navCapacity: "Bin Capacity",
+        navTruck: "Truck Location",
+        navReport: "Historical Report",
+        mainTitle: "Historical Report",
+        summaryTitle: 'Summary of "Bin Empties" and Driving Time per Zone',
+        chartYAxis: "Count",
+        times: "times",
+        chartTimeYAxis: "Driving time (minutes)",
+        chartTimeLabel: "Total driving time",
+        minutes: "minutes",
+        seconds: "seconds",
+        loading: "Calculating data...",
+        noData: "No zone/emptying data in the system yet",
+        detailTitle: 'Details — Zone: ',
+        unspecifiedZone: "Unspecified Zone",
+        chartLabel: "Empty Count",
+        allEmptyCard: "📊 All bin emptying records",
+        roleAdmin: "Administrator",
+        roleUser: "User",
+        logout: "Logout",
+        zoneFilterAll: "All zones",
+        monthFilterAll: "All months",
+        yearFilterAll: "All years"
+      },
+      ms: {
+        pageTitle: "Smart Waste - Laporan Sejarah",
+        menuBtn: "☰ Menu",
+        navHome: "Halaman Utama",
+        navRegister: "Daftar",
+        navCapacity: "Kapasiti Tong",
+        navTruck: "Lokasi Lori",
+        navReport: "Laporan Sejarah",
+        mainTitle: "Laporan Sejarah",
+        summaryTitle: 'Ringkasan "Pengosongan Tong" dan Masa Pemanduan setiap Zon',
+        chartYAxis: "Bilangan",
+        times: "kali",
+        chartTimeYAxis: "Masa pemanduan (minit)",
+        chartTimeLabel: "Jumlah masa pemanduan",
+        minutes: "minit",
+        seconds: "saat",
+        loading: "Mengira data...",
+        noData: "Belum ada data zon/pengosongan dalam sistem",
+        detailTitle: 'Butiran — Zon: ',
+        unspecifiedZone: "Zon Tidak Dinyatakan",
+        chartLabel: "Bilangan Pengosongan",
+        allEmptyCard: "📊 Senarai pengosongan tong keseluruhan",
+        roleAdmin: "Pentadbir",
+        roleUser: "Pengguna",
+        logout: "Keluar",
+        zoneFilterAll: "Semua zon",
+        monthFilterAll: "Semua bulan",
+        yearFilterAll: "Semua tahun"
       }
-      return null;
+    };
+
+    const monthNames = {
+      th: ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."],
+      en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+      ms: ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogos", "Sep", "Okt", "Nov", "Dis"]
+    };
+
+    const LangState = window.AdminLang;
+    let currentLang = (LangState && typeof LangState.getLang === "function")
+      ? LangState.getLang()
+      : (localStorage.getItem("sw_lang") || "th");
+
+    function getTranslation(key) {
+      return translations[currentLang][key] || key;
     }
 
-    /* ดึงเวลาการวิ่งรถทั้งหมดของ zone หนึ่ง จาก trucks/{}/runs (ตามช่วงเวลาปัจจุบัน) */
-    async function getDriveTimeForZone(zoneId) {
-      const cacheKey = `${zoneId}|${currentTimeFilter || "all"}`;
-      if (driveTimeCache.has(cacheKey)) {
-        return driveTimeCache.get(cacheKey);
+    function getMonthLabel(m) {
+      const names = monthNames[currentLang] || monthNames["en"];
+      const idx = m - 1;
+      if (idx >= 0 && idx < names.length) return names[idx];
+      return String(m).padStart(2, "0");
+    }
+
+    function updateFilterTexts() {
+      if (zoneFilterSelect) {
+        const optAllZone = zoneFilterSelect.querySelector('option[value="all"]');
+        if (optAllZone) optAllZone.textContent = getTranslation("zoneFilterAll");
+      }
+      if (monthFilterSelect) {
+        const optAllMonth = monthFilterSelect.querySelector('option[value="all"]');
+        if (optAllMonth) optAllMonth.textContent = getTranslation("monthFilterAll");
+      }
+      if (yearFilterSelect) {
+        const optAllYear = yearFilterSelect.querySelector('option[value="all"]');
+        if (optAllYear) optAllYear.textContent = getTranslation("yearFilterAll");
       }
 
-      const range = getCurrentDateRange();
-
-      let trucksSnap;
-      try {
-        trucksSnap = await db.collection("trucks").where("zoneId", "==", zoneId).get();
-        if (trucksSnap.empty) {
-          trucksSnap = null;
+      // อัปเดต label เดือนตามภาษา
+      Array.from(monthFilterSelect.options).forEach(opt => {
+        if (opt.value === "all") return;
+        const m = Number(opt.value);
+        if (!isNaN(m)) {
+          opt.textContent = getMonthLabel(m);
         }
-      } catch (e) {
-        trucksSnap = null;
-      }
+      });
+    }
 
-      if (!trucksSnap) {
-        const allTrucksSnap = await db.collection("trucks").get();
-        const filtered = [];
-        allTrucksSnap.forEach(doc => {
-          if (getZoneIdFromTruckDoc(doc) === zoneId) filtered.push(doc);
-        });
-        trucksSnap = { docs: filtered };
-      }
+    function populateZoneFilter() {
+      if (!zoneFilterSelect) return;
+      const current = selectedZoneId || "all";
+      zoneFilterSelect.innerHTML = "";
 
-      let totalMinutes = 0;
-      const runs = [];
+      const optAll = document.createElement("option");
+      optAll.value = "all";
+      optAll.textContent = getTranslation("zoneFilterAll");
+      zoneFilterSelect.appendChild(optAll);
 
-      for (const truckDoc of trucksSnap.docs) {
-        const runsSnap = await truckDoc.ref.collection("runs").get();
-        runsSnap.forEach(runDoc => {
-          const d = runDoc.data() || {};
-          const startDate = d.startAt && typeof d.startAt.toDate === "function"
-            ? d.startAt.toDate()
-            : null;
-          if (!isInRange(startDate, range)) return;
-
-          const m = diffMinutes(d.startAt, d.endAt);
-          if (m > 0) {
-            totalMinutes += m;
-            runs.push({
-              id: runDoc.id,
-              minutes: m,
-              start: startDate
-            });
-          }
-        });
-      }
-
-      runs.sort((a, b) => {
-        if (!a.start || !b.start) return 0;
-        return a.start - b.start;
+      cachedZones.forEach(z => {
+        const opt = document.createElement("option");
+        opt.value = z.zoneId;
+        opt.textContent = z.displayName;
+        zoneFilterSelect.appendChild(opt);
       });
 
-      const result = { totalMinutes, runs };
-      driveTimeCache.set(cacheKey, result);
-      return result;
+      if (zoneFilterSelect.querySelector(`option[value="${current}"]`)) {
+        zoneFilterSelect.value = current;
+      } else {
+        zoneFilterSelect.value = "all";
+        selectedZoneId = "all";
+      }
     }
 
-    /* chart helpers */
+    function populateMonthYearFilters() {
+      if (!monthFilterSelect || !yearFilterSelect) return;
+
+      // เดือน
+      monthFilterSelect.innerHTML = "";
+      const optMonthAll = document.createElement("option");
+      optMonthAll.value = "all";
+      optMonthAll.textContent = getTranslation("monthFilterAll");
+      monthFilterSelect.appendChild(optMonthAll);
+
+      availableMonths
+        .slice()
+        .sort((a, b) => a - b)
+        .forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = String(m);
+          opt.textContent = getMonthLabel(m);
+          monthFilterSelect.appendChild(opt);
+        });
+
+      if (monthFilterSelect.querySelector(`option[value="${currentMonth}"]`)) {
+        monthFilterSelect.value = currentMonth;
+      } else {
+        monthFilterSelect.value = "all";
+        currentMonth = "all";
+      }
+
+      // ปี
+      yearFilterSelect.innerHTML = "";
+      const optYearAll = document.createElement("option");
+      optYearAll.value = "all";
+      optYearAll.textContent = getTranslation("yearFilterAll");
+      yearFilterSelect.appendChild(optYearAll);
+
+      availableYears
+        .slice()
+        .sort((a, b) => a - b)
+        .forEach(y => {
+          const opt = document.createElement("option");
+          opt.value = String(y);
+          opt.textContent = String(y);
+          yearFilterSelect.appendChild(opt);
+        });
+
+      if (yearFilterSelect.querySelector(`option[value="${currentYear}"]`)) {
+        yearFilterSelect.value = currentYear;
+      } else {
+        yearFilterSelect.value = "all";
+        currentYear = "all";
+      }
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      currentLang = lang;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+
+      document.title = getTranslation("pageTitle");
+      document.querySelector(".toggle-btn").textContent = getTranslation("menuBtn");
+      if (window.AdminNav) {
+        window.AdminNav.setLanguage(currentLang);
+      }
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+      document.querySelector("h1").textContent = getTranslation("mainTitle");
+      loadingEl.textContent = getTranslation("loading");
+
+      populateZoneFilter();
+      populateMonthYearFilters();
+      updateFilterTexts();
+      refreshChartsByFilters();
+    }
+
+    langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          changeLanguage(lang);
+        }
+      });
+    }
+
+    // เปลี่ยนฟิลเตอร์เขต
+    zoneFilterSelect.addEventListener("change", (e) => {
+      selectedZoneId = e.target.value || "all";
+      localStorage.setItem("sw_report_zone_filter", selectedZoneId);
+      refreshChartsByFilters();
+    });
+
+    // เปลี่ยนฟิลเตอร์เดือน
+    monthFilterSelect.addEventListener("change", (e) => {
+      currentMonth = e.target.value || "all";
+      localStorage.setItem("sw_report_month_filter", currentMonth);
+      refreshChartsByFilters();
+    });
+
+    // เปลี่ยนฟิลเตอร์ปี
+    yearFilterSelect.addEventListener("change", (e) => {
+      currentYear = e.target.value || "all";
+      localStorage.setItem("sw_report_year_filter", currentYear);
+      refreshChartsByFilters();
+    });
+
+    /* ===== chart helpers ===== */
     function renderCountChart(labels, data) {
       if (chartCount) chartCount.destroy();
       chartCount = new Chart(ctxCount, {
@@ -635,6 +819,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: {
               beginAtZero: true,
@@ -671,6 +856,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: {
               beginAtZero: true,
@@ -713,214 +899,6 @@
       });
     }
 
-    /* ===== Internationalization (i18n) ===== */
-    const translations = {
-      th: {
-        pageTitle: "Smart Waste - รายงานย้อนหลัง",
-        menuBtn: "☰ เมนู",
-        navHome: "หน้าหลัก",
-        navRegister: "ลงทะเบียน",
-        navCapacity: "ความจุถังขยะ",
-        navTruck: "ตำแหน่งรถเก็บขยะ",
-        navReport: "รายงานย้อนหลัง",
-        mainTitle: "รายงานย้อนหลัง",
-        summaryTitle: "สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต",
-        chartYAxis: "จำนวนครั้ง",
-        times: "ครั้ง",
-        chartTimeYAxis: "เวลาการเดินรถ (นาที)",
-        chartTimeLabel: "เวลาการเดินรถรวม",
-        minutes: "นาที",
-        seconds: "วินาที",
-        loading: "กำลังคำนวณข้อมูล…",
-        noData: "ยังไม่มีข้อมูลเขต/การเทในระบบ",
-        detailTitle: "รายละเอียดย่อย — เขต: ",
-        unspecifiedZone: "ไม่ระบุเขต",
-        chartLabel: "จำนวนการเท",
-        allEmptyCard: "📊 รายการเทถังขยะทั้งหมด",
-        roleAdmin: "ผู้ดูแลระบบ",
-        roleUser: "ผู้ใช้ทั่วไป",
-        logout: "ออกจากระบบ",
-        timeFilterAll: "ทั้งหมด",
-        timeFilterDay: "วันนี้",
-        timeFilterWeek: "7 วันล่าสุด",
-        timeFilterMonth: "30 วันล่าสุด",
-        timeFilterYear: "365 วันล่าสุด",
-        zoneFilterAll: "ทุกเขต"
-      },
-      en: {
-        pageTitle: "Smart Waste - Historical Report",
-        menuBtn: "☰ Menu",
-        navHome: "Home",
-        navRegister: "Register",
-        navCapacity: "Bin Capacity",
-        navTruck: "Truck Location",
-        navReport: "Historical Report",
-        mainTitle: "Historical Report",
-        summaryTitle: 'Summary of "Bin Empties" and Driving Time per Zone',
-        chartYAxis: "Count",
-        times: "times",
-        chartTimeYAxis: "Driving time (minutes)",
-        chartTimeLabel: "Total driving time",
-        minutes: "minutes",
-        seconds: "seconds",
-        loading: "Calculating data...",
-        noData: "No zone/emptying data in the system yet",
-        detailTitle: 'Details — Zone: ',
-        unspecifiedZone: "Unspecified Zone",
-        chartLabel: "Empty Count",
-        allEmptyCard: "📊 All bin emptying records",
-        roleAdmin: "Administrator",
-        roleUser: "User",
-        logout: "Logout",
-        timeFilterAll: "All",
-        timeFilterDay: "Today",
-        timeFilterWeek: "Last 7 days",
-        timeFilterMonth: "Last 30 days",
-        timeFilterYear: "Last 365 days",
-        zoneFilterAll: "All zones"
-      },
-      ms: {
-        pageTitle: "Smart Waste - Laporan Sejarah",
-        menuBtn: "☰ Menu",
-        navHome: "Halaman Utama",
-        navRegister: "Daftar",
-        navCapacity: "Kapasiti Tong",
-        navTruck: "Lokasi Lori",
-        navReport: "Laporan Sejarah",
-        mainTitle: "Laporan Sejarah",
-        summaryTitle: 'Ringkasan "Pengosongan Tong" dan Masa Pemanduan setiap Zon',
-        chartYAxis: "Bilangan",
-        times: "kali",
-        chartTimeYAxis: "Masa pemanduan (minit)",
-        chartTimeLabel: "Jumlah masa pemanduan",
-        minutes: "minit",
-        seconds: "saat",
-        loading: "Mengira data...",
-        noData: "Belum ada data zon/pengosongan dalam sistem",
-        detailTitle: 'Butiran — Zon: ',
-        unspecifiedZone: "Zon Tidak Dinyatakan",
-        chartLabel: "Bilangan Pengosongan",
-        allEmptyCard: "📊 Senarai pengosongan tong keseluruhan",
-        roleAdmin: "Pentadbir",
-        roleUser: "Pengguna",
-        logout: "Keluar",
-        timeFilterAll: "Semua",
-        timeFilterDay: "Hari ini",
-        timeFilterWeek: "7 hari terakhir",
-        timeFilterMonth: "30 hari terakhir",
-        timeFilterYear: "365 hari terakhir",
-        zoneFilterAll: "Semua zon"
-      }
-    };
-
-    const LangState = window.AdminLang;
-    let currentLang = (LangState && typeof LangState.getLang === "function")
-      ? LangState.getLang()
-      : (localStorage.getItem("sw_lang") || "th");
-
-    function getTranslation(key) {
-      return translations[currentLang][key] || key;
-    }
-
-    function updateFilterTexts() {
-      if (timeFilterSelect) {
-        const optAll = timeFilterSelect.querySelector('option[value="all"]');
-        const optDay = timeFilterSelect.querySelector('option[value="day"]');
-        const optWeek = timeFilterSelect.querySelector('option[value="week"]');
-        const optMonth = timeFilterSelect.querySelector('option[value="month"]');
-        const optYear = timeFilterSelect.querySelector('option[value="year"]');
-
-        if (optAll) optAll.textContent = getTranslation("timeFilterAll");
-        if (optDay) optDay.textContent = getTranslation("timeFilterDay");
-        if (optWeek) optWeek.textContent = getTranslation("timeFilterWeek");
-        if (optMonth) optMonth.textContent = getTranslation("timeFilterMonth");
-        if (optYear) optYear.textContent = getTranslation("timeFilterYear");
-      }
-
-      if (zoneFilterSelect) {
-        const optAllZone = zoneFilterSelect.querySelector('option[value="all"]');
-        if (optAllZone) optAllZone.textContent = getTranslation("zoneFilterAll");
-      }
-    }
-
-    function populateZoneFilter() {
-      if (!zoneFilterSelect) return;
-      const current = selectedZoneId || "all";
-      zoneFilterSelect.innerHTML = "";
-
-      const optAll = document.createElement("option");
-      optAll.value = "all";
-      optAll.textContent = getTranslation("zoneFilterAll");
-      zoneFilterSelect.appendChild(optAll);
-
-      cachedZones.forEach(z => {
-        const opt = document.createElement("option");
-        opt.value = z.zoneId;
-        opt.textContent = z.displayName;
-        zoneFilterSelect.appendChild(opt);
-      });
-
-      if (zoneFilterSelect.querySelector(`option[value="${current}"]`)) {
-        zoneFilterSelect.value = current;
-      } else {
-        zoneFilterSelect.value = "all";
-        selectedZoneId = "all";
-      }
-    }
-
-    function changeLanguage(lang) {
-      if (!translations[lang]) return;
-      currentLang = lang;
-      if (LangState && typeof LangState.setLang === "function") {
-        LangState.setLang(lang);
-        currentLang = LangState.getLang();
-      } else {
-        localStorage.setItem("sw_lang", lang);
-      }
-      langSelect.value = currentLang;
-
-      document.title = getTranslation("pageTitle");
-      document.querySelector(".toggle-btn").textContent = getTranslation("menuBtn");
-      if (window.AdminNav) {
-        window.AdminNav.setLanguage(currentLang);
-      }
-      if (window.AdminUser) {
-        window.AdminUser.setLanguage(currentLang);
-      }
-      document.querySelector("h1").textContent = getTranslation("mainTitle");
-      loadingEl.textContent = getTranslation("loading");
-
-      updateFilterTexts();
-      populateZoneFilter();
-      refreshChartsByFilters();
-    }
-
-    langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
-
-    if (LangState && typeof LangState.onChange === "function") {
-      LangState.onChange(lang => {
-        if (lang && lang !== currentLang) {
-          currentLang = lang;
-          langSelect.value = lang;
-          changeLanguage(lang);
-        }
-      });
-    }
-
-    // Time filter change
-    timeFilterSelect.addEventListener("change", (e) => {
-      currentTimeFilter = e.target.value || "all";
-      localStorage.setItem("sw_report_time_filter", currentTimeFilter);
-      refreshChartsByFilters();
-    });
-
-    // Zone filter change
-    zoneFilterSelect.addEventListener("change", (e) => {
-      selectedZoneId = e.target.value || "all";
-      localStorage.setItem("sw_report_zone_filter", selectedZoneId);
-      refreshChartsByFilters();
-    });
-
     // โหลดเขต + ถัง
     async function loadZonesAndBins() {
       const zonesSnap = await db.collection("zones").orderBy("name").get();
@@ -949,7 +927,28 @@
       return zones;
     }
 
-    // สรุปจำนวนการเท + เวลาการวิ่งรถต่อเขต (ตามฟิลเตอร์เวลา)
+    // โหลดเดือน/ปีจาก log ทั้งหมดในระบบ
+    async function loadAvailableMonthsYears() {
+      const snap = await db.collectionGroup(LOG_COLLECTION).get();
+      const mSet = new Set();
+      const ySet = new Set();
+
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const dt = getLogDate(d);
+        if (!dt) return;
+        mSet.add(dt.getMonth() + 1);
+        ySet.add(dt.getFullYear());
+      });
+
+      availableMonths = Array.from(mSet);
+      availableYears = Array.from(ySet);
+
+      populateMonthYearFilters();
+      updateFilterTexts();
+    }
+
+    // สรุปจำนวนการเท + เวลาการวิ่งรถต่อเขต (ตามฟิลเตอร์เขต/เดือน/ปี)
     async function loadSummaryByZone() {
       loadingEl.style.display = "inline";
 
@@ -957,8 +956,6 @@
         cachedZones = await loadZonesAndBins();
         populateZoneFilter();
       }
-
-      const range = getCurrentDateRange();
 
       const zoneCountMap = new Map();
       const labels = [];
@@ -980,7 +977,7 @@
           logsSnap.forEach(logDoc => {
             const d = logDoc.data() || {};
             const dt = getLogDate(d);
-            if (isInRange(dt, range)) {
+            if (matchCurrentFilters(dt)) {
               totalEmpty += 1;
             }
           });
@@ -1011,7 +1008,6 @@
       if (!zone) return;
 
       loadingEl.style.display = "inline";
-      const range = getCurrentDateRange();
 
       const labelsBins = [];
       const countData = [];
@@ -1029,7 +1025,7 @@
         logsSnap.forEach(logDoc => {
           const d = logDoc.data() || {};
           const dt = getLogDate(d);
-          if (isInRange(dt, range)) {
+          if (matchCurrentFilters(dt)) {
             countForBin += 1;
           }
         });
@@ -1053,7 +1049,6 @@
           label = `${dd}/${mm} ${hh}:${mi}`;
         }
         labelsRuns.push(label);
-        // ใช้จำนวนนาทีเต็ม ไม่มีทศนิยม
         timeData.push(Math.round(r.minutes));
       });
 
@@ -1063,9 +1058,69 @@
       loadingEl.style.display = "none";
     }
 
-    // เลือกว่าจะโหลดแบบรวม หรือรายเขต ตาม dropdown
+    /* ดึงเวลาการวิ่งรถทั้งหมดของ zone หนึ่ง จาก trucks/{}/runs (ตามฟิลเตอร์เดือน/ปี) */
+    async function getDriveTimeForZone(zoneId) {
+      const cacheKey = `${zoneId}|${currentMonth}|${currentYear}`;
+      if (driveTimeCache.has(cacheKey)) {
+        return driveTimeCache.get(cacheKey);
+      }
+
+      let trucksSnap;
+      try {
+        trucksSnap = await db.collection("trucks").where("zoneId", "==", zoneId).get();
+        if (trucksSnap.empty) {
+          trucksSnap = null;
+        }
+      } catch (e) {
+        trucksSnap = null;
+      }
+
+      if (!trucksSnap) {
+        const allTrucksSnap = await db.collection("trucks").get();
+        const filtered = [];
+        allTrucksSnap.forEach(doc => {
+          if (getZoneIdFromTruckDoc(doc) === zoneId) filtered.push(doc);
+        });
+        trucksSnap = { docs: filtered };
+      }
+
+      let totalMinutes = 0;
+      const runs = [];
+
+      for (const truckDoc of trucksSnap.docs) {
+        const runsSnap = await truckDoc.ref.collection("runs").get();
+        runsSnap.forEach(runDoc => {
+          const d = runDoc.data() || {};
+          const startDate = d.startAt && typeof d.startAt.toDate === "function"
+            ? d.startAt.toDate()
+            : null;
+          if (!matchCurrentFilters(startDate)) return;
+
+          const m = diffMinutes(d.startAt, d.endAt);
+          if (m > 0) {
+            totalMinutes += m;
+            runs.push({
+              id: runDoc.id,
+              minutes: m,
+              start: startDate
+            });
+          }
+        });
+      }
+
+      runs.sort((a, b) => {
+        if (!a.start || !b.start) return 0;
+        return a.start - b.start;
+      });
+
+      const result = { totalMinutes, runs };
+      driveTimeCache.set(cacheKey, result);
+      return result;
+    }
+
+    // เลือกว่าจะโหลดแบบรวม หรือรายเขต ตาม dropdown เขต
     function refreshChartsByFilters() {
-      // เคลียร์ cache เวลาวิ่ง เพราะช่วงเวลาเปลี่ยน
+      // เคลียร์ cache เวลาวิ่ง เพราะฟิลเตอร์เปลี่ยน
       driveTimeCache.clear();
       if (selectedZoneId && selectedZoneId !== "all") {
         showZoneDetail(selectedZoneId);
@@ -1079,6 +1134,7 @@
       // ถ้ามีการเปลี่ยนแปลงในทุก log การเทถัง (collectionGroup 'logs')
       db.collectionGroup(LOG_COLLECTION).onSnapshot(() => {
         refreshChartsByFilters();
+        loadAvailableMonthsYears(); // เผื่อมีเดือน/ปีใหม่เพิ่ม
       });
 
       // ถ้ามีการเปลี่ยนแปลงในทุก run การวิ่งรถ (collectionGroup 'runs')
@@ -1087,10 +1143,14 @@
       });
     }
 
-    // เริ่มต้นจากภาษาใน localStorage แล้วโหลดข้อมูล + ผูก realtime
-    updateFilterTexts();
+    // เริ่มต้น
+    zoneFilterSelect.value = selectedZoneId;
+    monthFilterSelect.value = currentMonth;
+    yearFilterSelect.value = currentYear;
+
     changeLanguage(currentLang);
     initRealtimeListeners();
+    loadAvailableMonthsYears();
   </script>
 </body>
 

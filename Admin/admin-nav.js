@@ -4,7 +4,7 @@
     { id: "addDriver", href: "addDriver.html" },
     { id: "schedule", href: "schedule.html" },
     { id: "truck", href: "truck.html" },
-    { id: "report", href: "report.html" }
+    { id: "report", href: "reports.html" }
   ];
 
   const NAV_LABELS = {
