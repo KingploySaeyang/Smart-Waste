@@ -32,7 +32,6 @@
       min-height: 100vh;
       background: #f5f6fa;
       flex-direction: row;
-      overflow-x: hidden;
     }
 
     /* ล็อกหน้าเว็บเวลาเปิด modal */
@@ -156,10 +155,8 @@
     }
 
     h1 {
-      margin: 0 0 16px;
-      font-size: 22px;
-      color: #111827;
-      line-height: 1.25;
+      color: #2f3640;
+      margin-bottom: 16px;
     }
 
     .topbar {
@@ -538,7 +535,21 @@
       }
 
       h1 {
-        text-align: center;
+      margin: 0 0 16px;
+      line-height: 1.25;
+    }
+
+      .topbar {
+        position: relative;
+        padding-top: 10px;
+      }
+
+      .topbar-right {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 1000;
+        gap: 8px;
       }
 
       .add-schedule-header {
@@ -574,7 +585,7 @@
 
 <body>
 
-  <button id="menuToggle" class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+  <button id="menuToggle" class="toggle-btn">☰ เมนู</button>
 
   <aside class="sidebar" id="sidebar">
     <h2>Smart Waste</h2>
@@ -589,9 +600,6 @@
       <div class="topbar">
         <div class="page-header">
           <h1 id="mainTitle">จัดตารางขับรถเก็บขยะ</h1>
-          <p class="muted" id="pageHint">
-            สร้างตารางมอบหมายรถและคนขับตามเขตพื้นที่
-          </p>
         </div>
         <div class="topbar-right">
           <!-- ไอคอนเลือกภาษา -->
@@ -733,6 +741,10 @@
         btn.style.display = show ? 'none' : 'inline-flex';
       }
     }
+
+    document.getElementById("menuToggle").addEventListener("click", () => {
+      toggleMenu();
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.menu a').forEach(a => {

@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Waste - คนขับรถเก็บขยะ</title>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- Auth (เหมือนหน้าอื่น) -->
   <script src="../Login/auth.js"></script>
   <script src="admin-lang.js"></script>
   <script src="admin-user.js" defer></script>
@@ -34,7 +32,6 @@
       overflow-x: hidden;
     }
 
-    /* ---------- ตัวแปรพื้นฐานสำหรับปุ่ม/ฟอร์ม ---------- */
     :root {
       --btn-min-h: 44px;
       --btn-pad-x: 16px;
@@ -43,7 +40,6 @@
       --btn-font: 16px;
     }
 
-    /* ล็อกหน้าเว็บไม่ให้เลื่อนตอนเปิดโมดอล */
     body.modal-open {
       overflow: hidden;
       height: 100vh;
@@ -251,6 +247,10 @@
       margin-bottom: 10px;
     }
 
+    #searchInput {
+      margin-bottom: 0 !important;
+    }
+
     input:focus,
     select:focus {
       outline: 3px solid #93c5fd;
@@ -264,9 +264,14 @@
       gap: 12px;
       align-items: flex-start;
     }
-
+    
     .row > div {
-      flex: 1 1 220px;
+      flex: 1 1 220px; /* ค่าเริ่มต้นสำหรับ Desktop */
+    }
+
+    /* Class พิเศษสำหรับกล่องค้นหา */
+    .search-box-wrapper {
+       flex: 0 0 260px;
     }
 
     button {
@@ -387,7 +392,6 @@
       font-size:12px;
     }
 
-    /* ปุ่มเล็กให้สูงเท่าปุ่มอื่น */
     .btn-small {
       min-height: var(--btn-min-h);
       padding: var(--btn-pad-y) var(--btn-pad-x);
@@ -411,7 +415,6 @@
       color:#16a34a;
     }
 
-    /* ===== Header + ปุ่มเพิ่มคนขับ (สไตล์แบบ addBin) ===== */
     .add-driver-header {
       display:flex;
       justify-content:flex-end;
@@ -435,7 +438,6 @@
       margin-top:4px;
     }
 
-    /* ===== Modal (เหมือนหน้า addBin) ===== */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -501,8 +503,24 @@
       .sidebar.show{left:0;}
       .toggle-btn{display:inline-flex;}
       main{padding:70px 16px 20px;}
-      .row{flex-direction:column;}
-      .row > div{width:100%;}
+      
+      .row{
+        flex-direction:column;
+        gap: 0; 
+      }
+      
+      .row > div {
+        width: 100%;
+        /* ===== แก้ไขจุดสำคัญ: รีเซ็ตความสูงที่ถูกดันจาก flex-basis 220px ===== */
+        flex: 1 1 auto; 
+      }
+      
+      .search-box-wrapper {
+        flex: 1 1 auto; 
+        width: 100%;
+        margin-top: 8px;
+      }
+
       .page-header{max-width:100%;}
 
       /* Modal บนมือถือ */
@@ -532,8 +550,71 @@
       }
     }
   </style>
+
+  <style>
+    /* ---------- Loader Animation ---------- */
+    #loader-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(245, 246, 250, 0.95);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transition: opacity 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loader-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .loading-text {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2f3640;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    /* Bouncing dots loader */
+    .spinner {
+      margin: 0 auto 20px;
+      width: 70px;
+      text-align: center;
+    }
+    .spinner > div {
+      width: 15px;
+      height: 15px;
+      background-color: #2563eb;
+      border-radius: 100%;
+      display: inline-block;
+      animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+    }
+    .spinner .bounce1 { animation-delay: -0.32s; }
+    .spinner .bounce2 { animation-delay: -0.16s; }
+
+    @keyframes sk-bouncedelay {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1.0); }
+    }
+  </style>
 </head>
 <body>
+  <div id="loader-overlay">
+    <div class="spinner">
+      <div class="bounce1"></div>
+      <div class="bounce2"></div>
+      <div class="bounce3"></div>
+    </div>
+    <div class="loading-text" id="loaderText">กำลังโหลด...</div>
+  </div>
+
   <button class="toggle-btn" id="menuToggleBtn">☰ เมนู</button>
 
   <aside class="sidebar" id="sidebar">
@@ -570,7 +651,6 @@
 
     <div class="content">
 
-      <!-- การ์ดหัวข้อ + ปุ่มเพิ่มคนขับ (แบบหน้า addBin) -->
       <div class="card">
         <div class="add-driver-header">
           <div class="add-driver-title" id="addDriverHeaderTitle">เพิ่มคนขับใหม่</div>
@@ -581,16 +661,16 @@
         </p>
       </div>
 
-      <!-- ตารางคนขับ -->
       <div class="card">
-        <div class="row" style="margin-bottom:4px;">
+        <div class="row" style="margin-bottom:0;">
           <div style="flex:1 1 auto;">
             <label class="muted" style="margin-bottom:6px;" id="labelZoneFilter">เขตพื้นที่</label>
             <div class="chips-row" id="zoneChips">
               <button type="button" class="chip active" data-zone="__all" id="chipAllZones">เขตทั้งหมด</button>
             </div>
           </div>
-          <div style="flex:0 0 260px;">
+          
+          <div class="search-box-wrapper">
             <label for="searchInput" class="muted" style="margin-bottom:6px;" id="labelSearch">ค้นหา Driver ID / Username</label>
             <input id="searchInput" type="text" placeholder="เช่น DRV001 หรือชื่อผู้ใช้" />
           </div>
@@ -614,7 +694,7 @@
               </tr>
             </thead>
             <tbody id="driversTbody">
-              <tr><td colspan="7" class="muted" id="loadingText">กำลังโหลดข้อมูล...</td></tr>
+              <!-- Data will be rendered here by JS -->
             </tbody>
           </table>
         </div>
@@ -623,7 +703,6 @@
     </div>
   </main>
 
-  <!-- Modal เพิ่มคนขับ (ฟอร์มเด้งขึ้นมา) -->
   <div class="modal-backdrop" id="driverModalBackdrop">
     <div class="modal">
       <div class="modal-header">
@@ -759,12 +838,14 @@
     const searchInput = document.getElementById('searchInput');
     const driversTbody = document.getElementById('driversTbody');
     const countLabel = document.getElementById('countLabel');
+    const loaderOverlay = document.getElementById('loader-overlay');
 
     /* ---------- State ---------- */
     let zones = [];        // {id, name}
     let drivers = [];      // {docId, driverId, username, fullName, phone, zoneId, zoneName, updatedAt}
     let activeZoneFilter = "__all";
     let searchText = "";
+    let editingDriverDocId = null; // State for editing
 
     /* ---------- แปลภาษา ---------- */
     const translations = {
@@ -777,6 +858,7 @@
         addDriverTitle: "เพิ่มคนขับใหม่",
         addDriverHint: "กดปุ่มเพื่อเพิ่ม / ลงทะเบียนคนขับใหม่ในระบบ",
         btnOpenDriverForm: "เพิ่มคนขับ",
+        editDriverTitle: "แก้ไขข้อมูลคนขับ",
 
         labelZone: "เขตพื้นที่ (โซนการทำงาน)",
         zoneHelp: "เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ",
@@ -796,6 +878,7 @@
 
         btnClear: "ล้างฟอร์ม",
         btnSaveDriver: "บันทึกคนขับ",
+        btnUpdateDriver: "บันทึกการเปลี่ยนแปลง",
 
         labelZoneFilter: "เขตพื้นที่",
         chipAllZones: "เขตทั้งหมด",
@@ -809,6 +892,7 @@
         thUpdated: "อัปเดตเมื่อ",
         thActions: "จัดการ",
         loadingText: "กำลังโหลดข้อมูล...",
+        loaderText: "กำลังโหลด...",
 
         countPrefix: "แสดง",
         countSuffix: "รายการ",
@@ -830,12 +914,13 @@
         statusUsernameExists: "มีชื่อผู้ใช้นี้ในระบบแล้ว กรุณาใช้ชื่ออื่น",
         statusPhoneExists: "มีเบอร์โทรนี้ในระบบแล้ว กรุณาใช้หมายเลขอื่น",
         statusSaveOk: "บันทึกข้อมูลคนขับเรียบร้อย",
+        statusUpdateOk: "อัปเดตข้อมูลเรียบร้อย",
         statusSaveErrorPrefix: "เกิดข้อผิดพลาด: ",
 
         confirmDelete: "ต้องการลบ (ซ่อน) คนขับคนนี้หรือไม่?",
         deleteFailPrefix: "ลบไม่สำเร็จ: ",
 
-        editNotImpl: "ปุ่มแก้ไขยังไม่ได้ทำ ถ้าต้องการให้ทำระบบแก้ไขเพิ่ม บอกได้เลยนะ 😊",
+        passwordEditHint: "เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน",
         roleAdmin: "ผู้ดูแลระบบ",
         roleDriver: "พนักงานขับรถ",
         roleUser: "ผู้ใช้ทั่วไป",
@@ -850,6 +935,7 @@
         addDriverTitle: "Add New Driver",
         addDriverHint: "Click the button to register a new driver.",
         btnOpenDriverForm: "Add Driver",
+        editDriverTitle: "Edit Driver Information",
 
         labelZone: "Zone (Operation Area)",
         zoneHelp: "Select a zone first and the system will generate a Driver ID automatically.",
@@ -869,6 +955,7 @@
 
         btnClear: "Reset Form",
         btnSaveDriver: "Save Driver",
+        btnUpdateDriver: "Save Changes",
 
         labelZoneFilter: "Zone",
         chipAllZones: "All Zones",
@@ -882,6 +969,7 @@
         thUpdated: "Updated At",
         thActions: "Actions",
         loadingText: "Loading data...",
+        loaderText: "Loading...",
 
         countPrefix: "Showing",
         countSuffix: "items",
@@ -903,12 +991,13 @@
         statusUsernameExists: "This username already exists, please use another",
         statusPhoneExists: "This phone number is already used by another driver.",
         statusSaveOk: "Driver saved successfully",
+        statusUpdateOk: "Driver updated successfully",
         statusSaveErrorPrefix: "Error: ",
 
         confirmDelete: "Are you sure you want to delete (hide) this driver?",
         deleteFailPrefix: "Delete failed: ",
 
-        editNotImpl: "Edit function not implemented yet.",
+        passwordEditHint: "Leave blank if you don't want to change the password",
         roleAdmin: "Administrator",
         roleDriver: "Driver",
         roleUser: "User",
@@ -923,6 +1012,7 @@
         addDriverTitle: "Tambah Pemandu Baharu",
         addDriverHint: "Klik butang untuk daftar pemandu baharu.",
         btnOpenDriverForm: "Tambah Pemandu",
+        editDriverTitle: "Ubah Maklumat Pemandu",
 
         labelZone: "Zon (Kawasan Operasi)",
         zoneHelp: "Pilih zon dahulu, sistem akan jana ID Pemandu secara automatik.",
@@ -942,6 +1032,7 @@
 
         btnClear: "Kosongkan Borang",
         btnSaveDriver: "Simpan Pemandu",
+        btnUpdateDriver: "Simpan Perubahan",
 
         labelZoneFilter: "Zon",
         chipAllZones: "Semua Zon",
@@ -955,6 +1046,7 @@
         thUpdated: "Dikemas Kini",
         thActions: "Tindakan",
         loadingText: "Memuatkan data...",
+        loaderText: "Memuatkan...",
 
         countPrefix: "Menunjukkan",
         countSuffix: "rekod",
@@ -976,12 +1068,13 @@
         statusUsernameExists: "Nama pengguna ini sudah wujud, sila guna yang lain",
         statusPhoneExists: "Nombor telefon ini telah digunakan oleh pemandu lain.",
         statusSaveOk: "Pemandu berjaya disimpan",
+        statusUpdateOk: "Maklumat pemandu berjaya dikemas kini",
         statusSaveErrorPrefix: "Ralat: ",
 
         confirmDelete: "Adakah anda pasti mahu memadam (sembunyi) pemandu ini?",
         deleteFailPrefix: "Gagal memadam: ",
 
-        editNotImpl: "Fungsi ubah belum disediakan.",
+        passwordEditHint: "Biarkan kosong jika tidak mahu menukar kata laluan",
         roleAdmin: "Pentadbir",
         roleDriver: "Pemandu",
         roleUser: "Pengguna",
@@ -1023,6 +1116,15 @@
     /* ---------- lock scroll ตอนเปิด modal ---------- */
     function lockBodyScroll(lock){
       document.body.classList.toggle("modal-open", !!lock);
+    }
+
+    /* ---------- Loader ---------- */
+    function showLoader() {
+      if (loaderOverlay) loaderOverlay.classList.add('show');
+    }
+
+    function hideLoader() {
+      if (loaderOverlay) loaderOverlay.classList.remove('show');
     }
 
     /* ---------- Load zones ---------- */
@@ -1101,6 +1203,7 @@
 
     /* ---------- Load drivers ---------- */
     async function loadDrivers(){
+      driversTbody.innerHTML = `<tr><td colspan="7" class="muted">${tr("loadingText")}</td></tr>`;
       const snap = await usersCol.get();
       drivers = [];
       snap.forEach(doc => {
@@ -1204,74 +1307,134 @@
       const phoneDigits = normalizePhone(phone);
       const username = usernameInput.value.trim();
       const password = passwordInput.value.trim();
+      const btnSaveDriver = document.getElementById('btnSaveDriver');
 
-      if(!zoneId){
-        setFormStatus(tr("statusRequiredZone"), "err");
-        return;
-      }
-      if(!driverId){
-        setFormStatus(tr("statusMissingDriverId"), "err");
-        return;
-      }
       if(!fullName || !phoneDigits){
         setFormStatus(tr("statusMissingNamePhone"), "err");
         return;
       }
-      if(!username || !password){
-        setFormStatus(tr("statusMissingUserPass"), "err");
-        return;
-      }
 
-      const zone = zones.find(z => z.id === zoneId);
-      const zoneName = zone ? zone.name : zoneId;
-
-      setFormStatus(tr("statusSaving"), "");
+      btnSaveDriver.disabled = true;
+      setFormStatus(tr("statusSaving"), ""); // "กำลังบันทึก..."
 
       try{
-        // ตรวจว่ามี username นี้อยู่แล้วหรือยัง
-        const existed = await usersCol.doc(username).get();
-        if(existed.exists && existed.data() && existed.data().isDeleted !== true){
-          setFormStatus(tr("statusUsernameExists"), "err");
-          return;
+        // --- Edit Mode ---
+        if (editingDriverDocId) {
+          const originalDriver = drivers.find(d => d.docId === editingDriverDocId);
+          if (!originalDriver) {
+            throw new Error("Original driver data not found for editing.");
+          }
+
+          const newUsername = username;
+          const usernameChanged = newUsername !== editingDriverDocId;
+
+          const dataToUpdate = {
+            driverId,
+            zoneId,
+            zoneName: zones.find(z => z.id === zoneId)?.name || zoneId,
+            fullName,
+            phone: phoneDigits,
+            phoneNormalized: phoneDigits,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          if(usernameChanged){
+            dataToUpdate.username = newUsername;
+          }
+
+          // Only update password if a new one is provided
+          if (password) {
+            dataToUpdate.passwordHash = await hashPassword(password);
+          }
+
+          // Check for phone number conflict, excluding the current user
+          const phoneQuery = await usersCol.where("phoneNormalized", "==", phoneDigits).get();
+          let phoneConflict = false;
+          phoneQuery.forEach(doc => {
+            if (doc.id !== editingDriverDocId && isActiveDriver(doc.data())) {
+              phoneConflict = true;
+            }
+          });
+
+          if (phoneConflict) {
+            setFormStatus(tr("statusPhoneExists"), "err");
+            btnSaveDriver.disabled = false;
+            return;
+          }
+
+          // Handle username change (re-create document)
+          if (usernameChanged) {
+            // Check if new username already exists
+            const newDocRef = usersCol.doc(newUsername);
+            const newDocSnap = await newDocRef.get();
+            if (newDocSnap.exists && isActiveDriver(newDocSnap.data())) {
+              setFormStatus(tr("statusUsernameExists"), "err");
+              btnSaveDriver.disabled = false;
+              return;
+            }
+
+            // Get old data, merge with new, create new doc, then delete old
+            const oldDocSnap = await usersCol.doc(editingDriverDocId).get();
+            if (!oldDocSnap.exists) throw new Error("Original document to edit is gone.");
+            
+            const oldData = oldDocSnap.data();
+            const newData = { ...oldData, ...dataToUpdate };
+
+            await newDocRef.set(newData);
+            await usersCol.doc(editingDriverDocId).delete();
+
+          } else {
+            // Simple update if username is not changed
+            await usersCol.doc(editingDriverDocId).update(dataToUpdate);
+          }
+
+          setFormStatus(tr("statusUpdateOk"), "ok");
+
+        // --- Create Mode ---
+        } else {
+          if(!zoneId || !driverId || !username || !password){
+            setFormStatus(tr("statusMissingAllFields"), "err"); // Custom message for creation
+            return;
+          }
+          const existed = await usersCol.doc(username).get();
+          if(existed.exists && existed.data() && existed.data().isDeleted !== true){
+            setFormStatus(tr("statusUsernameExists"), "err");
+            btnSaveDriver.disabled = false;
+            return;
+          }
+
+          const phoneConflict = await hasPhoneConflict(phoneDigits, phone);
+          if(phoneConflict){
+            setFormStatus(tr("statusPhoneExists"), "err");
+            btnSaveDriver.disabled = false;
+            return;
+          }
+
+          const passwordHash = await hashPassword(password);
+
+          const zoneName = zones.find(z => z.id === zoneId)?.name || zoneId;
+          // ใช้ docId = username เพื่อให้หน้า login ใช้ username เป็น key ได้
+          const docId = username;
+
+          await usersCol.doc(docId).set({
+            username, driverId, fullName,
+            phone: phoneDigits, phoneNormalized: phoneDigits,
+            status: 1, // 1 = คนขับรถ
+            zoneId, zoneName, passwordHash,
+            isDeleted: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          setFormStatus(tr("statusSaveOk"), "ok");
         }
-
-        const phoneConflict = await hasPhoneConflict(phoneDigits, phone);
-        if(phoneConflict){
-          setFormStatus(tr("statusPhoneExists"), "err");
-          return;
-        }
-
-        const passwordHash = await hashPassword(password);
-
-        // ใช้ docId = username เพื่อให้หน้า login ใช้ username เป็น key ได้
-        const docId = username;
-
-        await usersCol.doc(docId).set({
-          username,
-          driverId,
-          fullName,
-          phone: phoneDigits,
-          phoneNormalized: phoneDigits,
-          status: 1,           // 1 = คนขับรถ
-          zoneId,
-          zoneName,
-          passwordHash,
-          isDeleted: false,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        setFormStatus(tr("statusSaveOk"), "ok");
-        fullNameInput.value = "";
-        phoneInput.value = "";
-        usernameInput.value = "";
-        passwordInput.value = "";
 
         await loadDrivers();
-        setTimeout(closeDriverModal, 600);
+        setTimeout(closeDriverModal, 800);
       }catch(err){
         console.error(err);
         setFormStatus(tr("statusSaveErrorPrefix") + (err.message || err), "err");
+      } finally {
+        btnSaveDriver.disabled = false;
       }
     });
 
@@ -1309,7 +1472,12 @@
           alert(tr("deleteFailPrefix") + (err.message || err));
         }
       }else if(action === "edit"){
-        alert(tr("editNotImpl"));
+        const driverToEdit = drivers.find(d => d.docId === docId);
+        if (driverToEdit) {
+          openDriverModal(driverToEdit);
+        } else {
+          console.error("Driver not found for editing:", docId);
+        }
       }
     });
 
@@ -1352,18 +1520,45 @@
     });
 
     /* ---------- เปิด/ปิด Modal เพิ่มคนขับ ---------- */
-    function openDriverModal(){
+    function openDriverModal(driverToEdit = null) {
+      driverForm.reset();
+      setFormStatus("", "");
+      editingDriverDocId = null;
+
+      if (driverToEdit) {
+        // --- Edit Mode ---
+        editingDriverDocId = driverToEdit.docId;
+        driverModalTitle.textContent = tr('editDriverTitle');
+        btnSaveDriver.textContent = tr('btnUpdateDriver');
+
+        zoneSelect.value = driverToEdit.zoneId;
+        driverIdInput.value = driverToEdit.driverId;
+        fullNameInput.value = driverToEdit.fullName;
+        phoneInput.value = driverToEdit.phone;
+        usernameInput.value = driverToEdit.username;
+        passwordInput.placeholder = tr('passwordEditHint');
+        passwordInput.required = false;
+
+        // Allow editing all fields
+        zoneSelect.disabled = false;
+        usernameInput.disabled = false;
+      } else {
+        // --- Add Mode ---
+        driverModalTitle.textContent = tr('addDriverTitle');
+        btnSaveDriver.textContent = tr('btnSaveDriver');
+        passwordInput.placeholder = tr('passwordPh');
+        passwordInput.required = true;
+        zoneSelect.disabled = false;
+        usernameInput.disabled = false;
+      }
+
       driverModalBackdrop.classList.add('show');
       lockBodyScroll(true);
-      setFormStatus("", "");
     }
 
     function closeDriverModal(){
       driverModalBackdrop.classList.remove('show');
       lockBodyScroll(false);
-      driverForm.reset();
-      driverIdInput.value = "";
-      setFormStatus("", "");
     }
 
     btnOpenDriverForm.addEventListener("click", openDriverModal);
@@ -1386,7 +1581,7 @@
       // หัวข้อ + hint + ปุ่มของหัวการ์ด
       if(addDriverHeaderTitle) addDriverHeaderTitle.textContent = tMap.addDriverTitle;
       if(addDriverHeaderHint) addDriverHeaderHint.textContent = tMap.addDriverHint;
-      if(btnOpenDriverForm) btnOpenDriverForm.textContent = tMap.btnOpenDriverForm;
+      if(btnOpenDriverForm) btnOpenDriverForm.textContent = tMap.btnOpenDriverForm; // This is for the top button
       if(driverModalTitle) driverModalTitle.textContent = tMap.addDriverTitle;
 
       document.getElementById("labelZone").textContent = tMap.labelZone;
@@ -1397,7 +1592,12 @@
       document.getElementById("labelUsername").textContent = tMap.labelUsername;
       document.getElementById("labelPassword").textContent = tMap.labelPassword;
       document.getElementById("btnClear").textContent = tMap.btnClear;
-      document.getElementById("btnSaveDriver").textContent = tMap.btnSaveDriver;
+
+      // Set button text based on mode (add/edit)
+      const btnSave = document.getElementById("btnSaveDriver");
+      if (editingDriverDocId) {
+        btnSave.textContent = tMap.btnUpdateDriver;
+      } else { btnSave.textContent = tMap.btnSaveDriver; }
 
       document.getElementById("labelZoneFilter").textContent = tMap.labelZoneFilter;
       document.getElementById("chipAllZones").textContent = tMap.chipAllZones;
@@ -1409,8 +1609,8 @@
       document.getElementById("thFullName").textContent = tMap.thFullName;
       document.getElementById("thPhone").textContent = tMap.thPhone;
       document.getElementById("thUpdated").textContent = tMap.thUpdated;
-      document.getElementById("thActions").textContent = tMap.thActions;
-      document.getElementById("loadingText").textContent = tMap.loadingText;
+      document.getElementById("thActions").textContent = tMap.thActions;      
+      document.getElementById("loaderText").textContent = tMap.loaderText;
 
       // placeholders
       if (zoneSelect.options.length > 0) {
@@ -1420,7 +1620,11 @@
       fullNameInput.placeholder = tMap.fullNamePh;
       phoneInput.placeholder = tMap.phonePh;
       usernameInput.placeholder = tMap.usernamePh;
-      passwordInput.placeholder = tMap.passwordPh;
+      if (editingDriverDocId) {
+        passwordInput.placeholder = tMap.passwordEditHint;
+      } else {
+        passwordInput.placeholder = tMap.passwordPh;
+      }
       searchInput.placeholder = tMap.searchPh;
 
       // ปุ่มเมนู
@@ -1472,8 +1676,10 @@
 
     /* ---------- Init data ---------- */
     (async () => {
+      showLoader();
       await loadZones();
       await loadDrivers();
+      hideLoader();
     })();
   </script>
 </body>
