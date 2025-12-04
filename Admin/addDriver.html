@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Waste - คนขับรถเก็บขยะ</title>
-
+  <link rel="stylesheet" href="a_style.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
@@ -164,12 +164,6 @@
       font-size: 13px;
     }
 
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
     .lang-switcher {
       position: static;
     }
@@ -180,35 +174,6 @@
       border: 1px solid #d1d5db;
       font-size: 14px;
       background: #fff;
-    }
-
-    .user-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #fff;
-      border-radius: 999px;
-      border: 1px solid #e5e7eb;
-      padding: 8px 12px;
-      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
-    }
-
-    .user-chip .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
-      color: #0f172a;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .user-chip__label {
-      margin: 0;
-      font-size: 12px;
-      color:#6b7280;
     }
 
     .content {
@@ -632,21 +597,32 @@
         </p>
       </div>
       <div class="topbar-right">
-        <div class="lang-switcher">
-          <select id="langSelect">
-            <option value="th">ไทย</option>
-            <option value="en">English</option>
-            <option value="ms">Bahasa Melayu</option>
-          </select>
-        </div>
-        <div class="user-chip">
-          <span class="avatar" id="adminAvatar">A</span>
-          <div>
-            <p class="user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
-            <strong id="adminName">-</strong>
+          <!-- ไอคอนเลือกภาษา -->
+          <div class="lang-switcher">
+            <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+              <img src="images/lang-icon.png" alt="Language" class="top-icon">
+            </button>
+            <div class="lang-menu" id="langMenu">
+              <button type="button" data-lang="th">ไทย</button>
+              <button type="button" data-lang="en">English</button>
+              <button type="button" data-lang="ms">Bahasa Melayu</button>
+            </div>
+            <select id="langSelect" style="display:none;">
+              <option value="th">ไทย</option>
+              <option value="en">English</option>
+              <option value="ms">Bahasa Melayu</option>
+            </select>
           </div>
+
+          <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
+          <a href="profile.html" class="user-chip" id="profileBtn">
+            <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
+            <div class="user-chip-text">
+              <div class="user-chip-name" id="profileName">User Name</div>
+              <div class="user-chip-role" id="profileRole">Role</div>
+            </div>
+          </a>
         </div>
-      </div>
     </div>
 
     <div class="content">
@@ -1645,19 +1621,29 @@
 
     function changeLanguage(lang) {
       if (!translations[lang]) return;
-      currentLang = lang;
       if (LangState && typeof LangState.setLang === "function") {
         LangState.setLang(lang);
         currentLang = LangState.getLang();
       } else {
+        currentLang = lang;
         localStorage.setItem("sw_lang", lang);
       }
       langSelect.value = currentLang;
       applyLanguage();
     }
 
-    langSelect.addEventListener("change", (e) => {
-      changeLanguage(e.target.value);
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+    langSelect.value = currentLang;
+
+    langIconBtn.addEventListener("click", () => {
+      langMenu.classList.toggle("show");
+    });
+
+    langMenu.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      changeLanguage(btn.dataset.lang);
+      langMenu.classList.remove("show");
     });
 
     if (LangState && typeof LangState.onChange === "function") {
@@ -1670,9 +1656,11 @@
       });
     }
 
-    // initial lang setup
-    langSelect.value = currentLang;
-    applyLanguage();
+    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
+    document.addEventListener("click", e => {
+      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+      if (!clickedInLang) langMenu.classList.remove("show");
+    });
 
     /* ---------- Init data ---------- */
     (async () => {

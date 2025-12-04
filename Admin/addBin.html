@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Smart Waste - รายการถัง</title>
+  <link rel="stylesheet" href="a_style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Firebase v8 SDKs (App + Firestore) -->
@@ -154,140 +155,11 @@
     }
 
     .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    /* ---------- ไอคอนภาษา + โปรไฟล์ ---------- */
-    .icon-btn {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      padding: 6px 10px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
-      width: 45px;
-      height: 45px;
-    }
-
-    .icon-btn,
-    .user-chip {
-      width: 45px;
-      height: 45px;
-      padding: 0;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .top-icon {
-      width: 20px;
-      height: 30px;
-      object-fit: contain;
-      display: block;
-    }
-
-    .lang-switcher {
-      position: relative;
-    }
-
-    .lang-switcher select {
-      display: none;
-    }
-
-    .lang-menu {
-      position: absolute;
-      right: 0;
-      top: 120%;
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      padding: 4px;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, .2);
-      min-width: 150px;
-      display: none;
-      z-index: 1100;
-    }
-
-    .lang-menu.show {
-      display: block;
-    }
-
-    .lang-menu button {
-      width: 100%;
-      border: none;
-      background: transparent;
-      padding: 8px 12px;
-      text-align: left;
-      font-size: 14px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .lang-menu button:hover {
-      background: #f3f4f6;
-    }
-
-    .lang-menu button.active {
-      background: #e0edff;
-      font-weight: 600;
-    }
-
-    /* โปรไฟล์มุมขวา */
-    .user-chip {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 999px;
-      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 1000;
       gap: 8px;
-      width: 45px;
-      height: 45px;
-      padding: 0;
-      text-decoration: none;
-      color: #111827;
-    }
-
-    .user-avatar {
-      width: 30px;
-      height: 30px;
-      object-fit: contain;
-    }
-
-    .user-chip-text {
-      display: none;
-      flex-direction: column;
-      align-items: flex-start;
-      line-height: 1.2;
-    }
-
-    .user-chip-name {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .user-chip-role {
-      font-size: 11px;
-      color: #6b7280;
-    }
-
-    @media (min-width: 901px) {
-      .user-chip {
-        width: auto;
-        padding: 4px 12px;
-        justify-content: flex-start;
-      }
-
-      .user-chip-text {
-        display: flex;
-      }
     }
 
     fieldset {
@@ -833,32 +705,32 @@
         <h1 id="pageTitleHeading">รายการถัง</h1>
       </div>
       <div class="topbar-right">
-        <!-- ไอคอนเลือกภาษา -->
-        <div class="lang-switcher">
-          <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
-            <img src="images/lang-icon.png" alt="Language" class="top-icon">
-          </button>
-          <div class="lang-menu" id="langMenu">
-            <button type="button" data-lang="th">ไทย</button>
-            <button type="button" data-lang="en">English</button>
-            <button type="button" data-lang="ms">Bahasa Melayu</button>
+          <!-- ไอคอนเลือกภาษา -->
+          <div class="lang-switcher">
+            <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+              <img src="images/lang-icon.png" alt="Language" class="top-icon">
+            </button>
+            <div class="lang-menu" id="langMenu">
+              <button type="button" data-lang="th">ไทย</button>
+              <button type="button" data-lang="en">English</button>
+              <button type="button" data-lang="ms">Bahasa Melayu</button>
+            </div>
+            <select id="langSelect" style="display:none;">
+              <option value="th">ไทย</option>
+              <option value="en">English</option>
+              <option value="ms">Bahasa Melayu</option>
+            </select>
           </div>
-          <select id="langSelect" style="display:none;">
-            <option value="th">ไทย</option>
-            <option value="en">English</option>
-            <option value="ms">Bahasa Melayu</option>
-          </select>
-        </div>
 
-        <!-- ปุ่มไปหน้าโปรไฟล์ (ดึงชื่อ + role จาก Firestore) -->
-        <a href="profile.html" class="user-chip" id="profileBtn">
-          <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
-          <div class="user-chip-text">
-            <div class="user-chip-name" id="profileName">User Name</div>
-            <div class="user-chip-role" id="profileRole">Role</div>
-          </div>
-        </a>
-      </div>
+          <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
+          <a href="profile.html" class="user-chip" id="profileBtn">
+            <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
+            <div class="user-chip-text">
+              <div class="user-chip-name" id="profileName">User Name</div>
+              <div class="user-chip-role" id="profileRole">Role</div>
+            </div>
+          </a>
+        </div>
     </div>
 
     <div class="content">
