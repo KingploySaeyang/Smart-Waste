@@ -164,18 +164,6 @@
       font-size: 13px;
     }
 
-    .lang-switcher {
-      position: static;
-    }
-
-    .lang-switcher select {
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
-      background: #fff;
-    }
-
     .content {
       background: #fff;
       padding: 24px;
@@ -599,20 +587,20 @@
       <div class="topbar-right">
           <!-- ไอคอนเลือกภาษา -->
           <div class="lang-switcher">
-            <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
-              <img src="images/lang-icon.png" alt="Language" class="top-icon">
-            </button>
-            <div class="lang-menu" id="langMenu">
-              <button type="button" data-lang="th">ไทย</button>
-              <button type="button" data-lang="en">English</button>
-              <button type="button" data-lang="ms">Bahasa Melayu</button>
-            </div>
-            <select id="langSelect" style="display:none;">
-              <option value="th">ไทย</option>
-              <option value="en">English</option>
-              <option value="ms">Bahasa Melayu</option>
-            </select>
+          <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+            <img src="images/lang-icon.png" alt="Language" class="top-icon">
+          </button>
+          <div class="lang-menu" id="langMenu">
+            <button type="button" data-lang="th">ไทย</button>
+            <button type="button" data-lang="en">English</button>
+            <button type="button" data-lang="ms">Bahasa Melayu</button>
           </div>
+          <select id="langSelect" style="display:none;">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+          </select>
+        </div>
 
           <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
           <a href="profile.html" class="user-chip" id="profileBtn">
@@ -1620,55 +1608,57 @@
     }
 
     function changeLanguage(lang) {
-      if (!translations[lang]) return;
-      if (LangState && typeof LangState.setLang === "function") {
-        LangState.setLang(lang);
-        currentLang = LangState.getLang();
-      } else {
-        currentLang = lang;
-        localStorage.setItem("sw_lang", lang);
-      }
-      langSelect.value = currentLang;
-      applyLanguage();
-    }
+      if (!translations[lang]) return;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        currentLang = lang;
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+      applyLanguage();
+    }
 
-    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
-    langSelect.value = currentLang;
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+    langSelect.value = currentLang;
 
-    langIconBtn.addEventListener("click", () => {
-      langMenu.classList.toggle("show");
-    });
+    langIconBtn.addEventListener("click", () => {
+      langMenu.classList.toggle("show");
+    });
 
-    langMenu.addEventListener("click", e => {
-      const btn = e.target.closest("button[data-lang]");
-      if (!btn) return;
-      changeLanguage(btn.dataset.lang);
-      langMenu.classList.remove("show");
-    });
+    langMenu.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      changeLanguage(btn.dataset.lang);
+      langMenu.classList.remove("show");
+    });
 
-    if (LangState && typeof LangState.onChange === "function") {
-      LangState.onChange(lang => {
-        if (lang && lang !== currentLang) {
-          currentLang = lang;
-          langSelect.value = lang;
-          applyLanguage();
-        }
-      });
-    }
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
 
-    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
-    document.addEventListener("click", e => {
-      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
-      if (!clickedInLang) langMenu.classList.remove("show");
-    });
+    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
+    document.addEventListener("click", e => {
+      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+      if (!clickedInLang) langMenu.classList.remove("show");
+    });
 
     /* ---------- Init data ---------- */
-    (async () => {
-      showLoader();
-      await loadZones();
-      await loadDrivers();
-      hideLoader();
-    })();
+(async () => {
+    showLoader();
+    await loadZones();
+    await loadDrivers();
+    // *** เพิ่มบรรทัดนี้เพื่อ apply ภาษาที่ดึงมาจาก localStorage/AdminLang ทันที
+    applyLanguage(); 
+    hideLoader();
+})();
   </script>
 </body>
 </html>

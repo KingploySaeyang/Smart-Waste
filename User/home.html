@@ -757,7 +757,10 @@
             binId,
             ...data
           };
-        }).sort((a,b)=>{
+        })
+        .filter(item => item.isHidden !== true)
+        
+        .sort((a,b)=>{
           const z = a.zone.localeCompare(b.zone);
           return z !== 0 ? z : a.binId.localeCompare(b.binId);
         });

@@ -933,6 +933,11 @@
       .onSnapshot(async snapshot => {
         const resolved = await Promise.all(snapshot.docs.map(async doc => {
           const data = doc.data() || {};
+
+          if (data.isHidden === true) {
+            return null; // ส่งค่า null กลับไป เพื่อให้ถูกตัดออกในขั้นตอนถัดไป
+          }
+          
           let zone = (data.zone || "").trim();
           let binId = data.binId || doc.id;
           let lat = typeof data.lat === "number" ? data.lat : null;

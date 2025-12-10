@@ -34,9 +34,9 @@
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <main>
-    <div class="page-wrap">
+
       <div class="topbar">
-        <div class="page-header">
+        <div>
           <h1 id="mainTitle">จัดตารางขับรถเก็บขยะ</h1>
         </div>
         <div class="topbar-right">
@@ -101,7 +101,6 @@
         </div>
 
       </div>
-    </div>
   </main>
 
   <!-- Modal ฟอร์มจัดตาราง (เหมือนฟอร์มเพิ่มถัง) -->
@@ -157,787 +156,829 @@
   </div>
 
   <script>
-    /* -------- เมนูมือถือ + sidebar backdrop (เหมือนหน้าเพิ่มถัง) -------- */
-    function toggleMenu(force) {
-      const sidebar = document.getElementById('sidebar');
-      const btn = document.getElementById('menuToggle');
-      const backdrop = document.getElementById('sidebarBackdrop');
-      let show;
+    /* -------- เมนูมือถือ + sidebar backdrop (เหมือนหน้าเพิ่มถัง) -------- */
+    function toggleMenu(force) {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('menuToggle');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      let show;
 
-      if (typeof force === 'boolean') {
-        show = force;
-      } else {
-        show = !sidebar.classList.contains('show');
-      }
+      if (typeof force === 'boolean') {
+        show = force;
+      } else {
+        show = !sidebar.classList.contains('show');
+      }
 
-      sidebar.classList.toggle('show', show);
-      if (backdrop) {
-        backdrop.classList.toggle('show', show);
-      }
+      sidebar.classList.toggle('show', show);
+      if (backdrop) {
+        backdrop.classList.toggle('show', show);
+      }
 
-      if (window.innerWidth <= 900) {
-        btn.style.display = show ? 'none' : 'inline-flex';
-      }
-    }
+      if (window.innerWidth <= 900) {
+        btn.style.display = show ? 'none' : 'inline-flex';
+      }
+    }
 
-    document.getElementById("menuToggle").addEventListener("click", () => {
-      toggleMenu();
-    });
+    document.getElementById("menuToggle").addEventListener("click", () => {
+      toggleMenu();
+    });
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.menu a').forEach(a => {
-        a.addEventListener('click', () => {
-          if (window.innerWidth <= 900) toggleMenu(false);
-        });
-      });
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.menu a').forEach(a => {
+        a.addEventListener('click', () => {
+          if (window.innerWidth <= 900) toggleMenu(false);
+        });
+      });
 
-      const backdrop = document.getElementById('sidebarBackdrop');
-      if (backdrop) {
-        backdrop.addEventListener('click', () => toggleMenu(false));
-      }
-    });
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (backdrop) {
+        backdrop.addEventListener('click', () => toggleMenu(false));
+      }
+    });
 
-    window.addEventListener('resize', () => {
-      const btn = document.getElementById('menuToggle');
-      const sidebar = document.getElementById('sidebar');
-      const backdrop = document.getElementById('sidebarBackdrop');
+    window.addEventListener('resize', () => {
+      const btn = document.getElementById('menuToggle');
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
 
-      if (window.innerWidth > 900) {
-        btn.style.display = 'none';
-        sidebar.classList.remove('show');
-        if (backdrop) backdrop.classList.remove('show');
-      } else {
-        btn.style.display = sidebar.classList.contains('show') ? 'none' : 'inline-flex';
-      }
-    });
+      if (window.innerWidth > 900) {
+        btn.style.display = 'none';
+        sidebar.classList.remove('show');
+        if (backdrop) backdrop.classList.remove('show');
+      } else {
+        btn.style.display = sidebar.classList.contains('show') ? 'none' : 'inline-flex';
+      }
+    });
 
-    /* ล็อก/ปลดล็อก scroll ของ body เวลาเปิด modal */
+    /* -------- Firebase -------- */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+
+    const zonesCol = fs.collection("zones");
+    const trucksCol = fs.collection("trucks");
+    const usersCol = fs.collection("users");
+    const scheduleCol = fs.collection("truck_schedule");
+
+    /* DOM */
+    const zoneSelect = document.getElementById("zoneSelect");
+    const truckSelect = document.getElementById("truckSelect");
+    const driverSelect = document.getElementById("driverSelect");
+    const formStatus = document.getElementById("formStatus");
+    const scheduleTbody = document.getElementById("scheduleTbody");
+    const countLabel = document.getElementById("countLabel");
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+    const btnClear = document.getElementById("btnClear");
+
+    const btnOpenScheduleForm = document.getElementById("btnOpenScheduleForm");
+    const scheduleModalBackdrop = document.getElementById("scheduleModalBackdrop");
+    const btnScheduleClose = document.getElementById("btnScheduleClose");
+
+    // โปรไฟล์
+    const profileNameEl = document.getElementById("profileName");
+    const profileRoleEl = document.getElementById("profileRole");
+
+    let zones = [];
+    let trucks = []; // 👈 เก็บข้อมูลรถทั้งหมด
+    let drivers = []; // 👈 เก็บข้อมูลคนขับทั้งหมด
+    let schedules = [];
+
     function lockBodyScroll(lock) {
       document.body.classList.toggle("modal-open", !!lock);
     }
 
-    /* -------- Firebase -------- */
-    var firebaseConfig = {
-      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
-      authDomain: "smart-waste-a2bf4.firebaseapp.com",
-      projectId: "smart-waste-a2bf4",
-      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
-      messagingSenderId: "522733244689",
-      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const fs = firebase.firestore();
-
-    const zonesCol = fs.collection("zones");
-    const trucksCol = fs.collection("trucks");
-    const usersCol = fs.collection("users");
-    const scheduleCol = fs.collection("truck_schedule");
-
-    /* DOM */
-    const zoneSelect = document.getElementById("zoneSelect");
-    const truckSelect = document.getElementById("truckSelect");
-    const driverSelect = document.getElementById("driverSelect");
-    const formStatus = document.getElementById("formStatus");
-    const scheduleTbody = document.getElementById("scheduleTbody");
-    const countLabel = document.getElementById("countLabel");
-    const startDate = document.getElementById("startDate");
-    const endDate = document.getElementById("endDate");
-    const btnClear = document.getElementById("btnClear");
-
-    const btnOpenScheduleForm = document.getElementById("btnOpenScheduleForm");
-    const scheduleModalBackdrop = document.getElementById("scheduleModalBackdrop");
-    const btnScheduleClose = document.getElementById("btnScheduleClose");
-
-    // โปรไฟล์
-    const profileNameEl = document.getElementById("profileName");
-    const profileRoleEl = document.getElementById("profileRole");
-
-    let zones = [];
-    let schedules = [];
     let currentUserProfile = null;
 
-    /* -------- i18n -------- */
-    const translations = {
-      th: {
-        pageTitle: "Smart Waste - จัดตารางขับรถเก็บขยะ",
-        menuBtn: "☰ เมนู",
-        mainTitle: "จัดตารางขับรถเก็บขยะ",
-        pageHint: "สร้างตารางมอบหมายรถและคนขับตามเขตพื้นที่",
-
-        formTitle: "สร้างตารางขับรถ",
-        labelStart: "วันเริ่มต้น",
-        labelEnd: "วันสิ้นสุด",
-        labelZone: "เขตพื้นที่",
-        labelTruck: "เลือกรถ",
-        labelDriver: "เลือกคนขับ",
-        zonePlaceholder: "เลือกเขต...",
-        truckLoading: "กำลังโหลดรถ...",
-        truckPlaceholder: "เลือกรถ...",
-        truckNoData: "ยังไม่มีรถในเขตนี้",
-        driverLoading: "กำลังโหลด...",
-        driverPlaceholder: "เลือกคนขับ...",
-        driverNoData: "ยังไม่มีคนขับในเขตนี้",
-        btnClear: "ล้างฟอร์ม",
-        btnSave: "บันทึกตาราง",
-        addScheduleHeaderTitle: "สร้างตารางขับรถ",
-        btnOpenSchedule: "สร้างตารางขับรถ",
-
-        tableTitle: "ตารางขับรถล่าสุด",
-        countPrefix: "แสดง",
-        countSuffix: "รายการ",
-        loadingText: "กำลังโหลด...",
-        noData: "ยังไม่มีข้อมูล",
-
-        thZone: "เขต",
-        thRange: "ช่วงวันที่",
-        thTruck: "รถ",
-        thDriver: "คนขับ",
-        thCreated: "บันทึกเมื่อ",
-
-        statusEndBeforeStart: "วันสิ้นสุดต้องไม่ก่อนวันเริ่ม",
-        statusPastDate: "ไม่สามารถบันทึกได้ ไม่อนุญาตให้จัดตารางย้อนหลัง",
-        statusSaveOk: "บันทึกเรียบร้อย",
-        statusConflict: "ไม่สามารถบันทึกได้ เนื่องจากเขตนี้มีเวรขับรถในช่วงวันที่นี้แล้ว",
-
-        cleared: ""
-      },
-      en: {
-        pageTitle: "Smart Waste - Truck Schedule",
-        menuBtn: "☰ Menu",
-        mainTitle: "Garbage Truck Schedule",
-        pageHint: "Create schedules assigning trucks and drivers to each zone.",
-
-        formTitle: "Create Schedule",
-        labelStart: "Start date",
-        labelEnd: "End date",
-        labelZone: "Zone",
-        labelTruck: "Select truck",
-        labelDriver: "Select driver",
-        zonePlaceholder: "Select zone...",
-        truckLoading: "Loading trucks...",
-        truckPlaceholder: "Select truck...",
-        truckNoData: "No trucks in this zone",
-        driverLoading: "Loading drivers...",
-        driverPlaceholder: "Select driver...",
-        driverNoData: "No drivers in this zone",
-        btnClear: "Reset form",
-        btnSave: "Save schedule",
-        addScheduleHeaderTitle: "Create schedule",
-        btnOpenSchedule: "Create schedule",
-
-        tableTitle: "Latest Schedules",
-        countPrefix: "Showing",
-        countSuffix: "items",
-        loadingText: "Loading...",
-        noData: "No schedule data yet",
-
-        thZone: "Zone",
-        thRange: "Date range",
-        thTruck: "Truck",
-        thDriver: "Driver",
-        thCreated: "Created at",
-
-        statusEndBeforeStart: "End date must not be before start date",
-        statusPastDate: "Cannot save. Scheduling in the past is not allowed.",
-        statusSaveOk: "Schedule saved",
-        statusConflict: "Cannot save. This zone already has a truck scheduled for the selected date range.",
-
-        cleared: ""
-      },
-      ms: {
-        pageTitle: "Smart Waste - Jadual Lori Sampah",
-        menuBtn: "☰ Menu",
-        mainTitle: "Jadual Lori Sampah",
-        pageHint: "Cipta jadual bagi lori dan pemandu mengikut zon.",
-
-        formTitle: "Cipta Jadual",
-        labelStart: "Tarikh mula",
-        labelEnd: "Tarikh tamat",
-        labelZone: "Zon",
-        labelTruck: "Pilih lori",
-        labelDriver: "Pilih pemandu",
-        zonePlaceholder: "Pilih zon...",
-        truckLoading: "Memuatkan lori...",
-        truckPlaceholder: "Pilih lori...",
-        truckNoData: "Tiada lori dalam zon ini",
-        driverLoading: "Memuatkan pemandu...",
-        driverPlaceholder: "Pilih pemandu...",
-        driverNoData: "Tiada pemandu dalam zon ini",
-        btnClear: "Kosongkan borang",
-        btnSave: "Simpan jadual",
-        addScheduleHeaderTitle: "Cipta jadual",
-        btnOpenSchedule: "Cipta jadual",
-
-        tableTitle: "Jadual Terkini",
-        countPrefix: "Menunjukkan",
-        countSuffix: "rekod",
-        loadingText: "Sedang memuatkan...",
-        noData: "Belum ada data jadual",
-
-        thZone: "Zon",
-        thRange: "Julat tarikh",
-        thTruck: "Lori",
-        thDriver: "Pemandu",
-        thCreated: "Direkodkan",
-
-        statusEndBeforeStart: "Tarikh tamat tidak boleh sebelum tarikh mula",
-        statusPastDate: "Tidak boleh simpan. Jadual untuk tarikhที่ sudah lepas tidak dibenarkan.",
-        statusSaveOk: "Jadual berjaya disimpan",
-        statusConflict: "Tidak boleh simpan. Zon ini sudah mempunyai jadual lori dalam julat tarikh tersebut.",
-
-        cleared: ""
-      }
-    };
-
-    const LangState = window.AdminLang;
-    let currentLang = (LangState && typeof LangState.getLang === "function")
-      ? LangState.getLang()
-      : (localStorage.getItem("sw_lang") || "th");
-    const langSelect = document.getElementById("langSelect");
-    const langIconBtn = document.getElementById("langIconBtn");
-    const langMenu = document.getElementById("langMenu");
-
-    function tr(key) {
-      const t = translations[currentLang] || translations.th;
-      return t[key] !== undefined ? t[key] : key;
-    }
-
-    function setFormStatusText(text, type) {
-      formStatus.textContent = text || "";
-      formStatus.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
-    }
-
-    /* role label ตามภาษา (เหมือนหน้า bins) */
-    const ROLE_LABELS = {
-      th: {
-        0: "ผู้ดูแลระบบ",
-        1: "พนักงานขับรถ",
-        2: "ผู้ใช้งานทั่วไป"
-      },
-      en: {
-        0: "Administrator",
-        1: "Driver",
-        2: "Resident User"
-      },
-      ms: {
-        0: "Pentadbir",
-        1: "Pemandu",
-        2: "Pengguna"
-      }
-    };
-
-    async function loadCurrentUserProfile() {
-      try {
-        let usernameKey = currentUser && (currentUser.username || currentUser.uid || currentUser.email);
-        if (!usernameKey) return;
-
-        const docSnap = await usersCol.doc(usernameKey).get();
-        if (docSnap.exists) {
-          const data = docSnap.data() || {};
-          currentUserProfile = {
-            ...data,
-            username: data.username || docSnap.id
-          };
-        } else {
-          currentUserProfile = {
-            username: usernameKey,
-            status: currentUser && typeof currentUser.status === "number" ? currentUser.status : 0
-          };
-        }
-        applyProfileInfo();
-      } catch (e) {
-        console.error("loadCurrentUserProfile error", e);
-      }
-    }
-
-    function applyProfileInfo() {
-      if (!profileNameEl || !profileRoleEl || !currentUserProfile) return;
-
-      const fullName = (currentUserProfile.fullName || "").trim();
-      const username = currentUserProfile.username || currentUser?.username || "";
-      const statusVal = typeof currentUserProfile.status === "number"
-        ? currentUserProfile.status
-        : (currentUser && typeof currentUser.status === "number" ? currentUser.status : 0);
-
-      const roleMap = ROLE_LABELS[currentLang] || ROLE_LABELS.th;
-
-      profileNameEl.textContent = fullName || username || "—";
-      profileRoleEl.textContent = roleMap[statusVal] || "";
-    }
-
-    function updateLangMenuActive() {
-      if (!langMenu) return;
-      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.lang === currentLang);
-      });
-    }
-
-    function applyLanguage() {
-      document.title = tr("pageTitle");
-      document.getElementById("menuToggle").textContent = tr("menuBtn");
-
-      document.getElementById("mainTitle").textContent = tr("mainTitle");
-      document.getElementById("pageHint").textContent = tr("pageHint");
-
-      document.getElementById("scheduleModalTitle").textContent = tr("formTitle");
-      document.getElementById("labelStart").textContent = tr("labelStart");
-      document.getElementById("labelEnd").textContent = tr("labelEnd");
-      document.getElementById("labelZone").textContent = tr("labelZone");
-      document.getElementById("labelTruck").textContent = tr("labelTruck");
-      document.getElementById("labelDriver").textContent = tr("labelDriver");
-      document.getElementById("btnClear").textContent = tr("btnClear");
-      document.getElementById("btnSave").textContent = tr("btnSave");
-
-      document.getElementById("addScheduleHeaderTitle").textContent = tr("addScheduleHeaderTitle");
-      document.getElementById("btnOpenScheduleForm").textContent = tr("btnOpenSchedule");
-
-      document.getElementById("tableTitle").textContent = tr("tableTitle");
-      document.getElementById("thZone").textContent = tr("thZone");
-      document.getElementById("thRange").textContent = tr("thRange");
-      document.getElementById("thTruck").textContent = tr("thTruck");
-      document.getElementById("thDriver").textContent = tr("thDriver");
-      document.getElementById("thCreated").textContent = tr("thCreated");
-      document.getElementById("loadingText").textContent = tr("loadingText");
-
-      if (zoneSelect.options.length > 0) {
-        zoneSelect.options[0].textContent = tr("zonePlaceholder");
-      }
-      if (!truckSelect.disabled && truckSelect.options.length > 0 && !truckSelect.value) {
-        truckSelect.options[0].textContent = tr("truckPlaceholder");
-      }
-      if (!driverSelect.disabled && driverSelect.options.length > 0 && !driverSelect.value) {
-        driverSelect.options[0].textContent = tr("driverPlaceholder");
-      }
-
-      // sync กับ AdminNav/AdminUser ถ้ามี
-      if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {
-        window.AdminNav.setLanguage(currentLang);
-      }
-      if (window.AdminUser && typeof window.AdminUser.setLanguage === "function") {
-        window.AdminUser.setLanguage(currentLang);
-      }
-
-      renderSchedules();
-      applyProfileInfo();
-      updateLangMenuActive();
-    }
-
-    function changeLanguage(lang) {
-      if (!translations[lang]) return;
-      if (LangState && typeof LangState.setLang === "function") {
-        LangState.setLang(lang);
-        currentLang = LangState.getLang();
-      } else {
-        currentLang = lang;
-        localStorage.setItem("sw_lang", lang);
-      }
-      langSelect.value = currentLang;
-      applyLanguage();
-    }
-
-    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
-    langSelect.value = currentLang;
-
-    langIconBtn.addEventListener("click", () => {
-      langMenu.classList.toggle("show");
-    });
-
-    langMenu.addEventListener("click", e => {
-      const btn = e.target.closest("button[data-lang]");
-      if (!btn) return;
-      changeLanguage(btn.dataset.lang);
-      langMenu.classList.remove("show");
-    });
-
-    if (LangState && typeof LangState.onChange === "function") {
-      LangState.onChange(lang => {
-        if (lang && lang !== currentLang) {
-          currentLang = lang;
-          langSelect.value = lang;
-          applyLanguage();
-        }
-      });
-    }
-
-    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
-    document.addEventListener("click", e => {
-      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
-      if (!clickedInLang) langMenu.classList.remove("show");
-    });
-
-    /* โหลดเขต */
-    async function loadZones() {
-      const snap = await zonesCol.get();
-      zones = [];
-      zoneSelect.innerHTML = '<option value="">' + tr("zonePlaceholder") + '</option>';
-      snap.forEach(doc => {
-        const d = doc.data();
-        zones.push({ id: doc.id, name: d.name });
-        const opt = document.createElement("option");
-        opt.value = doc.id;
-        opt.textContent = d.name;
-        zoneSelect.appendChild(opt);
-      });
-    }
-
-    /* โหลดรถในเขต */
-    async function loadTrucks(zoneId) {
-      truckSelect.disabled = true;
-      truckSelect.innerHTML = '<option>' + tr("truckLoading") + '</option>';
-
-      const snap = await trucksCol.where("zone", "==", zoneId).get();
-
-      truckSelect.innerHTML = '<option value="">' + tr("truckPlaceholder") + '</option>';
-
-      if (snap.empty) {
-        truckSelect.innerHTML = '<option value="">' + tr("truckNoData") + '</option>';
-      } else {
-        snap.forEach(doc => {
-          const d = doc.data();
-          const opt = document.createElement("option");
-          opt.value = doc.id;
-          opt.textContent = doc.id + " • " + (d.truckId || "");
-          truckSelect.appendChild(opt);
-        });
-      }
-      truckSelect.disabled = false;
-    }
-
-    /* โหลดคนขับในเขต */
-    async function loadDrivers(zoneId) {
-      driverSelect.disabled = true;
-      driverSelect.innerHTML = '<option>' + tr("driverLoading") + '</option>';
-
-      const snap = await usersCol
-        .where("status", "==", 1)
-        .where("zoneId", "==", zoneId)
-        .get();
-
-      driverSelect.innerHTML = '<option value="">' + tr("driverPlaceholder") + '</option>';
-
-      if (snap.empty) {
-        driverSelect.innerHTML = '<option value="">' + tr("driverNoData") + '</option>';
-      } else {
-        snap.forEach(doc => {
-          const d = doc.data();
-          const opt = document.createElement("option");
-          opt.value = doc.id;
-          opt.textContent = (d.driverId || "") + " • " + (d.fullName || "");
-          opt.dataset.driverId = d.driverId || "";
-          opt.dataset.driverName = d.fullName || "";
-          driverSelect.appendChild(opt);
-        });
-      }
-      driverSelect.disabled = false;
-    }
-
-    zoneSelect.addEventListener("change", () => {
-      if (!zoneSelect.value) {
-        truckSelect.disabled = true;
-        driverSelect.disabled = true;
-        return;
-      }
-      loadTrucks(zoneSelect.value);
-      loadDrivers(zoneSelect.value);
-    });
-
-    /* helper: list วันที่จาก start ถึง end เป็น 'YYYY-MM-DD' */
-    function listDates(startStr, endStr) {
-      const days = [];
-      const cur = new Date(startStr + "T00:00:00");
-      const end = new Date(endStr + "T00:00:00");
-      while (cur <= end) {
-        const y = cur.getFullYear();
-        const m = String(cur.getMonth() + 1).padStart(2, "0");
-        const d = String(cur.getDate()).padStart(2, "0");
-        days.push(`${y}-${m}-${d}`);
-        cur.setDate(cur.getDate() + 1);
-      }
-      return days;
-    }
-
-    /* helper: แปลง YYYY-MM-DD → string ตามภาษา */
-    function formatDateList(arr) {
-      const locale =
-        currentLang === "th" ? "th-TH" :
-          currentLang === "ms" ? "ms-MY" : "en-GB";
-      return arr.map(str => {
-        return new Date(str + "T00:00:00").toLocaleDateString(locale);
-      }).join(", ");
-    }
-
-    /* helper: แบ่ง freeDays เป็นช่วงต่อเนื่อง */
-    function groupContiguous(dates) {
-      if (!dates.length) return [];
-      const sorted = [...dates].sort();
-      const groups = [];
-      let start = sorted[0];
-      let prev = sorted[0];
-
-      function isNextDay(a, b) {
-        const da = new Date(a + "T00:00:00");
-        const db = new Date(b + "T00:00:00");
-        return (db - da) === 24 * 60 * 60 * 1000;
-      }
-
-      for (let i = 1; i < sorted.length; i++) {
-        const cur = sorted[i];
-        if (isNextDay(prev, cur)) {
-          prev = cur;
-        } else {
-          groups.push([start, prev]);
-          start = prev = cur;
-        }
-      }
-      groups.push([start, prev]);
-      return groups;
-    }
-
-    /* helper: doc id = {zone_YYYY-MM-DD_HH-mm-ss-SSS} */
-    function buildDocId(zone) {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      const hh = String(now.getHours()).padStart(2, "0");
-      const mi = String(now.getMinutes()).padStart(2, "0");
-      const ss = String(now.getSeconds()).padStart(2, "0");
-      const ms = String(now.getMilliseconds()).padStart(3, "0");
-      return `${zone}_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}-${ms}`;
-    }
-
-    /* บันทึกตาราง (เหมือนเดิม ไม่เปลี่ยน logic) */
-    document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const s = startDate.value;
-      const e2 = endDate.value;
-      const zone = zoneSelect.value;
-      const truck = truckSelect.value;
-      const driver = driverSelect.value;
-
-      if (!s || !e2 || !zone || !truck || !driver) return;
-
-      // วันนี้ในรูปแบบ YYYY-MM-DD
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      const todayStr = `${yyyy}-${mm}-${dd}`;
-
-      if (s < todayStr) {
-        setFormStatusText(tr("statusPastDate"), "err");
-        return;
-      }
-
-      if (e2 < s) {
-        setFormStatusText(tr("statusEndBeforeStart"), "err");
-        return;
-      }
-
-      setFormStatusText("", "");
-
-      const driverOpt = driverSelect.options[driverSelect.selectedIndex];
-      const truckOpt = truckSelect.options[truckSelect.selectedIndex];
-
-      const startDateObj = new Date(s + "T00:00:00");
-      const endDateObj = new Date(e2 + "T23:59:59");
-      const startTs = firebase.firestore.Timestamp.fromDate(startDateObj);
-      const endTs = firebase.firestore.Timestamp.fromDate(endDateObj);
-
-      try {
-        // ดึงตารางของเขตนี้ทั้งหมด
-        const snap = await scheduleCol.where("zoneId", "==", zone).get();
-
-        const newDays = listDates(s, e2);
-        const overlapDays = [];
-        const freeDays = [];
-
-        const existing = [];
-        snap.forEach(doc => {
-          const d = doc.data();
-          if (!d.startDate || !d.endDate) return;
-          existing.push({
-            startMs: d.startDate.toMillis(),
-            endMs: d.endDate.toMillis()
-          });
-        });
-
-        newDays.forEach(dStr => {
-          const t0 = new Date(dStr + "T00:00:00").getTime();
-          const t1 = new Date(dStr + "T23:59:59").getTime();
-          let overlapped = false;
-          for (const ex of existing) {
-            if (ex.startMs <= t1 && ex.endMs >= t0) {
-              overlapped = true;
-              break;
-            }
-          }
-          if (overlapped) {
-            overlapDays.push(dStr);
-          } else {
-            freeDays.push(dStr);
-          }
-        });
-
-        if (overlapDays.length && !freeDays.length) {
-          // ซ้ำทุกวัน
-          const listText = formatDateList(overlapDays);
-          if (currentLang === "th") {
-            setFormStatusText("วันที่ " + listText + " มีอยู่ในตารางแล้ว", "err");
-          } else if (currentLang === "en") {
-            setFormStatusText("Dates " + listText + " already have schedules in this zone.", "err");
-          } else {
-            setFormStatusText("Tarikh " + listText + " sudah mempunyai jadual dalam zon ini.", "err");
-          }
-          return;
-        }
-
-        if (overlapDays.length && freeDays.length) {
-          // ซ้ำบางวัน → ถามยืนยัน
-          const dupText = formatDateList(overlapDays);
-          const freeText = formatDateList(freeDays);
-          let msg;
-          if (currentLang === "th") {
-            msg = `วันที่ ${dupText} มีอยู่ในตารางแล้ว\nต้องการบันทึกเฉพาะวันที่ ${freeText} ลงในตารางหรือไม่?`;
-          } else if (currentLang === "en") {
-            msg = `These dates already have schedules: ${dupText}\nDo you want to save only these free dates: ${freeText}?`;
-          } else {
-            msg = `Tarikh berikut sudah ada jadual: ${dupText}\nAdakah anda mahu simpan hanya tarikh berikut: ${freeText}?`;
-          }
-
-          const ok = window.confirm(msg);
-          if (!ok) {
-            setFormStatusText(tr("statusConflict"), "err");
-            return;
-          }
-        }
-
-        if (!freeDays.length) {
-          setFormStatusText(tr("statusConflict"), "err");
-          return;
-        }
-
-        // แบ่ง freeDays เป็นช่วงต่อเนื่องแล้วบันทึกทีละช่วง
-        const groups = groupContiguous(freeDays);
-
-        for (const [startStr, endStr] of groups) {
-          const startObj = new Date(startStr + "T00:00:00");
-          const endObj = new Date(endStr + "T23:59:59");
-
-          const sTs = firebase.firestore.Timestamp.fromDate(startObj);
-          const eTs = firebase.firestore.Timestamp.fromDate(endObj);
-
-          const docId = buildDocId(zone); // doc id = {zone_วันที่เวลา ณ ตอนบันทึก}
-
-          await scheduleCol.doc(docId).set({
-            zoneId: zone,
-            zoneName: zones.find(z => z.id === zone)?.name,
-            truckId: truck,
-            truckName: truckOpt.textContent,
-            driverUsername: driver,
-            driverName: driverOpt.dataset.driverName,
-            driverId: driverOpt.dataset.driverId,
-            startDate: sTs,
-            endDate: eTs,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        }
-
-        setFormStatusText(tr("statusSaveOk"), "ok");
-      } catch (err) {
-        console.error(err);
-        setFormStatusText(err.message || "Error", "err");
-      }
-    });
-
-    /* ปุ่มล้างฟอร์ม */
-    btnClear.addEventListener("click", () => {
-      startDate.value = "";
-      endDate.value = "";
-      zoneSelect.value = "";
-      truckSelect.disabled = true;
-      driverSelect.disabled = true;
-      truckSelect.innerHTML = '<option value="">' + tr("truckPlaceholder") + '</option>';
-      driverSelect.innerHTML = '<option value="">' + tr("driverPlaceholder") + '</option>';
-      setFormStatusText(tr("cleared"), "");
-    });
-
-    /* Modal ฟอร์มจัดตาราง */
-    function openScheduleModal() {
-      scheduleModalBackdrop.classList.add("show");
-      lockBodyScroll(true);
-    }
-    function closeScheduleModal() {
-      scheduleModalBackdrop.classList.remove("show");
-      lockBodyScroll(false);
-    }
-
-    btnOpenScheduleForm.addEventListener("click", openScheduleModal);
-    btnScheduleClose.addEventListener("click", closeScheduleModal);
-
-    scheduleModalBackdrop.addEventListener("click", (e) => {
-      if (e.target === scheduleModalBackdrop) {
-        closeScheduleModal();
-      }
-    });
-
-    /* โหลดตาราง */
-    function setupScheduleListener() {
-      scheduleCol.orderBy("createdAt", "desc").limit(100)
-        .onSnapshot(sn => {
-          schedules = [];
-          sn.forEach(doc => {
-            const d = doc.data();
-            const start = d.startDate?.toDate();
-            const end = d.endDate?.toDate();
-            const created = d.createdAt?.toDate();
-
-            schedules.push({
-              zoneName: d.zoneName,
-              truckId: d.truckId,
-              truckName: d.truckName,
-              driverName: d.driverName,
-              driverId: d.driverId,
-              start: start?.toLocaleDateString(),
-              end: end?.toLocaleDateString(),
-              created: created?.toLocaleString()
-            });
-          });
-          renderSchedules();
-        });
-    }
-
-    function renderSchedules() {
-      if (!scheduleTbody) return;
-
-      if (!schedules.length) {
-        countLabel.textContent = tr("countPrefix") + " 0 " + tr("countSuffix");
-        scheduleTbody.innerHTML = '<tr><td colspan="5" class="muted">' + tr("noData") + '</td></tr>';
-        return;
-      }
-
-      countLabel.textContent = tr("countPrefix") + " " + schedules.length + " " + tr("countSuffix");
-
-      scheduleTbody.innerHTML = schedules.map(s => `
-      <tr>
-        <td><span class="badge-zone">${s.zoneName}</span></td>
-        <td>${s.start} - ${s.end}</td>
-        <td>${s.truckId}</td>
-        <td>${s.driverId} • ${s.driverName}</td>
-        <td>${s.created}</td>
-      </tr>
-    `).join("");
-    }
-
-    (async () => {
-      langSelect.value = currentLang;
-      applyLanguage();
-      await loadZones();
-      setupScheduleListener();
-      await loadCurrentUserProfile();
-    })();
-  </script>
+    /* -------- i18n -------- */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - จัดตารางขับรถเก็บขยะ",
+        menuBtn: "☰ เมนู",
+        mainTitle: "จัดตารางขับรถเก็บขยะ",
+        pageHint: "สร้างตารางมอบหมายรถและคนขับตามเขตพื้นที่",
+
+        formTitle: "สร้างตารางขับรถ",
+        labelStart: "วันเริ่มต้น",
+        labelEnd: "วันสิ้นสุด",
+        labelZone: "เขตพื้นที่",
+        labelTruck: "เลือกรถ",
+        labelDriver: "เลือกคนขับ",
+        zonePlaceholder: "เลือกเขต...",
+        truckLoading: "กำลังโหลดรถทั้งหมด...", // 👈 ข้อความโหลดเริ่มต้น
+        truckPlaceholder: "เลือกเขตก่อน...", // 👈 เปลี่ยนเป็นข้อความนี้
+        truckSelect: "เลือกรถ...", // 👈 ข้อความเมื่อเลือกเขตแล้ว
+        truckNoData: "ยังไม่มีรถในเขตนี้",
+        driverLoading: "กำลังโหลดคนขับทั้งหมด...", // 👈 ข้อความโหลดเริ่มต้น
+        driverPlaceholder: "เลือกเขตก่อน...", // 👈 เปลี่ยนเป็นข้อความนี้
+        driverSelect: "เลือกคนขับ...",// 👈 ข้อความเมื่อเลือกเขตแล้ว
+        driverNoData: "ยังไม่มีคนขับในเขตนี้",
+        btnClear: "ล้างฟอร์ม",
+        btnSave: "บันทึกตาราง",
+        addScheduleHeaderTitle: "สร้างตารางขับรถ",
+        btnOpenSchedule: "สร้างตารางขับรถ",
+
+        tableTitle: "ตารางขับรถล่าสุด",
+        countPrefix: "แสดง",
+        countSuffix: "รายการ",
+        loadingText: "กำลังโหลด...",
+        noData: "ยังไม่มีข้อมูล",
+
+        thZone: "เขต",
+        thRange: "ช่วงวันที่",
+        thTruck: "รถ",
+        thDriver: "คนขับ",
+        thCreated: "บันทึกเมื่อ",
+
+        statusEndBeforeStart: "วันสิ้นสุดต้องไม่ก่อนวันเริ่ม",
+        statusPastDate: "ไม่สามารถบันทึกได้ ไม่อนุญาตให้จัดตารางย้อนหลัง",
+        statusSaveOk: "บันทึกเรียบร้อย",
+        statusConflict: "ไม่สามารถบันทึกได้ เนื่องจากเขตนี้มีเวรขับรถในช่วงวันที่นี้แล้ว",
+
+        cleared: ""
+      },
+      en: {
+        pageTitle: "Smart Waste - Truck Schedule",
+        menuBtn: "☰ Menu",
+        mainTitle: "Garbage Truck Schedule",
+        pageHint: "Create schedules assigning trucks and drivers to each zone.",
+
+        formTitle: "Create Schedule",
+        labelStart: "Start date",
+        labelEnd: "End date",
+        labelZone: "Zone",
+        labelTruck: "Select truck",
+        labelDriver: "Select driver",
+        zonePlaceholder: "Select zone...",
+        truckLoading: "Loading all trucks...",
+        truckPlaceholder: "Select zone first...",
+        truckSelect: "Select truck...",
+        truckNoData: "No trucks in this zone",
+        driverLoading: "Loading all drivers...",
+        driverPlaceholder: "Select zone first...",
+        driverSelect: "Select driver...",
+        driverNoData: "No drivers in this zone",
+        btnClear: "Reset form",
+        btnSave: "Save schedule",
+        addScheduleHeaderTitle: "Create schedule",
+        btnOpenSchedule: "Create schedule",
+
+        tableTitle: "Latest Schedules",
+        countPrefix: "Showing",
+        countSuffix: "items",
+        loadingText: "Loading...",
+        noData: "No schedule data yet",
+
+        thZone: "Zone",
+        thRange: "Date range",
+        thTruck: "Truck",
+        thDriver: "Driver",
+        thCreated: "Created at",
+
+        statusEndBeforeStart: "End date must not be before start date",
+        statusPastDate: "Cannot save. Scheduling in the past is not allowed.",
+        statusSaveOk: "Schedule saved",
+        statusConflict: "Cannot save. This zone already has a truck scheduled for the selected date range.",
+
+        cleared: ""
+      },
+      ms: {
+        pageTitle: "Smart Waste - Jadual Lori Sampah",
+        menuBtn: "☰ Menu",
+        mainTitle: "Jadual Lori Sampah",
+        pageHint: "Cipta jadual bagi lori dan pemandu mengikut zon.",
+
+        formTitle: "Cipta Jadual",
+        labelStart: "Tarikh mula",
+        labelEnd: "Tarikh tamat",
+        labelZone: "Zon",
+        labelTruck: "Pilih lori",
+        labelDriver: "Pilih pemandu",
+        zonePlaceholder: "Pilih zon...",
+        truckLoading: "Memuatkan semua lori...",
+        truckPlaceholder: "Pilih zon dahulu...",
+        truckSelect: "Pilih lori...",
+        truckNoData: "Tiada lori dalam zon ini",
+        driverLoading: "Memuatkan semua pemandu...",
+        driverPlaceholder: "Pilih zon dahulu...",
+        driverSelect: "Pilih pemandu...",
+        driverNoData: "Tiada pemandu dalam zon ini",
+        btnClear: "Kosongkan borang",
+        btnSave: "Simpan jadual",
+        addScheduleHeaderTitle: "Cipta jadual",
+        btnOpenSchedule: "Cipta jadual",
+
+        tableTitle: "Jadual Terkini",
+        countPrefix: "Menunjukkan",
+        countSuffix: "rekod",
+        loadingText: "Sedang memuatkan...",
+        noData: "Belum ada data jadual",
+
+        thZone: "Zon",
+        thRange: "Julat tarikh",
+        thTruck: "Lori",
+        thDriver: "Pemandu",
+        thCreated: "Direkodkan",
+
+        statusEndBeforeStart: "Tarikh tamat tidak boleh sebelum tarikh mula",
+        statusPastDate: "Tidak boleh simpan. Jadual untuk tarikhที่ sudah lepas tidak dibenarkan.",
+        statusSaveOk: "Jadual berjaya disimpan",
+        statusConflict: "Tidak boleh simpan. Zon ini sudah mempunyai jadual lori dalam julat tarikh tersebut.",
+
+        cleared: ""
+      }
+    };
+
+    const LangState = window.AdminLang;
+    let currentLang = (LangState && typeof LangState.getLang === "function")
+      ? LangState.getLang()
+      : (localStorage.getItem("sw_lang") || "th");
+    const langSelect = document.getElementById("langSelect");
+    const langIconBtn = document.getElementById("langIconBtn");
+    const langMenu = document.getElementById("langMenu");
+
+    function tr(key) {
+      const t = translations[currentLang] || translations.th;
+      return t[key] !== undefined ? t[key] : key;
+    }
+
+    function setFormStatusText(text, type) {
+      formStatus.textContent = text || "";
+      formStatus.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
+    }
+
+    /* role label ตามภาษา (เหมือนหน้า bins) */
+    const ROLE_LABELS = {
+      th: {
+        0: "ผู้ดูแลระบบ",
+        1: "พนักงานขับรถ",
+        2: "ผู้ใช้งานทั่วไป"
+      },
+      en: {
+        0: "Administrator",
+        1: "Driver",
+        2: "Resident User"
+      },
+      ms: {
+        0: "Pentadbir",
+        1: "Pemandu",
+        2: "Pengguna"
+      }
+    };
+
+    async function loadCurrentUserProfile() {
+      try {
+        let usernameKey = currentUser && (currentUser.username || currentUser.uid || currentUser.email);
+        if (!usernameKey) return;
+
+        const docSnap = await usersCol.doc(usernameKey).get();
+        if (docSnap.exists) {
+          const data = docSnap.data() || {};
+          currentUserProfile = {
+            ...data,
+            username: data.username || docSnap.id
+          };
+        } else {
+          currentUserProfile = {
+            username: usernameKey,
+            status: currentUser && typeof currentUser.status === "number" ? currentUser.status : 0
+          };
+        }
+        applyProfileInfo();
+      } catch (e) {
+        console.error("loadCurrentUserProfile error", e);
+      }
+    }
+
+    function applyProfileInfo() {
+      if (!profileNameEl || !profileRoleEl || !currentUserProfile) return;
+
+      const fullName = (currentUserProfile.fullName || "").trim();
+      const username = currentUserProfile.username || currentUser?.username || "";
+      const statusVal = typeof currentUserProfile.status === "number"
+        ? currentUserProfile.status
+        : (currentUser && typeof currentUser.status === "number" ? currentUser.status : 0);
+
+      const roleMap = ROLE_LABELS[currentLang] || ROLE_LABELS.th;
+
+      profileNameEl.textContent = fullName || username || "—";
+      profileRoleEl.textContent = roleMap[statusVal] || "";
+    }
+
+    function updateLangMenuActive() {
+      if (!langMenu) return;
+      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === currentLang);
+      });
+    }
+
+    function applyLanguage() {
+      document.title = tr("pageTitle");
+      document.getElementById("menuToggle").textContent = tr("menuBtn");
+
+      document.getElementById("mainTitle").textContent = tr("mainTitle");
+      // document.getElementById("pageHint").textContent = tr("pageHint"); // ไม่มี element นี้ใน HTML
+
+      document.getElementById("scheduleModalTitle").textContent = tr("formTitle");
+      document.getElementById("labelStart").textContent = tr("labelStart");
+      document.getElementById("labelEnd").textContent = tr("labelEnd");
+      document.getElementById("labelZone").textContent = tr("labelZone");
+      document.getElementById("labelTruck").textContent = tr("labelTruck");
+      document.getElementById("labelDriver").textContent = tr("labelDriver");
+      document.getElementById("btnClear").textContent = tr("btnClear");
+      document.getElementById("btnSave").textContent = tr("btnSave");
+
+      document.getElementById("addScheduleHeaderTitle").textContent = tr("addScheduleHeaderTitle");
+      document.getElementById("btnOpenScheduleForm").textContent = tr("btnOpenSchedule");
+
+      document.getElementById("tableTitle").textContent = tr("tableTitle");
+      document.getElementById("thZone").textContent = tr("thZone");
+      document.getElementById("thRange").textContent = tr("thRange");
+      document.getElementById("thTruck").textContent = tr("thTruck");
+      document.getElementById("thDriver").textContent = tr("thDriver");
+      document.getElementById("thCreated").textContent = tr("thCreated");
+      document.getElementById("loadingText").textContent = tr("loadingText");
+
+      if (zoneSelect.options.length > 0) {
+        zoneSelect.options[0].textContent = tr("zonePlaceholder");
+      }
+
+      // อัปเดต Placeholder ของ Select
+      if (truckSelect.disabled) {
+        truckSelect.innerHTML = '<option value="">' + tr("truckPlaceholder") + '</option>';
+      }
+      if (driverSelect.disabled) {
+        driverSelect.innerHTML = '<option value="">' + tr("driverPlaceholder") + '</option>';
+      }
+
+      // sync กับ AdminNav/AdminUser ถ้ามี
+      if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {
+        window.AdminNav.setLanguage(currentLang);
+      }
+      if (window.AdminUser && typeof window.AdminUser.setLanguage === "function") {
+        window.AdminUser.setLanguage(currentLang);
+      }
+
+      renderSchedules();
+      applyProfileInfo();
+      updateLangMenuActive();
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        currentLang = lang;
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+      applyLanguage();
+    }
+
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+    langSelect.value = currentLang;
+
+    langIconBtn.addEventListener("click", () => {
+      langMenu.classList.toggle("show");
+    });
+
+    langMenu.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      changeLanguage(btn.dataset.lang);
+      langMenu.classList.remove("show");
+    });
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
+
+    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
+    document.addEventListener("click", e => {
+      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+      if (!clickedInLang) langMenu.classList.remove("show");
+    });
+
+    /* โหลดข้อมูลเริ่มต้น (Zones, Trucks, Drivers) */
+    async function loadInitialData() {
+      try {
+        // 1. โหลด Zones
+        const snapZones = await zonesCol.get();
+        zones = [];
+        zoneSelect.innerHTML = '<option value="">' + tr("zonePlaceholder") + '</option>';
+        snapZones.forEach(doc => {
+          const d = doc.data();
+          zones.push({ id: doc.id, name: d.name });
+          const opt = document.createElement("option");
+          opt.value = doc.id;
+          opt.textContent = d.name;
+          zoneSelect.appendChild(opt);
+        });
+
+        // 2. โหลด Trucks ทั้งหมด (ไม่ต้องมีการกรอง zone ใน Firebase)
+        const snapTrucks = await trucksCol.get();
+        trucks = [];
+        snapTrucks.forEach(doc => {
+          const d = doc.data();
+          trucks.push({ id: doc.id, truckId: d.truckId || "", zoneId: d.zone });
+        });
+
+        // 3. โหลด Drivers ทั้งหมด (กรองเฉพาะ status: 1)
+        const snapDrivers = await usersCol.where("status", "==", 1).get();
+        drivers = [];
+        snapDrivers.forEach(doc => {
+          const d = doc.data();
+          drivers.push({
+            username: doc.id,
+            fullName: d.fullName || "",
+            driverId: d.driverId || "",
+            zoneId: d.zoneId
+          });
+        });
+
+        console.log("Initial data loaded: ", { zones: zones.length, trucks: trucks.length, drivers: drivers.length });
+      } catch (e) {
+        console.error("Error loading initial data:", e);
+        alert("ไม่สามารถโหลดข้อมูลเริ่มต้นได้: " + e.message);
+      }
+    }
+
+    /* ดึงรถในเขตจากตัวแปร JS */
+    function loadTrucks(zoneId) {
+      truckSelect.innerHTML = '<option value="">' + tr("truckSelect") + '</option>';
+      truckSelect.disabled = true;
+
+      const filteredTrucks = trucks.filter(t => t.zoneId === zoneId);
+
+      if (filteredTrucks.length === 0) {
+        truckSelect.innerHTML = '<option value="">' + tr("truckNoData") + '</option>';
+      } else {
+        filteredTrucks.forEach(d => {
+          const opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent = d.id + " • " + d.truckId;
+          truckSelect.appendChild(opt);
+        });
+      }
+      truckSelect.disabled = false;
+    }
+
+    /* ดึงคนขับในเขตจากตัวแปร JS */
+    function loadDrivers(zoneId) {
+      driverSelect.innerHTML = '<option value="">' + tr("driverSelect") + '</option>';
+      driverSelect.disabled = true;
+
+      const filteredDrivers = drivers.filter(d => d.zoneId === zoneId);
+
+      if (filteredDrivers.length === 0) {
+        driverSelect.innerHTML = '<option value="">' + tr("driverNoData") + '</option>';
+      } else {
+        filteredDrivers.forEach(d => {
+          const opt = document.createElement("option");
+          opt.value = d.username;
+          opt.textContent = (d.driverId || d.username) + " • " + d.fullName;
+          opt.dataset.driverId = d.driverId || "";
+          opt.dataset.driverName = d.fullName || "";
+          driverSelect.appendChild(opt);
+        });
+      }
+      driverSelect.disabled = false;
+    }
+
+    zoneSelect.addEventListener("change", () => {
+      const selectedZone = zoneSelect.value;
+      if (!selectedZone) {
+        truckSelect.value = "";
+        driverSelect.value = "";
+        truckSelect.disabled = true;
+        driverSelect.disabled = true;
+        truckSelect.innerHTML = '<option value="">' + tr("truckPlaceholder") + '</option>';
+        driverSelect.innerHTML = '<option value="">' + tr("driverPlaceholder") + '</option>';
+        return;
+      }
+      loadTrucks(selectedZone); // 👈 ดึงจาก Cache (เร็วขึ้นมาก)
+      loadDrivers(selectedZone); // 👈 ดึงจาก Cache (เร็วขึ้นมาก)
+    });
+
+    /* helper: list วันที่จาก start ถึง end เป็น 'YYYY-MM-DD' */
+    function listDates(startStr, endStr) {
+      const days = [];
+      const cur = new Date(startStr + "T00:00:00");
+      const end = new Date(endStr + "T00:00:00");
+      while (cur <= end) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, "0");
+        const d = String(cur.getDate()).padStart(2, "0");
+        days.push(`${y}-${m}-${d}`);
+        cur.setDate(cur.getDate() + 1);
+      }
+      return days;
+    }
+
+    /* helper: แปลง YYYY-MM-DD → string ตามภาษา */
+    function formatDateList(arr) {
+      const locale =
+        currentLang === "th" ? "th-TH" :
+          currentLang === "ms" ? "ms-MY" : "en-GB";
+      return arr.map(str => {
+        return new Date(str + "T00:00:00").toLocaleDateString(locale);
+      }).join(", ");
+    }
+
+    /* helper: แบ่ง freeDays เป็นช่วงต่อเนื่อง */
+    function groupContiguous(dates) {
+      if (!dates.length) return [];
+      const sorted = [...dates].sort();
+      const groups = [];
+      let start = sorted[0];
+      let prev = sorted[0];
+
+      function isNextDay(a, b) {
+        const da = new Date(a + "T00:00:00");
+        const db = new Date(b + "T00:00:00");
+        return (db - da) === 24 * 60 * 60 * 1000;
+      }
+
+      for (let i = 1; i < sorted.length; i++) {
+        const cur = sorted[i];
+        if (isNextDay(prev, cur)) {
+          prev = cur;
+        } else {
+          groups.push([start, prev]);
+          start = prev = cur;
+        }
+      }
+      groups.push([start, prev]);
+      return groups;
+    }
+
+    /* helper: doc id = {zone_YYYY-MM-DD_HH-mm-ss-SSS} */
+    function buildDocId(zone) {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mi = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      const ms = String(now.getMilliseconds()).padStart(3, "0");
+      return `${zone}_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}-${ms}`;
+    }
+
+    /* บันทึกตาราง (เหมือนเดิม ไม่เปลี่ยน logic) */
+    document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const s = startDate.value;
+      const e2 = endDate.value;
+      const zone = zoneSelect.value;
+      const truck = truckSelect.value;
+      const driver = driverSelect.value;
+
+      if (!s || !e2 || !zone || !truck || !driver) return;
+
+      // วันนี้ในรูปแบบ YYYY-MM-DD
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+
+      if (s < todayStr) {
+        setFormStatusText(tr("statusPastDate"), "err");
+        return;
+      }
+
+      if (e2 < s) {
+        setFormStatusText(tr("statusEndBeforeStart"), "err");
+        return;
+      }
+
+      setFormStatusText("", "");
+
+      const driverOpt = driverSelect.options[driverSelect.selectedIndex];
+      const truckOpt = truckSelect.options[truckSelect.selectedIndex];
+
+      // ใช้ startDateObj และ endDateObj เป็น 00:00:00 และ 23:59:59 เพื่อครอบคลุมทั้งวัน
+      const startDateObj = new Date(s + "T00:00:00");
+      const endDateObj = new Date(e2 + "T23:59:59");
+      
+      // แปลงเป็น Timestamp
+      const startTs = firebase.firestore.Timestamp.fromDate(startDateObj);
+      const endTs = firebase.firestore.Timestamp.fromDate(endDateObj);
+
+      try {
+        // ดึงตารางของเขตนี้ทั้งหมด (ยังคงใช้ Firestore เพื่อเช็ค Conflict)
+        const snap = await scheduleCol.where("zoneId", "==", zone).get();
+
+        const newDays = listDates(s, e2);
+        const overlapDays = [];
+        const freeDays = [];
+
+        const existing = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (!d.startDate || !d.endDate) return;
+          existing.push({
+            startMs: d.startDate.toMillis(),
+            endMs: d.endDate.toMillis()
+          });
+        });
+
+        newDays.forEach(dStr => {
+          const t0 = new Date(dStr + "T00:00:00").getTime();
+          const t1 = new Date(dStr + "T23:59:59").getTime();
+          let overlapped = false;
+          for (const ex of existing) {
+            // ตรวจสอบว่าช่วงเวลาชนกันหรือไม่
+            if (ex.startMs <= t1 && ex.endMs >= t0) {
+              overlapped = true;
+              break;
+            }
+          }
+          if (overlapped) {
+            overlapDays.push(dStr);
+          } else {
+            freeDays.push(dStr);
+          }
+        });
+
+        if (overlapDays.length && !freeDays.length) {
+          // ซ้ำทุกวัน
+          const listText = formatDateList(overlapDays);
+          if (currentLang === "th") {
+            setFormStatusText("วันที่ " + listText + " มีอยู่ในตารางแล้ว", "err");
+          } else if (currentLang === "en") {
+            setFormStatusText("Dates " + listText + " already have schedules in this zone.", "err");
+          } else {
+            setFormStatusText("Tarikh " + listText + " sudah mempunyai jadual dalam zon ini.", "err");
+          }
+          return;
+        }
+
+        if (overlapDays.length && freeDays.length) {
+          // ซ้ำบางวัน → ถามยืนยัน
+          const dupText = formatDateList(overlapDays);
+          const freeText = formatDateList(freeDays);
+          let msg;
+          if (currentLang === "th") {
+            msg = `วันที่ ${dupText} มีอยู่ในตารางแล้ว\nต้องการบันทึกเฉพาะวันที่ ${freeText} ลงในตารางหรือไม่?`;
+          } else if (currentLang === "en") {
+            msg = `These dates already have schedules: ${dupText}\nDo you want to save only these free dates: ${freeText}?`;
+          } else {
+            msg = `Tarikh berikut sudah ada jadual: ${dupText}\nAdakah anda mahu simpan hanya tarikh berikut: ${freeText}?`;
+          }
+
+          const ok = window.confirm(msg);
+          if (!ok) {
+            setFormStatusText(tr("statusConflict"), "err");
+            return;
+          }
+        }
+
+        if (!freeDays.length) {
+          setFormStatusText(tr("statusConflict"), "err");
+          return;
+        }
+
+        // แบ่ง freeDays เป็นช่วงต่อเนื่องแล้วบันทึกทีละช่วง
+        const groups = groupContiguous(freeDays);
+
+        for (const [startStr, endStr] of groups) {
+          const startObj = new Date(startStr + "T00:00:00");
+          const endObj = new Date(endStr + "T23:59:59");
+
+          const sTs = firebase.firestore.Timestamp.fromDate(startObj);
+          const eTs = firebase.firestore.Timestamp.fromDate(endObj);
+
+          const docId = buildDocId(zone); // doc id = {zone_วันที่เวลา ณ ตอนบันทึก}
+
+          await scheduleCol.doc(docId).set({
+            zoneId: zone,
+            zoneName: zones.find(z => z.id === zone)?.name,
+            truckId: truck,
+            truckName: truckOpt.textContent,
+            driverUsername: driver,
+            driverName: driverOpt.dataset.driverName,
+            driverId: driverOpt.dataset.driverId,
+            startDate: sTs,
+            endDate: eTs,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        setFormStatusText(tr("statusSaveOk"), "ok");
+      } catch (err) {
+        console.error(err);
+        setFormStatusText(err.message || "Error", "err");
+      }
+    });
+
+    /* ปุ่มล้างฟอร์ม */
+    btnClear.addEventListener("click", () => {
+      startDate.value = "";
+      endDate.value = "";
+      zoneSelect.value = "";
+      truckSelect.disabled = true;
+      driverSelect.disabled = true;
+      truckSelect.innerHTML = '<option value="">' + tr("truckPlaceholder") + '</option>';
+      driverSelect.innerHTML = '<option value="">' + tr("driverPlaceholder") + '</option>';
+      setFormStatusText(tr("cleared"), "");
+    });
+
+    /* Modal ฟอร์มจัดตาราง */
+    function openScheduleModal() {
+      // รีเซ็ตฟอร์มทุกครั้งที่เปิด
+      btnClear.click(); 
+      scheduleModalBackdrop.classList.add("show");
+      lockBodyScroll(true);
+    }
+    function closeScheduleModal() {
+      scheduleModalBackdrop.classList.remove("show");
+      lockBodyScroll(false);
+    }
+
+    btnOpenScheduleForm.addEventListener("click", openScheduleModal);
+    btnScheduleClose.addEventListener("click", closeScheduleModal);
+
+    scheduleModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === scheduleModalBackdrop) {
+        closeScheduleModal();
+      }
+    });
+
+    /* โหลดตาราง */
+    function setupScheduleListener() {
+      // ยังคงเป็น Real-time listener แต่จำกัดแค่ 100 รายการล่าสุด
+      scheduleCol.orderBy("createdAt", "desc").limit(100)
+        .onSnapshot(sn => {
+          schedules = [];
+          sn.forEach(doc => {
+            const d = doc.data();
+            const start = d.startDate?.toDate();
+            const end = d.endDate?.toDate();
+            const created = d.createdAt?.toDate();
+
+            schedules.push({
+              zoneName: d.zoneName,
+              truckId: d.truckId,
+              truckName: d.truckName,
+              driverName: d.driverName,
+              driverId: d.driverId,
+              start: start?.toLocaleDateString(),
+              end: end?.toLocaleDateString(),
+              created: created?.toLocaleString()
+            });
+          });
+          renderSchedules();
+        });
+    }
+
+    function renderSchedules() {
+      if (!scheduleTbody) return;
+
+      if (!schedules.length) {
+        countLabel.textContent = tr("countPrefix") + " 0 " + tr("countSuffix");
+        scheduleTbody.innerHTML = '<tr><td colspan="5" class="muted">' + tr("noData") + '</td></tr>';
+        return;
+      }
+
+      countLabel.textContent = tr("countPrefix") + " " + schedules.length + " " + tr("countSuffix");
+
+      scheduleTbody.innerHTML = schedules.map(s => `
+      <tr>
+        <td><span class="badge-zone">${s.zoneName}</span></td>
+        <td>${s.start} - ${s.end}</td>
+        <td>${s.truckId}</td>
+        <td>${s.driverId} • ${s.driverName}</td>
+        <td>${s.created}</td>
+      </tr>
+    `).join("");
+    }
+
+    (async () => {
+      langSelect.value = currentLang;
+      applyLanguage();
+      await loadInitialData(); // 👈 โหลด zones, trucks, drivers ครั้งเดียว
+      setupScheduleListener();
+      await loadCurrentUserProfile();
+    })();
+  </script>
 
 </body>
 
