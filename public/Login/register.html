@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Smart Waste - Register</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+  <style>
+    /* --- Reset & Fonts --- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Prompt", "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+
+      /* --- Eco-Tech Theme Gradient --- */
+      background: linear-gradient(-45deg, #064e3b, #059669, #0d9488, #0ea5e9);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    /* --- Gimmick: Floating Particles --- */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .particles span {
+      position: absolute;
+      display: block;
+      list-style: none;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+      animation: floatUp 25s linear infinite;
+      bottom: -150px;
+      border-radius: 50%;
+    }
+
+    /* Particle Config */
+    .particles span:nth-child(1) {
+      left: 25%;
+      width: 80px;
+      height: 80px;
+      animation-delay: 0s;
+      animation-duration: 20s;
+    }
+
+    .particles span:nth-child(2) {
+      left: 10%;
+      width: 20px;
+      height: 20px;
+      animation-delay: 2s;
+      animation-duration: 12s;
+    }
+
+    .particles span:nth-child(3) {
+      left: 70%;
+      width: 20px;
+      height: 20px;
+      animation-delay: 4s;
+    }
+
+    .particles span:nth-child(4) {
+      left: 40%;
+      width: 60px;
+      height: 60px;
+      animation-delay: 0s;
+      animation-duration: 18s;
+    }
+
+    .particles span:nth-child(5) {
+      left: 65%;
+      width: 20px;
+      height: 20px;
+      animation-delay: 0s;
+    }
+
+    .particles span:nth-child(6) {
+      left: 75%;
+      width: 110px;
+      height: 110px;
+      animation-delay: 3s;
+    }
+
+    .particles span:nth-child(7) {
+      left: 35%;
+      width: 150px;
+      height: 150px;
+      animation-delay: 7s;
+    }
+
+    .particles span:nth-child(8) {
+      left: 50%;
+      width: 25px;
+      height: 25px;
+      animation-delay: 15s;
+      animation-duration: 45s;
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: translateY(-1000px) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    /* --- Container --- */
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      /* กว้างกว่า Login เล็กน้อย */
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      /* แบ่งสัดส่วน ซ้ายเล็กกว่าขวา */
+      align-items: center;
+      gap: 40px;
+      z-index: 2;
+    }
+
+    /* --- Left Panel --- */
+    .left-panel {
+      color: #fff;
+      padding-right: 20px;
+      animation: fadeIn 0.8s ease-out;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .left-panel h3 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      color: #d1fae5;
+    }
+
+    .left-panel h1 {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+
+    .left-panel p {
+      font-size: 16px;
+      line-height: 1.6;
+      opacity: 0.9;
+    }
+
+    .features-list {
+      list-style: none;
+      margin-top: 20px;
+    }
+
+    .features-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .features-list li i {
+      color: #34d399;
+      font-size: 18px;
+    }
+
+    /* --- Right Panel (Card) --- */
+    .right-panel {
+      display: flex;
+      justify-content: center;
+    }
+
+    .register-card {
+      background: rgba(255, 255, 255, 0.95);
+      width: 100%;
+      max-width: 550px;
+      /* การ์ดกว้างขึ้น */
+      border-radius: 30px;
+      padding: 40px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(5px);
+      animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .card-header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .card-header h2 {
+      font-size: 28px;
+      color: #047857;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .card-header p {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    /* --- Form Grid for Inputs --- */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      /* แบ่ง 2 คอลัมน์ */
+      gap: 15px;
+    }
+
+    .col-full {
+      grid-column: span 2;
+    }
+
+    /* ช่องที่ลากยาวเต็มบรรทัด */
+
+    .form-group {
+      margin-bottom: 0;
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="tel"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 15px;
+      color: #334155;
+      transition: all 0.3s;
+      background: #f8fafc;
+    }
+
+    input::placeholder {
+      color: #cbd5e1;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #10b981;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .hint-text {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 15px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    /* --- Buttons --- */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: #059669;
+      /* Solid Color */
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+      background: #047857;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3);
+    }
+
+    .btn-submit:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-back {
+      width: 100%;
+      padding: 12px;
+      background: #f1f5f9;
+      color: #64748b;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 10px;
+    }
+
+    .btn-back:hover {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    #status {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 13px;
+      min-height: 20px;
+    }
+
+    .err {
+      color: #ef4444;
+    }
+
+    .ok {
+      color: #059669;
+    }
+
+    /* --- Animations --- */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* =========================================
+       📱 Mobile Responsive Styles
+       ========================================= */
+    @media (max-width: 850px) {
+      body {
+        align-items: flex-start;
+        padding: 30px 20px;
+        overflow-y: auto;
+      }
+
+      .container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        max-width: 500px;
+      }
+
+      /* ซ่อน Panel ซ้ายบนมือถือเพื่อให้โฟกัสที่การสมัคร */
+      .left-panel {
+        display: none;
+      }
+
+      .register-card {
+        padding: 30px 25px;
+      }
+
+      /* บนมือถือให้เรียง Input เป็น 1 คอลัมน์ทั้งหมด */
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .col-full {
+        grid-column: span 1;
+      }
+
+      /* เพิ่ม Branding บนหัวการ์ด */
+      .card-header::before {
+        content: "Smart Waste Platform";
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #059669;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="particles">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+
+  <div class="container">
+    <div class="left-panel">
+      <h3>Join Us</h3>
+      <h1>Create New<br>Account</h1>
+      <p>
+        สมัครสมาชิกเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามสถานะ
+        และร่วมเป็นส่วนหนึ่งของสังคม Eco-City
+      </p>
+      <ul class="features-list">
+        <li><i class="ri-checkbox-circle-fill"></i> จัดการข้อมูลส่วนตัวได้ง่าย</li>
+        <li><i class="ri-checkbox-circle-fill"></i> ติดตามสถานะขยะ Real-time</li>
+        <li><i class="ri-checkbox-circle-fill"></i> ใช้งานได้ทุกที่ผ่านมือถือ</li>
+      </ul>
+    </div>
+
+    <div class="right-panel">
+      <div class="register-card">
+        <div class="card-header">
+          <h2>Sign Up</h2>
+          <p>กรอกข้อมูลเพื่อสร้างบัญชีใหม่</p>
+        </div>
+
+        <form id="registerForm">
+          <div class="form-grid">
+            <div class="form-group col-full">
+              <input id="fullName" type="text" placeholder="ชื่อ-นามสกุลจริง" required />
+            </div>
+
+            <div class="form-group">
+              <input id="username" type="text" placeholder="ชื่อผู้ใช้" required />
+            </div>
+
+            <div class="form-group">
+              <input id="phone" type="tel" placeholder="เบอร์มือถือ" required />
+            </div>
+
+            <div class="form-group col-full">
+              <input id="email" type="email" placeholder="อีเมล" required />
+            </div>
+
+            <div class="form-group">
+              <input id="password" type="password" placeholder="รหัสผ่าน" required />
+            </div>
+
+            <div class="form-group">
+              <input id="confirmPassword" type="password" placeholder="ยืนยันรหัสผ่าน" required />
+            </div>
+          </div>
+
+          <div class="hint-text">
+            <i class="ri-information-line"></i> รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร
+          </div>
+
+          <button type="submit" class="btn-submit">ยืนยันการสมัคร</button>
+          <button type="button" class="btn-back" id="backBtn">กลับไปหน้าเข้าสู่ระบบ</button>
+        </form>
+
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const form = $("registerForm");
+    const statusEl = $("status");
+    const backBtn = $("backBtn");
+    const submitBtn = form.querySelector('.btn-submit');
+
+    function setStatus(text, type) {
+      statusEl.textContent = text || "";
+      statusEl.className = type || "";
+      if (text && type === "err") {
+        statusEl.classList.add("err");
+        setTimeout(() => {
+          statusEl.textContent = "";
+          statusEl.className = "";
+        }, 5000);
+      }
+    }
+
+    // ---- Firebase Config ----
+    var firebaseConfig = {
+      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+      authDomain: "smart-waste2568.firebaseapp.com",
+      projectId: "smart-waste2568",
+      storageBucket: "smart-waste2568.firebasestorage.app",
+      messagingSenderId: "122699752010",
+      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
+      measurementId: "G-H82914YP66"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    const usersCol = db.collection("users");
+
+    async function hashPassword(pw) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pw);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const fullName = $("fullName").value.trim();
+      const username = $("username").value.trim();
+      const email = $("email").value.trim();
+      const phone = $("phone").value.trim();
+      const password = $("password").value.trim();
+      const confirm = $("confirmPassword").value.trim();
+
+      if (fullName.length < 3) return setStatus("ชื่อ-นามสกุลต้องอย่างน้อย 3 ตัวอักษร", "err");
+      if (username.length < 4 || username.length > 20) return setStatus("ชื่อผู้ใช้ต้อง 4-20 ตัวอักษร", "err");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setStatus("รูปแบบอีเมลไม่ถูกต้อง", "err");
+
+      const phoneDigits = phone.replace(/[^0-9]/g, "");
+      if (phoneDigits.length < 9) return setStatus("เบอร์มือถือต้องอย่างน้อย 9 หลัก", "err");
+
+      if (password.length < 6) return setStatus("รหัสผ่านต้องอย่างน้อย 6 ตัวอักษร", "err");
+      if (password !== confirm) return setStatus("รหัสผ่านยืนยันไม่ตรงกัน", "err");
+
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> กำลังบันทึก...';
+      submitBtn.disabled = true;
+
+      try {
+        const docRef = usersCol.doc(username);
+        // บังคับให้ข้าม Cache เพื่อป้องกัน Error "Client is offline" ที่ค้างอยู่
+        const docSnap = await docRef.get({ source: 'server' });
+        if (docSnap.exists) {
+          throw new Error("มีชื่อผู้ใช้นี้ในระบบแล้ว");
+        }
+
+        const hash = await hashPassword(password);
+
+        await docRef.set({
+          username,
+          passwordHash: hash,
+          fullName,
+          email,
+          phone: phoneDigits,
+          status: 2, // Default Role
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        form.reset();
+        setStatus("สมัครสมาชิกสำเร็จ! กำลังไปหน้าเข้าสู่ระบบ...", "ok");
+        // กลับไปหน้า Login
+        setTimeout(() => window.location.href = "home.html", 1500);
+
+      } catch (err) {
+        console.error(err);
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        setStatus(err.message || "เกิดข้อผิดพลาดในการสมัคร", "err");
+      }
+    });
+
+    backBtn.addEventListener("click", () => {
+      document.querySelector('.register-card').style.transform = 'translateY(20px)';
+      document.querySelector('.register-card').style.opacity = '0';
+      setTimeout(() => {
+        window.location.href = "home.html";
+      }, 300);
+    });
+  </script>
+</body>
+
+</html>

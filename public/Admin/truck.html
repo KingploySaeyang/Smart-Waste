@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - ตำแหน่งรถเก็บขยะ</title>
+  <link rel="stylesheet" href="a_style.css">
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="../Login/auth.js"></script>
+  <script src="admin-lang.js"></script>
+  <script src="admin-user.js" defer></script>
+  <script src="admin-nav.js" defer></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([0]);
+  </script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff
+    }
+
+    .sidebar .sw-logout-slot {
+      margin-top: 0 !important;
+      margin-left: 18px;
+      margin-right: 18px;
+      margin-bottom: 24px;
+      padding: 0;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px 20px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 10px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn:hover,
+    .sidebar .sw-logout-slot .sw-logout-btn:focus {
+      background: #b91c1c;
+      border-left: 0;
+    }
+
+    /* ปุ่ม 3 ขีด */
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    /* Main */
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto
+    }
+
+    h1 {
+      color: #2f3640;
+      margin: 0 0 16px;
+      line-height: 1.25;
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+      position: static;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    label {
+      display: block;
+      margin: 6px 0 4px
+    }
+
+    select,
+    button,
+    input {
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0
+    }
+
+    .primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 12px 0
+    }
+
+    /* การ์ดสรุประดับถัง (เหมือนหน้า home) */
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin: 4px 0 8px;
+    }
+
+    .cards .card {
+      flex: 1 1 220px;
+      background: #f9fafb;
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+      transition: .2s;
+      margin: 0;
+    }
+
+    .cards .card:hover {
+      background: #e0f2fe;
+      transform: translateY(-2px)
+    }
+
+    .cards .card h3 {
+      font-size: 17px;
+      color: #2f3640;
+      margin: 0 0 6px
+    }
+
+    .cards .card p {
+      font-size: 21px;
+      font-weight: bold;
+      color: #00a8ff;
+      margin: 0
+    }
+
+    #map {
+      width: 100%;
+      height: 460px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 8px 10px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #fafafa
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+
+    .ok {
+      color: #16a34a;
+    }
+
+    .err {
+      color: #dc2626;
+    }
+
+    /* Responsive */
+    @media(max-width:900px) {
+      body {
+        flex-direction: column
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 999;
+      }
+
+      .sidebar.show {
+        left: 0
+      }
+
+      .toggle-btn {
+        display: block
+      }
+
+      main {
+        padding: 70px 16px 20px
+      }
+
+      h1 {
+        text-align: center
+      }
+
+      .row {
+        flex-direction: column;
+        align-items: stretch
+      }
+
+      .row>div,
+      .row>button {
+        width: 100%;
+      }
+
+      #map {
+        height: 45vh
+      }
+
+      .cards {
+        gap: 8px;
+      }
+
+      .cards .card {
+        flex: 0 0 calc(50% - 8px);
+        max-width: calc(50% - 8px);
+        padding: 10px 8px;
+      }
+
+      .cards .card h3 {
+        font-size: 13px;
+        margin-bottom: 3px;
+      }
+
+      .cards .card p {
+        font-size: 16px;
+      }
+    }
+
+    /* ===== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า ===== */
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      line-height: 1.35;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="month"],
+    select,
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      font-size: var(--btn-font);
+      line-height: 1.2;
+    }
+
+    button,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+    }
+
+    .primary:hover,
+    .ghost:hover {
+      filter: brightness(1.03);
+    }
+
+    .primary:active,
+    .ghost:active {
+      transform: translateY(1px);
+    }
+
+    button:focus,
+    .toggle-btn:focus,
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    /* ===== Overlay การ์ดเด้งเพิ่มรถ ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+
+    .overlay-card {
+      width: min(520px, 92vw);
+      max-width: 520px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.38);
+      padding: 20px 18px 16px;
+      transform: translateY(8px) scale(.97);
+      opacity: 0;
+      animation: overlayIn .18s ease-out forwards;
+    }
+
+    .overlay-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    @keyframes overlayIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (min-width: 640px) {
+      .overlay-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+      }
+
+      .overlay-actions button {
+        min-width: 120px;
+      }
+    }
+
+    /* ===== ICON รถแบบเดียวกับฝั่งผู้ใช้ ===== */
+    .leaflet-marker-icon.truck-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .truck-pin {
+      --pin-color: #f43f5e;
+      --pin-label: #0f172a;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
+    }
+
+    .truck-pin__bubble {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px 16px 12px 12px;
+      background: linear-gradient(135deg, var(--pin-color), rgba(255, 255, 255, .25));
+      border: 2px solid rgba(255, 255, 255, .9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--pin-label);
+    }
+
+    .truck-pin__pointer {
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-top-color: var(--pin-color);
+      margin-top: -6px;
+      filter: brightness(.95);
+    }
+
+    /* ===== ICON ถังแบบเดียวกับฝั่งผู้ใช้ ===== */
+    .leaflet-marker-icon.bin-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .bin-pin {
+      --pin-color: #16a34a;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
+    }
+
+    .bin-pin__bubble {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      border-radius: 16px 16px 12px 12px;
+      background: linear-gradient(135deg, var(--pin-color), rgba(255, 255, 255, .2));
+      border: 2px solid rgba(255, 255, 255, .85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #0f172a;
+    }
+
+    .bin-pin__pointer {
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-top-color: var(--pin-color);
+      margin-top: -6px;
+      filter: brightness(.9);
+    }
+
+    .bin-pin__label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0f172a;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      padding: 2px 8px;
+      line-height: 1;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, .12);
+    }
+
+    .bin-pin__label.is-unknown {
+      color: #475569;
+      background: #f8fafc;
+    }
+  </style>
+</head>
+
+<body>
+  <button class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu" data-admin-menu data-active="truck"></nav>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitleHeading">ตำแหน่งรถเก็บขยะ</h1>
+      </div>
+      <div class="topbar-right">
+        <!-- ไอคอนเลือกภาษา -->
+        <div class="lang-switcher">
+          <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+            <img src="images/lang-icon.png" alt="Language" class="top-icon">
+          </button>
+          <div class="lang-menu" id="langMenu">
+            <button type="button" data-lang="th">ไทย</button>
+            <button type="button" data-lang="en">English</button>
+            <button type="button" data-lang="ms">Bahasa Melayu</button>
+          </div>
+          <select id="langSelect" style="display:none;">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+          </select>
+        </div>
+
+        <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
+        <a href="profile.html" class="user-chip" id="profileBtn">
+          <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
+          <div class="user-chip-text">
+            <div class="user-chip-name" id="profileName">User Name</div>
+            <div class="user-chip-role" id="profileRole">Role</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- การ์ดสรุประดับถัง -->
+      <div class="cards">
+        <div class="card">
+          <h3 id="cardTotalTitle">จำนวนถังทั้งหมด</h3>
+          <p id="totalBins">—</p>
+        </div>
+        <div class="card">
+          <h3 id="cardFullTitle">ถังเต็ม (≥80%)</h3>
+          <p id="fullBins">—</p>
+        </div>
+        <div class="card">
+          <h3 id="cardMidTitle">ถังเกือบเต็ม (50–79%)</h3>
+          <p id="midBins">—</p>
+        </div>
+        <div class="card">
+          <h3 id="cardLowTitle">ถังว่าง (&lt;50%)</h3>
+          <p id="lowBins">—</p>
+        </div>
+      </div>
+
+      <!-- เลือกโซน + ปุ่มสร้างรถ + ปุ่มโฟกัส -->
+      <div class="card">
+        <div class="row">
+          <div style="flex:1 1 260px">
+            <label for="zoneFilter" id="zoneFilterLabel">เลือกเขตพื้นที่</label>
+            <div class="row">
+              <select id="zoneFilter">
+                <option value="">ทุกเขต</option>
+              </select>
+              <button id="btnCreate" class="ghost">+ สร้างรถใหม่</button>
+            </div>
+            <p id="truckInfo" class="muted" style="margin-top:6px">(ยังไม่ได้เลือกเขต)</p>
+          </div>
+
+          <button id="btnCenter" class="ghost">โฟกัสแผนที่</button>
+        </div>
+      </div>
+
+      <!-- แผนที่ -->
+      <div id="map"></div>
+
+      <!-- ตารางเวลาแสดงการวิ่ง -->
+      <div class="card">
+        <div class="row" style="justify-content: space-between; align-items:flex-end; gap:12px;">
+          <div>
+            <h3 id="usageTitle">เวลาแสดงการวิ่งรถตามวัน</h3>
+            <p class="muted" id="usageHint">เลือกเดือนเพื่อดูเวลาวิ่งรวมของแต่ละวันจากข้อมูลตำแหน่ง</p>
+          </div>
+          <div style="text-align:right;">
+            <label for="monthSelect" class="muted" id="monthSelectLabel">เลือกเดือน</label>
+            <input type="month" id="monthSelect" style="margin-left:8px;">
+          </div>
+        </div>
+        <p class="muted" id="usageStatus" style="margin-top:6px;"></p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th id="usageThDate">วันที่</th>
+                <th id="usageThStart">เริ่มส่ง</th>
+                <th id="usageThEnd">หยุดส่ง</th>
+                <th id="usageThDuration">เวลาวิ่งรวม</th>
+                <th id="usageThLat">ละติจูด (เริ่ม)</th>
+                <th id="usageThLng">ลองจิจูด (เริ่ม)</th>
+              </tr>
+            </thead>
+            <tbody id="usageBody">
+              <tr>
+                <td colspan="6" class="muted">เลือกเขตและเดือนเพื่อดูข้อมูล</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- การ์ดเด้งเพิ่มรถใหม่ -->
+  <div id="createOverlay" class="overlay" style="display:none;">
+    <div id="createPanel" class="card overlay-card">
+      <h3 id="createPanelTitle" style="margin-bottom: 12px;">เพิ่มรถใหม่</h3>
+      <div class="row" style="align-items:flex-start;gap:16px;">
+        <div style="flex:1 1 260px">
+          <label for="zoneSelect" id="zoneSelectLabel">เลือกเขตพื้นที่ (จาก Firestore: zones)</label>
+          <select id="zoneSelect">
+            <option value="">(กำลังโหลด…)</option>
+          </select>
+          <p class="muted" id="newTruckIdText" style="margin-top:6px">
+            รถคันใหม่: <b id="newTruckId">—</b>
+          </p>
+        </div>
+      </div>
+      <div class="overlay-actions" style="margin-top: 10px;">
+        <button id="btnCancelCreate" class="ghost">ยกเลิก</button>
+        <button id="btnSaveTruck" class="primary">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    /* Firebase */
+    var firebaseConfig = {
+      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain: "smart-waste-a2bf4.firebaseapp.com",
+      projectId: "smart-waste-a2bf4",
+      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId: "522733244689",
+      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const fs = firebase.firestore();
+
+    /* Map */
+    const start = [6.46007, 100.35933];
+    const map = L.map('map').setView(start, 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 20, attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+    // markers: รถ + ถัง
+    const truckMarkers = {};         // truckId -> marker
+    const truckDocUnsubMap = {};     // truckId -> unsubscribe truck doc
+    const truckRunsUnsubMap = {};    // truckId -> unsubscribe active runs
+    const truckActiveMap = {};       // truckId -> bool
+
+    const binMarkers = {};           // zone_binDocId -> marker
+    let binsDataUnsub = null;        // listener สำหรับ bin_data
+    let binsLevelUnsub = null;       // listener สำหรับ bin_level
+    let binsDataState = {};          // docId -> {lat,lng,binId}
+    let binsLevelState = {};         // binId -> fillLevel
+
+    /* Dashboard realtime state */
+    const dashboardState = {};       // zoneId -> { totalBins, levelByBin: {binKey:fill} }
+    let dashboardUnsubs = [];
+
+    /* UI refs */
+    const langSelect = document.getElementById('langSelect');
+    const adminNameEl = document.getElementById('adminName');
+    const adminAvatarEl = document.getElementById('adminAvatar');
+    const adminRoleEl = document.getElementById('adminRole');
+
+    const zoneFilter = document.getElementById('zoneFilter');
+    const truckInfo = document.getElementById('truckInfo');
+    const btnCreate = document.getElementById('btnCreate');
+    const btnCenter = document.getElementById('btnCenter');
+
+    // การ์ดสรุประดับถัง
+    const totalEl = document.getElementById('totalBins');
+    const fullEl = document.getElementById('fullBins');
+    const midEl = document.getElementById('midBins');
+    const lowEl = document.getElementById('lowBins');
+
+    // usage table
+    const monthSelect = document.getElementById('monthSelect');
+    const usageBody = document.getElementById('usageBody');
+    const usageStatus = document.getElementById('usageStatus');
+
+    // แผงเพิ่มรถ (overlay)
+    const createOverlay = document.getElementById('createOverlay');
+    const createPanel = document.getElementById('createPanel');
+    const zoneSelect = document.getElementById('zoneSelect');
+    const newTruckIdEl = document.getElementById('newTruckId');
+    const newTruckIdTextEl = document.getElementById('newTruckIdText');
+    const btnSaveTruck = document.getElementById('btnSaveTruck');
+    const btnCancelCreate = document.getElementById('btnCancelCreate');
+
+    const displayName = currentUser.fullName || currentUser.username;
+    const roleLabel = currentUser.roleLabel || "ผู้ดูแลระบบ";
+    if (adminNameEl) adminNameEl.textContent = displayName || "-";
+    if (adminAvatarEl) adminAvatarEl.textContent = displayName ? displayName.charAt(0).toUpperCase() : "?";
+    if (adminRoleEl) adminRoleEl.textContent = roleLabel;
+
+    function lockBodyScroll(lock) {
+      document.body.classList.toggle("modal-open", !!lock);
+    }
+
+    let currentUserProfile = null;
+
+    /* ===== Language / i18n ===== */
+    const translations = {
+      th: {
+        pageTitle: "Smart Waste - ตำแหน่งรถเก็บขยะ",
+        menuBtn: "☰ เมนู",
+        mainTitle: "ตำแหน่งรถเก็บขยะ",
+        // cards
+        cardTotal: "จำนวนถังทั้งหมด",
+        cardFull: "ถังเต็ม (≥80%)",
+        cardMid: "ถังเกือบเต็ม (50–79%)",
+        cardLow: "ถังว่าง (<50%)",
+
+        zoneFilterLabel: "เลือกเขตพื้นที่",
+        zoneFilterAll: "ทุกเขต",
+        createTruckBtn: "+ สร้างรถใหม่",
+        noZoneSelected: "(ยังไม่ได้เลือกเขต)",
+        focusBtn: "โฟกัสแผนที่",
+
+        truckInfoAllNone: "ตอนนี้ไม่มีรถที่กำลังวิ่งในทุกเขต",
+        truckInfoAllSome: "รถที่กำลังวิ่งอยู่ตอนนี้: %count% คัน",
+        truckInfoZoneNoTruck: "โซนนี้ยังไม่มีรถที่กำลังวิ่งอยู่ในตอนนี้",
+        truckInfoText: "ID: <b>%id%</b> • เขต: %zone% • ชื่อ: %name% • อัปเดตล่าสุด (FS): %updatedAt%",
+        truckActiveLabel: "กำลังวิ่ง",
+        truckInactiveLabel: "หยุดวิ่ง",
+
+        mapPopupTruckActive: "รถเก็บขยะ (กำลังวิ่ง)",
+        mapPopupTruckInactive: "รถเก็บขยะ",
+        mapPopupBin: "ถังขยะ",
+        mapPopup: "ตำแหน่งรถ",
+
+        usageTitle: "เวลาแสดงการวิ่งรถตามวัน",
+        usageHint: "เลือกเดือนเพื่อดูเวลาวิ่งรวมของรถในเขตที่เลือก",
+        monthSelectLabel: "เลือกเดือน",
+        usageThDate: "วันที่",
+        usageThStart: "เริ่มส่ง",
+        usageThEnd: "หยุดส่ง",
+        usageThDuration: "เวลาวิ่งรวม",
+        usageThLat: "ละติจูด (เริ่ม)",
+        usageThLng: "ลองจิจูด (เริ่ม)",
+        usageMsgSelectTruck: "กรุณาเลือกเขตก่อน",
+        usageMsgSelectMonth: "กรุณาเลือกเดือนเพื่อดูข้อมูล",
+        usageMsgNoData: "เดือนนี้ยังไม่มีข้อมูลตำแหน่งของรถในเขตนี้",
+        usageSummary: "พบ %count% วันในเดือนนี้",
+
+        // แผงเพิ่มรถ
+        createPanelTitle: "เพิ่มรถใหม่",
+        zoneSelectLabel: "เลือกเขตพื้นที่ (จาก Firestore: zones)",
+        selectZoneDefault: "-- เลือกเขต --",
+        newTruckIdText: "รถคันใหม่: <b>%id%</b>",
+        saveTruckBtn: "บันทึก",
+        cancelTruckBtn: "ยกเลิก",
+        noZones: "(ยังไม่มีเขตในระบบ)",
+        pleaseSelectZone: "กรุณาเลือกเขตก่อน",
+        cannotCreateId: "ยังไม่สามารถสร้างรหัสรถได้",
+
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ"
+      },
+      en: {
+        pageTitle: "Smart Waste - Truck Location",
+        menuBtn: "☰ Menu",
+        mainTitle: "Truck Location",
+        cardTotal: "Total Bins",
+        cardFull: "Full Bins (≥80%)",
+        cardMid: "Near Full Bins (50–79%)",
+        cardLow: "Empty Bins (<50%)",
+
+        zoneFilterLabel: "Select Zone",
+        zoneFilterAll: "All zones",
+        createTruckBtn: "+ Create New Truck",
+        noZoneSelected: "(No zone selected)",
+        focusBtn: "Focus Map",
+
+        truckInfoAllNone: "No trucks are currently running in any zone.",
+        truckInfoAllSome: "Trucks currently running: %count%",
+        truckInfoZoneNoTruck: "This zone currently has no truck running.",
+        truckInfoText: "ID: <b>%id%</b> • Zone: %zone% • Name: %name% • Last Updated (FS): %updatedAt%",
+        truckActiveLabel: "Running",
+        truckInactiveLabel: "Stopped",
+
+        mapPopupTruckActive: "Garbage Truck (Running)",
+        mapPopupTruckInactive: "Garbage Truck",
+        mapPopupBin: "Bin",
+        mapPopup: "Truck Location",
+
+        usageTitle: "Daily Running Time",
+        usageHint: "Select a month to see total running time per day for the truck in this zone.",
+        monthSelectLabel: "Month",
+        usageThDate: "Date",
+        usageThStart: "Start",
+        usageThEnd: "Stop",
+        usageThDuration: "Total running time",
+        usageThLat: "Latitude (start)",
+        usageThLng: "Longitude (start)",
+        usageMsgSelectTruck: "Please select a zone first.",
+        usageMsgSelectMonth: "Please select a month.",
+        usageMsgNoData: "No position data for this month in this zone.",
+        usageSummary: "Showing %count% days in this month",
+
+        createPanelTitle: "Add New Truck",
+        zoneSelectLabel: "Select Zone (from Firestore: zones)",
+        selectZoneDefault: "-- Select a zone --",
+        newTruckIdText: "New Truck: <b>%id%</b>",
+        saveTruckBtn: "Save",
+        cancelTruckBtn: "Cancel",
+        noZones: "(No zones in the system yet)",
+        pleaseSelectZone: "Please select a zone first",
+        cannotCreateId: "Cannot generate truck ID yet",
+
+        roleAdmin: "Administrator",
+        roleUser: "User",
+        logout: "Logout"
+      },
+      ms: {
+        pageTitle: "Smart Waste - Lokasi Lori",
+        menuBtn: "☰ Menu",
+        mainTitle: "Lokasi Lori",
+        cardTotal: "Jumlah Tong",
+        cardFull: "Tong Penuh (≥80%)",
+        cardMid: "Tong Hampir Penuh (50–79%)",
+        cardLow: "Tong Kosong (<50%)",
+
+        zoneFilterLabel: "Pilih Zon",
+        zoneFilterAll: "Semua zon",
+        createTruckBtn: "+ Cipta Lori Baharu",
+        noZoneSelected: "(Tiada zon dipilih)",
+        focusBtn: "Fokus Peta",
+
+        truckInfoAllNone: "Tiada lori yang sedang bergerak di mana-mana zon.",
+        truckInfoAllSome: "Lori yang sedang bergerak: %count%",
+        truckInfoZoneNoTruck: "Zon ini tiada lori yang sedang bergerak buat masa ini.",
+        truckInfoText: "ID: <b>%id%</b> • Zon: %zone% • Nama: %name% • Terakhir Dikemas Kini (FS): %updatedAt%",
+        truckActiveLabel: "Sedang bergerak",
+        truckInactiveLabel: "Berhenti",
+
+        mapPopupTruckActive: "Lori Sampah (Sedang bergerak)",
+        mapPopupTruckInactive: "Lori Sampah",
+        mapPopupBin: "Tong",
+        mapPopup: "Lokasi Lori",
+
+        usageTitle: "Masa Pergerakan Harian",
+        usageHint: "Pilih bulan untuk melihat jumlah masa pergerakan sehari bagi lori dalam zon ini.",
+        monthSelectLabel: "Bulan",
+        usageThDate: "Tarikh",
+        usageThStart: "Mula",
+        usageThEnd: "Tamat",
+        usageThDuration: "Jumlah masa pergerakan",
+        usageThLat: "Latitud (mula)",
+        usageThLng: "Longitud (mula)",
+        usageMsgSelectTruck: "Sila pilih zon terlebih dahulu.",
+        usageMsgSelectMonth: "Sila pilih bulan.",
+        usageMsgNoData: "Tiada data posisi untuk bulan ini dalam zon ini.",
+        usageSummary: "Menunjukkan %count% hari dalam bulan ini",
+
+        createPanelTitle: "Tambah Lori Baharu",
+        zoneSelectLabel: "Pilih Zon (daripada Firestore: zones)",
+        selectZoneDefault: "-- Pilih zon --",
+        newTruckIdText: "Lori Baharu: <b>%id%</b>",
+        saveTruckBtn: "Simpan",
+        cancelTruckBtn: "Batal",
+        noZones: "(Tiada zon dalam sistem lagi)",
+        pleaseSelectZone: "Sila pilih zon terlebih dahulu",
+        cannotCreateId: "Belum dapat jana ID lori",
+
+        roleAdmin: "Pentadbir",
+        roleUser: "Pengguna",
+        logout: "Keluar"
+      }
+    };
+    const LangState = window.AdminLang;
+    let currentLang = (LangState && typeof LangState.getLang === "function")
+      ? LangState.getLang()
+      : (localStorage.getItem('sw_lang') || 'th');
+
+    function getTranslation(key) { return translations[currentLang][key] || key; }
+    function t(key) { return getTranslation(key); }
+
+    function setStatusForm(text, type) {
+      msg.textContent = text || "";
+      msg.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
+    }
+    function setBinsStatus(text, type) {
+      binsStatusEl.textContent = text || "";
+      binsStatusEl.className = "muted" + (type === "ok" ? " ok" : type === "err" ? " err" : "");
+    }
+    function errStr(e) {
+      return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
+    }
+
+    /* ===== Helper เรื่องเวลา / listener ===== */
+    let liveTimerId = null;
+    let usageUnsub = null;
+    let currentTruckId = "";
+    let currentZoneFilter = ""; // "" = ทุกเขต
+    let trucks = []; // {id, data}
+
+    function clearLiveTimer() {
+      if (liveTimerId !== null) {
+        clearInterval(liveTimerId);
+        liveTimerId = null;
+      }
+    }
+
+    function formatDurationMs(ms) {
+      const durSec = Math.max(0, Math.round(ms / 1000));
+      const h = Math.floor(durSec / 3600);
+      const m = Math.floor((durSec % 3600) / 60);
+      const s = durSec % 60;
+
+      if (currentLang === 'th') {
+        return `${h} ชม. ${m} นาที ${s} วิ`;
+      } else if (currentLang === 'ms') {
+        return `${h} j ${m} m ${s} s`;
+      } else {
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        const ss = String(s).padStart(2, '0');
+        return `${hh}:${mm}:${ss}`;
+      }
+    }
+
+    function showUsageMessage(key) {
+      usageBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="muted">${getTranslation(key)}</td>
+        </tr>
+      `;
+      usageStatus.textContent = "";
+    }
+
+    function detachUsage() {
+      if (typeof usageUnsub === 'function') {
+        usageUnsub();
+        usageUnsub = null;
+      }
+      clearLiveTimer();
+    }
+
+    /* ===== helper icon ถัง (จากฝั่งผู้ใช้) ===== */
+    function clampFillValue(value) {
+      if (typeof value !== "number" || Number.isNaN(value)) {
+        return null;
+      }
+      return Math.max(0, Math.min(100, Math.round(value)));
+    }
+
+    function getFillColor(value) {
+      if (value === null) {
+        return "#94a3b8"; // เทา ไม่ทราบ
+      }
+      if (value >= 80) return "#dc2626"; // แดง ถังเต็ม
+      if (value >= 50) return "#f97316"; // ส้ม เกือบเต็ม
+      return "#16a34a";                // เขียว ว่าง
+    }
+
+    function buildBinIcon(fillLevel) {
+      const v = clampFillValue(fillLevel);
+      const labelText = v === null ? "?" : `${v}%`;
+      const labelClass = `bin-pin__label${v === null ? " is-unknown" : ""}`;
+      const color = getFillColor(v);
+
+      return L.divIcon({
+        className: "bin-icon",
+        html: `
+          <div class="bin-pin" style="--pin-color:${color};">
+            <div class="bin-pin__bubble">🗑️</div>
+            <div class="bin-pin__pointer"></div>
+            <div class="${labelClass}">${labelText}</div>
+          </div>
+        `.trim(),
+        iconSize: [50, 64],
+        iconAnchor: [25, 52],
+        popupAnchor: [0, -48]
+      });
+    }
+
+    /* ===== helper icon รถแบบฝั่งผู้ใช้ ===== */
+    function buildTruckIcon(isActive) {
+      const statusEmoji = isActive ? "🚛" : "🚚";
+      const color = isActive ? "#fb7185" : "#94a3b8";
+      return L.divIcon({
+        className: "truck-icon",
+        html: `
+          <div class="truck-pin" style="--pin-color:${color};">
+            <div class="truck-pin__bubble">${statusEmoji}</div>
+            <div class="truck-pin__pointer"></div>
+          </div>
+        `.trim(),
+        iconSize: [50, 70],
+        iconAnchor: [25, 55],
+        popupAnchor: [0, -50]
+      });
+    }
+
+    /* ===== โหลดโซนสำหรับ filter ===== */
+    async function loadZonesForFilter() {
+      zoneFilter.innerHTML = `<option value="">(${t('zoneFilterAll')})</option>`;
+      const snap = await fs.collection('zones').get();
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const opt = document.createElement('option');
+        opt.value = doc.id;
+        opt.textContent = d.name || doc.id;
+        zoneFilter.appendChild(opt);
+      });
+    }
+
+    /* ===== โหลด trucks + listeners รถ ===== */
+    function clearTruckListenersAndMarkers() {
+      Object.values(truckDocUnsubMap).forEach(fn => fn && fn());
+      Object.values(truckRunsUnsubMap).forEach(fn => fn && fn());
+      for (const k in truckMarkers) {
+        if (map.hasLayer(truckMarkers[k])) map.removeLayer(truckMarkers[k]);
+        delete truckMarkers[k];
+      }
+      trucks = [];
+      for (const k in truckActiveMap) delete truckActiveMap[k];
+    }
+
+    async function loadTrucks() {
+      clearTruckListenersAndMarkers();
+
+      const snap = await fs.collection('trucks').get();
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        trucks.push({ id: doc.id, data: d });
+
+        const lat = (typeof d.lat === 'number') ? d.lat : start[0];
+        const lng = (typeof d.lng === 'number') ? d.lng : start[1];
+
+        const marker = L.marker([lat, lng], { icon: buildTruckIcon(false) });
+        marker.bindPopup(t('mapPopupTruckInactive'));
+        truckMarkers[doc.id] = marker;
+        truckActiveMap[doc.id] = false;
+
+        const docUnsub = fs.collection('trucks').doc(doc.id).onSnapshot(snapDoc => {
+          if (!snapDoc.exists) return;
+          const data = snapDoc.data() || {};
+          const m = truckMarkers[doc.id];
+          if (!m) return;
+          if (typeof data.lat === 'number' && typeof data.lng === 'number') {
+            m.setLatLng([data.lat, data.lng]);
+          }
+          const isActive = !!truckActiveMap[doc.id];
+          const popupText = isActive ? t('mapPopupTruckActive') : t('mapPopupTruckInactive');
+          m.bindPopup(popupText);
+          updateTruckMarkerVisibility(doc.id);
+        });
+        truckDocUnsubMap[doc.id] = docUnsub;
+
+        const runsRef = fs.collection('trucks').doc(doc.id)
+          .collection('runs')
+          .where('isActive', '==', true);
+
+        const runsUnsub = runsRef.onSnapshot(runsSnap => {
+          truckActiveMap[doc.id] = !runsSnap.empty;
+          updateTruckMarkerVisibility(doc.id);
+          updateTruckInfoPanel();
+        });
+        truckRunsUnsubMap[doc.id] = runsUnsub;
+      });
+
+      updateAllTruckMarkersVisibility();
+      fitMapToAllMarkers();
+      updateTruckInfoPanel();
+    }
+
+    function updateTruckMarkerVisibility(truckId) {
+      const marker = truckMarkers[truckId];
+      if (!marker) return;
+      const truck = trucks.find(t => t.id === truckId);
+      if (!truck) return;
+
+      const zoneId = truck.data.zone || "";
+      const active = !!truckActiveMap[truckId];
+
+      let visible = true;
+      if (currentZoneFilter) {
+        visible = (zoneId === currentZoneFilter && active);
+      } else {
+        visible = active;
+      }
+
+      marker.setIcon(buildTruckIcon(active));
+
+      if (visible) {
+        if (!map.hasLayer(marker)) marker.addTo(map);
+      } else {
+        if (map.hasLayer(marker)) map.removeLayer(marker);
+      }
+    }
+
+    function updateAllTruckMarkersVisibility() {
+      trucks.forEach(tr => updateTruckMarkerVisibility(tr.id));
+    }
+
+    function updateTruckInfoPanel() {
+      if (!currentZoneFilter) {
+        const activeIds = Object.keys(truckActiveMap).filter(id => truckActiveMap[id]);
+        if (!activeIds.length) {
+          truckInfo.textContent = t('truckInfoAllNone');
+        } else {
+          truckInfo.innerHTML = t('truckInfoAllSome').replace('%count%', activeIds.length);
+        }
+        return;
+      }
+
+      const activeTrucks = trucks.filter(tr =>
+        (tr.data.zone || "") === currentZoneFilter && !!truckActiveMap[tr.id]
+      );
+
+      if (!activeTrucks.length) {
+        truckInfo.textContent = t('truckInfoZoneNoTruck');
+        return;
+      }
+
+      const truck = activeTrucks[0];
+      const d = truck.data;
+      const isActive = !!truckActiveMap[truck.id];
+      const updatedStr = d.updatedAt && d.updatedAt.toDate
+        ? d.updatedAt.toDate().toLocaleString()
+        : '—';
+
+      const base = t('truckInfoText')
+        .replace('%id%', d.truckId || truck.id)
+        .replace('%zone%', d.zoneName || d.zone || currentZoneFilter)
+        .replace('%name%', d.name || '—')
+        .replace('%updatedAt%', updatedStr);
+
+      const statusLabel = isActive ? t('truckActiveLabel') : t('truckInactiveLabel');
+      truckInfo.innerHTML = `${base} • <span class="ok">${statusLabel}</span>`;
+    }
+
+    /* ===== ถังขยะในโซนที่เลือก (realtime จาก bin_data + bin_level) ===== */
+    function clearBinMarkers() {
+      if (binsDataUnsub) {
+        binsDataUnsub();
+        binsDataUnsub = null;
+      }
+      if (binsLevelUnsub) {
+        binsLevelUnsub();
+        binsLevelUnsub = null;
+      }
+      Object.values(binMarkers).forEach(m => {
+        if (map.hasLayer(m)) map.removeLayer(m);
+      });
+      for (const k in binMarkers) delete binMarkers[k];
+      binsDataState = {};
+      binsLevelState = {};
+    }
+
+    function redrawBinMarkers(zoneId) {
+      // ลบ marker เก่าของโซนนี้
+      Object.entries(binMarkers).forEach(([key, marker]) => {
+        if (key.startsWith(zoneId + '_')) {
+          if (map.hasLayer(marker)) map.removeLayer(marker);
+          delete binMarkers[key];
+        }
+      });
+
+      Object.entries(binsDataState).forEach(([docId, info]) => {
+        const key = zoneId + '_' + docId;
+        const fill = binsLevelState[info.binId] ?? null;
+        const icon = buildBinIcon(fill);
+        const marker = L.marker([info.lat, info.lng], { icon })
+          .bindPopup(t('mapPopupBin'));
+        marker.addTo(map);
+        binMarkers[key] = marker;
+      });
+
+      fitMapToAllMarkers();
+    }
+
+    function setupBinsForZone(zoneId) {
+      clearBinMarkers();
+      if (!zoneId) return;
+
+      const dataRef = fs.collection('smartbins')
+        .doc(zoneId)
+        .collection('bin_data');
+      const levelRef = fs.collection('smartbins')
+        .doc(zoneId)
+        .collection('bin_level');
+
+      binsDataState = {};
+      binsLevelState = {};
+
+      binsDataUnsub = dataRef.onSnapshot(snap => {
+        const newState = {};
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          // ✅ ตรวจสอบเงื่อนไข isHidden และ deletedAt
+          if (d.isHidden === true || d.deletedAt) return;
+          const lat = (typeof d.lat === 'number') ? d.lat : null;
+          const lng = (typeof d.lng === 'number') ? d.lng : null;
+          if (lat === null || lng === null) return;
+          const binId = d.binId || doc.id;
+          newState[doc.id] = { lat, lng, binId };
+        });
+        binsDataState = newState;
+        redrawBinMarkers(zoneId);
+      });
+
+      binsLevelUnsub = levelRef.onSnapshot(snap => {
+        const lvlState = {};
+        snap.forEach(doc => {
+          const dd = doc.data() || {};
+          const fill = (typeof dd.fillLevel === "number")
+            ? dd.fillLevel
+            : (typeof dd.filllevel === "number" ? dd.filllevel : null);
+          lvlState[doc.id] = fill;
+        });
+        binsLevelState = lvlState;
+        redrawBinMarkers(zoneId);
+      });
+    }
+
+    function fitMapToAllMarkers() {
+      const ms = [];
+      Object.values(truckMarkers).forEach(m => {
+        if (map.hasLayer(m)) ms.push(m);
+      });
+      Object.values(binMarkers).forEach(m => {
+        if (map.hasLayer(m)) ms.push(m);
+      });
+      if (ms.length) {
+        const group = L.featureGroup(ms);
+        map.fitBounds(group.getBounds().pad(0.15));
+      }
+    }
+
+    /* ===== ตารางเวลาใช้งาน (runs / วัน / เดือน ต่อโซน) ===== */
+    function getTruckIdForZone(zoneId) {
+      const t = trucks.find(tr => (tr.data.zone || "") === zoneId);
+      return t ? t.id : "";
+    }
+
+    function setupUsageListener() {
+      detachUsage();
+
+      if (!currentZoneFilter) {
+        showUsageMessage('usageMsgSelectTruck');
+        return;
+      }
+
+      const truckId = getTruckIdForZone(currentZoneFilter);
+      currentTruckId = truckId;
+
+      if (!truckId) {
+        showUsageMessage('usageMsgNoData');
+        return;
+      }
+
+      const monthValue = monthSelect.value;
+      if (!monthValue) {
+        showUsageMessage('usageMsgSelectMonth');
+        return;
+      }
+
+      const [yearStr, monthStr] = monthValue.split('-');
+      const year = parseInt(yearStr, 10);
+      const monthIdx = parseInt(monthStr, 10) - 1;
+      const monthStart = new Date(year, monthIdx, 1, 0, 0, 0, 0);
+      const monthEnd = new Date(year, monthIdx + 1, 1, 0, 0, 0, 0);
+
+      const runsRef = fs.collection('trucks')
+        .doc(truckId)
+        .collection('runs')
+        .where('startAt', '>=', monthStart)
+        .where('startAt', '<', monthEnd);
+
+      usageUnsub = runsRef.onSnapshot(sn => {
+        const perDay = {};
+        const now = new Date();
+
+        sn.forEach(doc => {
+          const r = doc.data() || {};
+          if (!r.startAt || !r.startAt.toDate) return;
+
+          const start = r.startAt.toDate();
+          const end = (r.endAt && r.endAt.toDate) ? r.endAt.toDate() : null;
+          const isActive = r.isActive === true && !end;
+
+          const dateKey =
+            start.getFullYear() + '-' +
+            String(start.getMonth() + 1).padStart(2, '0') + '-' +
+            String(start.getDate()).padStart(2, '0');
+
+          const startLat = (typeof r.startLat === 'number') ? r.startLat : null;
+          const startLng = (typeof r.startLng === 'number') ? r.startLng : null;
+
+          const effectiveEnd = end || now;
+          const durMs = Math.max(0, effectiveEnd - start);
+
+          if (!perDay[dateKey]) {
+            perDay[dateKey] = {
+              date: new Date(start.getFullYear(), start.getMonth(), start.getDate()),
+              startAt: start,
+              endAt: effectiveEnd,
+              startLat,
+              startLng,
+              baseMs: 0,
+              liveStartMs: null
+            };
+          }
+
+          const d = perDay[dateKey];
+
+          if (start < d.startAt) {
+            d.startAt = start;
+            if (startLat != null) d.startLat = startLat;
+            if (startLng != null) d.startLng = startLng;
+          }
+          if (effectiveEnd > d.endAt) {
+            d.endAt = effectiveEnd;
+          }
+
+          if (isActive) {
+            if (d.liveStartMs === null || start.getTime() < d.liveStartMs) {
+              d.liveStartMs = start.getTime();
+            }
+          } else {
+            d.baseMs += durMs;
+          }
+        });
+
+        const days = Object.values(perDay).sort((a, b) => a.date - b.date);
+
+        if (!days.length) {
+          showUsageMessage('usageMsgNoData');
+          return;
+        }
+
+        let rowsHtml = '';
+        const nowMs = Date.now();
+
+        days.forEach(d => {
+          const dateStr = d.date.toLocaleDateString();
+          const startStr = d.startAt ? d.startAt.toLocaleTimeString() : '—';
+          const endStr = d.endAt ? d.endAt.toLocaleTimeString() : '—';
+          const latStr = (d.startLat != null) ? d.startLat.toFixed(5) : '—';
+          const lngStr = (d.startLng != null) ? d.startLng.toFixed(5) : '—';
+
+          const live = d.liveStartMs !== null;
+          const totalMs = d.baseMs + (live ? (nowMs - d.liveStartMs) : 0);
+
+          rowsHtml += `
+            <tr>
+              <td>${dateStr}</td>
+              <td>${startStr}</td>
+              <td>${endStr}</td>
+              <td>
+                <span
+                  class="dur"
+                  data-live="${live ? 1 : 0}"
+                  data-base-ms="${d.baseMs}"
+                  data-live-start-ms="${d.liveStartMs || 0}"
+                >${formatDurationMs(totalMs)}</span>
+              </td>
+              <td>${latStr}</td>
+              <td>${lngStr}</td>
+            </tr>
+          `;
+        });
+
+        usageBody.innerHTML = rowsHtml;
+        usageStatus.textContent = getTranslation('usageSummary')
+          .replace('%count%', days.length);
+
+        clearLiveTimer();
+        liveTimerId = setInterval(() => {
+          const nowMs2 = Date.now();
+          document.querySelectorAll('#usageBody .dur').forEach(span => {
+            const live = span.dataset.live === '1';
+            const base = Number(span.dataset.baseMs || 0);
+            const liveStart = Number(span.dataset.liveStartMs || 0);
+            const ms = live && liveStart ? base + (nowMs2 - liveStart) : base;
+            span.textContent = formatDurationMs(ms);
+          });
+        }, 1000);
+      });
+    }
+
+    /* ===== Dashboard การ์ดสรุประดับถัง (realtime) ===== */
+    function recomputeDashboard() {
+      let total = 0;
+      let full = 0;
+      let mid = 0;
+
+      Object.values(dashboardState).forEach(zoneState => {
+        total += zoneState.totalBins || 0;
+
+        const levels = zoneState.levelByBin || {};
+        const activeBinIds = zoneState.activeBinIds || []; // 👈 ดึงรายการ ID ถังที่ใช้งาน
+
+        // วนซ้ำเฉพาะถังที่ใช้งานอยู่เท่านั้น
+        activeBinIds.forEach(binId => {
+          const fill = levels[binId]; // ดึงระดับความเต็มของถังที่ใช้งาน
+
+          if (typeof fill !== "number") return;
+
+          if (fill >= 80) full++;
+          else if (fill >= 50) mid++;
+        });
+      });
+
+      const low = Math.max(0, total - full - mid);
+
+      totalEl.textContent = total;
+      fullEl.textContent = full;
+      midEl.textContent = mid;
+      lowEl.textContent = low;
+    }
+    async function setupDashboardListeners() {
+      // เคลียร์ listener เดิม
+      dashboardUnsubs.forEach(fn => fn && fn());
+      dashboardUnsubs = [];
+
+      const zonesSnap = await fs.collection("zones").get();
+      zonesSnap.forEach(zDoc => {
+        const zoneId = zDoc.id;
+        if (!dashboardState[zoneId]) {
+          dashboardState[zoneId] = { totalBins: 0, levelByBin: {} };
+        }
+
+        const binDataRef = fs.collection("smartbins")
+          .doc(zoneId)
+          .collection("bin_data");
+        const binLevelRef = fs.collection("smartbins")
+          .doc(zoneId)
+          .collection("bin_level");
+
+        // ฟังจำนวนถัง (ข้ามถังที่ซ่อน)
+        const unsubData = binDataRef.onSnapshot(snap => {
+          let count = 0;
+          const activeBinIds = []; // สร้างรายการ binId ที่ใช้งานอยู่
+          snap.forEach(doc => {
+            const d = doc.data() || {};
+            if (d.isHidden === true || d.deletedAt) return;
+            count++;
+            activeBinIds.push(d.binId || doc.id); // บันทึก binId ที่ใช้งาน
+          });
+          dashboardState[zoneId].totalBins = count;
+          dashboardState[zoneId].activeBinIds = activeBinIds; // <== เพิ่มสถานะนี้
+          recomputeDashboard();
+        });
+
+        // ฟังระดับถังต่อ bin
+        const unsubLevel = binLevelRef.onSnapshot(snap => {
+          const levels = {};
+          snap.forEach(doc => {
+            const d = doc.data() || {};
+            const fill = (typeof d.fillLevel === "number")
+              ? d.fillLevel
+              : (typeof d.filllevel === "number" ? d.filllevel : null);
+            levels[doc.id] = fill;
+          });
+          dashboardState[zoneId].levelByBin = levels;
+          recomputeDashboard();
+        });
+        dashboardUnsubs.push(unsubData, unsubLevel);
+      });
+
+      recomputeDashboard();
+    }
+
+    /* ===== เปลี่ยนภาษา ===== */
+    function applyLanguage() {
+      document.title = t('pageTitle');
+      document.querySelector('.toggle-btn').textContent = t('menuBtn');
+
+      if (window.AdminNav) {
+        window.AdminNav.setLanguage(currentLang);
+      }
+
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+
+      document.getElementById('pageTitleHeading').textContent = t('mainTitle');
+
+      // การ์ดสรุประดับถัง
+      document.getElementById('cardTotalTitle').textContent = t('cardTotal');
+      document.getElementById('cardFullTitle').textContent = t('cardFull');
+      document.getElementById('cardMidTitle').textContent = t('cardMid');
+      document.getElementById('cardLowTitle').textContent = t('cardLow');
+
+      // filter zone
+      document.getElementById('zoneFilterLabel').textContent = t('zoneFilterLabel');
+      if (zoneFilter.options.length > 0) {
+        zoneFilter.options[0].textContent = `(${t('zoneFilterAll')})`;
+      }
+      btnCreate.textContent = t('createTruckBtn');
+      btnCenter.textContent = t('focusBtn');
+
+      // usage
+      document.getElementById('usageTitle').textContent = t('usageTitle');
+      document.getElementById('usageHint').textContent = t('usageHint');
+      document.getElementById('monthSelectLabel').textContent = t('monthSelectLabel');
+      document.getElementById('usageThDate').textContent = t('usageThDate');
+      document.getElementById('usageThStart').textContent = t('usageThStart');
+      document.getElementById('usageThEnd').textContent = t('usageThEnd');
+      document.getElementById('usageThDuration').textContent = t('usageThDuration');
+      document.getElementById('usageThLat').textContent = t('usageThLat');
+      document.getElementById('usageThLng').textContent = t('usageThLng');
+
+      // overlay เพิ่มรถ
+      const createTitleEl = document.getElementById('createPanelTitle');
+      const zoneSelectLabelEl = document.getElementById('zoneSelectLabel');
+      if (createTitleEl) createTitleEl.textContent = t('createPanelTitle');
+      if (zoneSelectLabelEl) zoneSelectLabelEl.textContent = t('zoneSelectLabel');
+      if (btnSaveTruck) btnSaveTruck.textContent = t('saveTruckBtn');
+      if (btnCancelCreate) btnCancelCreate.textContent = t('cancelTruckBtn');
+      if (zoneSelect.options.length > 0) {
+        zoneSelect.options[0].textContent = t('selectZoneDefault');
+      }
+      updateNewTruckIdText(newTruckIdEl ? newTruckIdEl.textContent || "—" : "—");
+
+      if (!currentZoneFilter) {
+        truckInfo.textContent = t('noZoneSelected');
+      }
+
+      // ปรับ popup รถ/ถังตามภาษา
+      Object.entries(truckMarkers).forEach(([id, m]) => {
+        const isActive = !!truckActiveMap[id];
+        m.bindPopup(isActive ? t('mapPopupTruckActive') : t('mapPopupTruckInactive'));
+      });
+      Object.values(binMarkers).forEach(m => m.bindPopup(t('mapPopupBin')));
+
+      updateTruckInfoPanel();
+      setupUsageListener();
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        currentLang = lang;
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+      applyLanguage();
+    }
+
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+    langSelect.value = currentLang;
+
+    langIconBtn.addEventListener("click", () => {
+      langMenu.classList.toggle("show");
+    });
+
+    langMenu.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      changeLanguage(btn.dataset.lang);
+      langMenu.classList.remove("show");
+    });
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
+
+    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
+    document.addEventListener("click", e => {
+      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+      if (!clickedInLang) langMenu.classList.remove("show");
+    });
+
+
+    /* ===== สร้างรถใหม่ ===== */
+    function updateNewTruckIdText(idStr) {
+      if (newTruckIdEl) newTruckIdEl.textContent = idStr || "—";
+      if (newTruckIdTextEl) {
+        newTruckIdTextEl.innerHTML = t('newTruckIdText')
+          .replace('%id%', newTruckIdEl ? newTruckIdEl.textContent : "—");
+      }
+    }
+
+    async function loadZonesForCreate() {
+      zoneSelect.innerHTML = '<option value="">' + t('selectZoneDefault') + '</option>';
+      const snap = await fs.collection('zones').get();
+      if (snap.empty) {
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.textContent = t('noZones');
+        zoneSelect.appendChild(opt);
+        zoneSelect.disabled = true;
+      } else {
+        zoneSelect.disabled = false;
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          const opt = document.createElement('option');
+          opt.value = doc.id;
+          opt.textContent = d.name || doc.id;
+          zoneSelect.appendChild(opt);
+        });
+      }
+      updateNewTruckIdText("—");
+    }
+
+    async function computeNextTruckIdForZone(zoneId) {
+      const snap = await fs.collection('trucks').where('zone', '==', zoneId).get();
+      let maxIdx = 0;
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const idStr = d.truckId || doc.id;
+        const m = idStr.match(/(\d+)$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (!isNaN(n) && n > maxIdx) maxIdx = n;
+        }
+      });
+      const nextIdx = maxIdx + 1;
+      return `TRUCK${String(nextIdx).padStart(2, '0')}`;
+    }
+
+    zoneSelect.addEventListener('change', async () => {
+      const zoneId = zoneSelect.value;
+      if (!zoneId) {
+        updateNewTruckIdText("—");
+        return;
+      }
+      const nextId = await computeNextTruckIdForZone(zoneId);
+      updateNewTruckIdText(nextId);
+    });
+
+    function openCreateOverlay() {
+      createOverlay.style.display = 'flex';
+      createPanel.style.animation = 'none';
+      void createPanel.offsetWidth;
+      createPanel.style.animation = '';
+    }
+
+    function closeCreateOverlay() {
+      createOverlay.style.display = 'none';
+    }
+
+    btnCreate.addEventListener('click', async () => {
+      openCreateOverlay();
+      await loadZonesForCreate();
+      applyLanguage();
+    });
+
+    btnCancelCreate.addEventListener('click', () => {
+      closeCreateOverlay();
+    });
+
+    createOverlay.addEventListener('click', (e) => {
+      if (e.target === createOverlay) {
+        closeCreateOverlay();
+      }
+    });
+
+    btnSaveTruck.addEventListener('click', async () => {
+      const zoneId = zoneSelect.value;
+      if (!zoneId) {
+        alert(t('pleaseSelectZone'));
+        return;
+      }
+      const truckId = newTruckIdEl.textContent;
+      if (!truckId || truckId === "—") {
+        alert(t('cannotCreateId'));
+        return;
+      }
+
+      let zoneName = zoneId;
+      try {
+        const zDoc = await fs.collection('zones').doc(zoneId).get();
+        if (zDoc.exists) {
+          const zData = zDoc.data() || {};
+          if (zData.name) zoneName = zData.name;
+        }
+      } catch (e) {
+        console.warn("ไม่สามารถโหลดชื่อเขตได้", e);
+      }
+
+      const docId = `${zoneId}_${truckId}`;
+      const ref = fs.collection('trucks').doc(docId);
+      await ref.set({
+        zone: zoneId,
+        zoneName: zoneName,
+        truckId: truckId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      await loadTrucks();
+      closeCreateOverlay();
+    });
+
+    /* ===== เปลี่ยนโซน filter ===== */
+    zoneFilter.addEventListener('change', () => {
+      currentZoneFilter = zoneFilter.value || "";
+      if (!currentZoneFilter) {
+        truckInfo.textContent = t('noZoneSelected');
+      }
+      updateAllTruckMarkersVisibility();
+      updateTruckInfoPanel();
+      setupBinsForZone(currentZoneFilter);
+      setupUsageListener();
+    });
+
+    monthSelect.addEventListener('change', () => {
+      setupUsageListener();
+    });
+
+    /* ===== ปุ่มโฟกัสแผนที่ ===== */
+    btnCenter.addEventListener('click', () => {
+      fitMapToAllMarkers();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      detachUsage();
+      clearBinMarkers();
+      clearTruckListenersAndMarkers();
+      dashboardUnsubs.forEach(fn => fn && fn());
+    });
+
+    /* ===== ปุ่มเมนู 3 ขีด ===== */
+    function toggleMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      const isShow = sidebar.classList.toggle('show');
+      if (window.innerWidth <= 900) {
+        btn.style.display = isShow ? 'none' : 'block';
+      }
+    }
+    window.toggleMenu = toggleMenu;
+
+    document.addEventListener('click', (e) => {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      if (!sidebar.contains(e.target) && e.target !== btn && window.innerWidth <= 900) {
+        sidebar.classList.remove('show');
+        btn.style.display = 'block';
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('show');
+        btn.style.display = 'none';
+      } else {
+        sidebar.classList.remove('show');
+        btn.style.display = 'block';
+      }
+    });
+
+    /* ===== Initial ===== */
+    function initMonth() {
+      const now = new Date();
+      const ym = now.toISOString().slice(0, 7);
+      monthSelect.value = ym;
+    }
+
+    (async function init() {
+      initMonth();
+      langSelect.value = currentLang;
+      await loadZonesForFilter();
+      await loadTrucks();
+      await setupDashboardListeners(); // ใช้แบบ realtime แทน updateDashboard แบบเดิม
+      applyLanguage();
+      // ถ้าอยากให้เลือกโซนอัตโนมัติในอนาคต ค่อยเติมได้
+    })();
+  </script>
+</body>
+
+</html>

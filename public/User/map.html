@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>Smart Waste - แผนที่ถังของฉัน</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="../Login/auth.js"></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([2]);
+  </script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Prompt",system-ui,sans-serif}
+    body{min-height:100vh;display:flex;background:#f5f6fa;}
+    .sidebar{
+      width:240px;background:#1f2937;color:#f3f4f6;padding:24px 18px;
+      display:flex;flex-direction:column;gap:16px;justify-content:space-between;
+    }
+    .brand h2{color:#38bdf8;margin-bottom:12px;}
+    .menu a{
+      display:block;color:#f3f4f6;text-decoration:none;padding:10px 12px;border-radius:10px;transition:.2s;
+    }
+    .menu a:hover,.menu a.active{background:#374151;}
+    main{flex:1;padding:24px;display:flex;flex-direction:column;gap:18px;}
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+    }
+    .topbar h1{font-size:28px;color:#0f172a;}
+    .muted{color:#6b7280;font-size:14px;}
+    .user-chip{
+      display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;
+      border-radius:999px;border:1px solid #e5e7eb;box-shadow:0 6px 18px rgba(15,23,42,.08);
+    }
+    .user-chip .avatar{
+      width:32px;height:32px;border-radius:50%;
+      background:linear-gradient(135deg,#38bdf8,#1d4ed8);
+      color:#0f172a;font-weight:600;display:flex;align-items:center;justify-content:center;
+    }
+    .user-chip__label{
+      margin:0;
+      font-size:12px;
+    }
+    .layout{
+      flex:1;display:grid;grid-template-columns:2fr 1fr;gap:18px;min-height:0;
+    }
+    #map{
+      width:100%;height:100%;min-height:420px;
+      border-radius:18px;
+      border:1px solid #dbeafe;
+      box-shadow:0 10px 30px rgba(15,23,42,.08);
+      overflow:hidden;
+    }
+    .panel{
+      background:#fff;border-radius:18px;padding:18px;display:flex;flex-direction:column;
+      box-shadow:0 10px 30px rgba(15,23,42,.08);gap:16px;
+    }
+    .section h2{font-size:20px;margin-bottom:4px;color:#0f172a;}
+    .section p.muted{margin-bottom:8px;color:#6b7280;font-size:14px;}
+    .list{
+      display:flex;flex-direction:column;gap:12px;max-height:260px;overflow:auto;
+    }
+    .bin-card{
+      border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;
+      display:flex;flex-direction:column;gap:4px;cursor:pointer;
+      transition:.15s;background:#fff;
+    }
+    .bin-card.active{border-color:#2563eb;box-shadow:0 8px 18px rgba(37,99,235,.18);}
+    .bin-card:hover{background:#f8fafc;}
+    .bin-card strong{font-size:16px;color:#111827;}
+    .bin-card span{font-size:13px;color:#64748b;}
+    .truck-card strong{color:#111827;font-size:16px;}
+    .truck-card span{font-size:13px;color:#64748b;}
+    .truck-card .live{color:#16a34a;font-size:12px;}
+    #status{margin-top:4px;font-size:14px;}
+    #status.err{color:#dc2626;}
+    #status.ok{color:#16a34a;}
+    #truckStatus{font-size:14px;margin-top:4px;}
+    .panel hr{border:none;height:1px;background:#e5e7eb;}
+
+    .truck-icon{
+      background:transparent;
+      border:none;
+    }
+    .truck-pin{
+      --pin-color:#f43f5e;
+      --pin-label:#0f172a;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      filter:drop-shadow(0 10px 20px rgba(15,23,42,.25));
+    }
+    .truck-pin__bubble{
+      width:46px;
+      height:46px;
+      border-radius:16px 16px 12px 12px;
+      background:linear-gradient(135deg,var(--pin-color),rgba(255,255,255,.25));
+      border:2px solid rgba(255,255,255,.9);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      color:var(--pin-label);
+    }
+    .truck-pin__pointer{
+      width:0;
+      height:0;
+      border:10px solid transparent;
+      border-top-color:var(--pin-color);
+      margin-top:-6px;
+      filter:brightness(.95);
+    }
+
+    .leaflet-marker-icon.bin-icon{
+      background:transparent;
+      border:none;
+    }
+    .bin-pin{
+      --pin-color:#16a34a;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      filter:drop-shadow(0 10px 20px rgba(15,23,42,.25));
+    }
+    .bin-pin__bubble{
+      position:relative;
+      width:46px;
+      height:46px;
+      border-radius:16px 16px 12px 12px;
+      background:linear-gradient(135deg,var(--pin-color),rgba(255,255,255,.2));
+      border:2px solid rgba(255,255,255,.85);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      color:#0f172a;
+    }
+    .bin-pin__pointer{
+      width:0;
+      height:0;
+      border:10px solid transparent;
+      border-top-color:var(--pin-color);
+      margin-top:-6px;
+      filter:brightness(.9);
+    }
+    .bin-pin__label{
+      font-size:12px;
+      font-weight:600;
+      color:#0f172a;
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:999px;
+      padding:2px 8px;
+      line-height:1;
+      box-shadow:0 4px 10px rgba(15,23,42,.12);
+    }
+    .bin-pin__label.is-unknown{
+      color:#475569;
+      background:#f8fafc;
+    }
+
+    @media(max-width:900px){
+      body{flex-direction:column;}
+      .sidebar{width:100%;}
+      main{padding:16px;}
+      .layout{grid-template-columns:1fr;}
+      #map{height:360px;}
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <h2>Smart Waste</h2>
+      <nav class="menu">
+        <a href="home.html">หน้าหลัก</a>
+        <a href="map.html" class="active">แผนที่ของฉัน</a>
+      </nav>
+    </div>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1>แผนที่ถังขยะของฉัน</h1>
+        <p class="muted">ดูตำแหน่งถังที่คุณลงทะเบียนไว้ทั้งหมดบนแผนที่ และรถเก็บขยะในเขตของคุณ</p>
+      </div>
+      <div class="user-chip">
+        <span class="avatar" id="userAvatar">?</span>
+        <div>
+          <p class="muted user-chip__label">ผู้ใช้งาน</p>
+          <strong id="userLabel">-</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div id="map" aria-label="แผนที่แสดงถังขยะของฉัน"></div>
+      <div class="panel">
+        <div class="section">
+          <h2>ถังขยะของฉัน</h2>
+          <p class="muted">แตะรายการเพื่อเลื่อนแผนที่ไปยังถังนั้น</p>
+          <div id="binList" class="list"></div>
+          <p id="status" class="muted"></p>
+        </div>
+        <hr />
+        <div class="section">
+          <h2>รถเก็บขยะในเขตของฉัน</h2>
+          <p class="muted">แสดงเฉพาะรถที่ออนไลน์</p>
+          <div id="truckList" class="list"></div>
+          <p id="truckStatus" class="muted"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const userLabelEl = $("userLabel");
+    const userAvatarEl = $("userAvatar");
+    const displayName = currentUser.fullName || currentUser.username;
+    userLabelEl.textContent = displayName;
+    userAvatarEl.textContent = displayName ? displayName.charAt(0).toUpperCase() : "?";
+
+    const firebaseConfig = {
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    if(!firebase.apps.length){
+      firebase.initializeApp(firebaseConfig);
+    }else{
+      firebase.app();
+    }
+
+    const firestore = firebase.firestore();
+    const smartbinsCol = firestore.collection("smartbins");
+
+    const statusEl = $("status");
+    const mapContainerEl = $("map");
+    const binListEl = $("binList");
+    const truckListEl = $("truckList");
+    const truckStatusEl = $("truckStatus");
+
+    const map = L.map("map").setView([6.55, 100.35], 11);
+    const BIN_FOCUS_ZOOM = 16;
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+
+    function ensureMapSize(){
+      map.invalidateSize();
+    }
+    setTimeout(ensureMapSize, 200);
+    window.addEventListener("load", ensureMapSize);
+
+    const binMarkers = new Map();
+    const truckMarkers = new Map();
+    const truckStore = new Map();
+    const binsCache = new Map();
+    let trucksUnsub = null;
+    const truckRunUnsubs = new Map();
+    let selectedBinId = null;
+    let selectedBinInfo = null;
+    let selectedTruckId = null;
+    let userZones = new Set();
+    const binDocCache = new Map();
+    const BIN_REFRESH_INTERVAL = 2000;
+    let binRealtimeTimer = null;
+    let binRefreshInFlight = false;
+
+    function clampFillValue(value){
+      if(typeof value !== "number" || Number.isNaN(value)){
+        return null;
+      }
+      return Math.max(0, Math.min(100, Math.round(value)));
+    }
+
+    function getFillColor(value){
+      if(value === null){
+        return "#94a3b8";
+      }
+      if(value >= 80) return "#dc2626";
+      if(value >= 50) return "#f97316";
+      return "#16a34a";
+    }
+
+    function buildBinIcon(entry){
+      const fillValue = clampFillValue(entry.fillLevel);
+      const labelText = fillValue === null ? "?" : `${fillValue}%`;
+      const labelClass = `bin-pin__label${fillValue === null ? " is-unknown" : ""}`;
+      const color = getFillColor(fillValue);
+      return L.divIcon({
+        className: "bin-icon",
+        html: `
+          <div class="bin-pin" style="--pin-color:${color};">
+            <div class="bin-pin__bubble">🗑️</div>
+            <div class="bin-pin__pointer"></div>
+            <div class="${labelClass}">${labelText}</div>
+          </div>
+        `.trim(),
+        iconSize: [50, 64],
+        iconAnchor: [25, 52],
+        popupAnchor: [0, -48]
+      });
+    }
+
+    function setStatus(text, type){
+      statusEl.textContent = text || "";
+      statusEl.className = "muted" + (type ? " " + type : "");
+    }
+
+    function setTruckStatus(text, type){
+      truckStatusEl.textContent = text || "";
+      truckStatusEl.className = "muted" + (type ? " " + type : "");
+    }
+
+    function fetchLinkedBinDoc(path){
+      if(!path) return null;
+      if(!binDocCache.has(path)){
+        const promise = firestore.doc(path).get()
+          .then(snap => {
+            if(!snap.exists) return null;
+            const zoneHint = snap.ref?.parent?.id || "";
+            return { id: snap.id, zoneHint, ...(snap.data() || {}) };
+          })
+          .catch(err => {
+            console.error("ไม่สามารถโหลดข้อมูลถังจาก", path, err);
+            return null;
+          });
+        binDocCache.set(path, promise);
+      }
+      return binDocCache.get(path);
+    }
+
+    function upsertBinMarker(entry){
+      if(binMarkers.has(entry.id)){
+        const marker = binMarkers.get(entry.id);
+        marker.setLatLng([entry.lat, entry.lng]);
+        marker.setPopupContent(`<strong>${entry.binId}</strong><br>เขต ${entry.zone}`);
+        marker.setIcon(buildBinIcon(entry));
+        return marker;
+      }
+      const marker = L.marker([entry.lat, entry.lng], { icon: buildBinIcon(entry) }).addTo(map)
+        .bindPopup(`<strong>${entry.binId}</strong><br>เขต ${entry.zone}`, { autoPan: false });
+      marker.on("click", () => highlightBin(entry.id, { focus:true }));
+      marker.on("popupclose", () => {
+        if(selectedBinId === entry.id){
+          clearBinSelection();
+          renderTruckList();
+        }
+      });
+      binMarkers.set(entry.id, marker);
+      return marker;
+    }
+
+    function removeStaleBinMarkers(validIds){
+      binMarkers.forEach((marker, id) => {
+        if(!validIds.includes(id)){
+          map.removeLayer(marker);
+          binMarkers.delete(id);
+        }
+      });
+    }
+
+    function syncBinsRealtimeUI(options = {}){
+      const docs = options.docs || Array.from(binsCache.values());
+      renderList(docs);
+      const validIds = [];
+      docs.forEach(entry => {
+        validIds.push(entry.id);
+        upsertBinMarker(entry);
+      });
+      removeStaleBinMarkers(validIds);
+      if(selectedBinId && binsCache.has(selectedBinId)){
+        selectedBinInfo = binsCache.get(selectedBinId);
+        renderTruckList();
+      }else if(selectedBinId){
+        selectedBinInfo = null;
+        renderTruckList();
+      }
+    }
+
+    function stopBinRealtimeLoop(){
+      if(binRealtimeTimer){
+        clearInterval(binRealtimeTimer);
+        binRealtimeTimer = null;
+      }
+    }
+
+    function startBinRealtimeLoop(){
+      if(binRealtimeTimer) return;
+      refreshBinRealtimeLevels();
+      binRealtimeTimer = setInterval(refreshBinRealtimeLevels, BIN_REFRESH_INTERVAL);
+    }
+
+    async function refreshBinRealtimeLevels(){
+      if(binRefreshInFlight) return;
+      const entries = Array.from(binsCache.values());
+      if(!entries.length){
+        stopBinRealtimeLoop();
+        return;
+      }
+      binRefreshInFlight = true;
+      try{
+        const zoneGroups = new Map();
+        entries.forEach(entry => {
+          if(!entry.zone || entry.zone === "-" || !entry.binId) return;
+          if(!zoneGroups.has(entry.zone)){
+            zoneGroups.set(entry.zone, []);
+          }
+          zoneGroups.get(entry.zone).push(entry);
+        });
+
+        const requests = [];
+        zoneGroups.forEach((zoneEntries, zoneId) => {
+          const zoneDocRef = smartbinsCol.doc(zoneId);
+          const colRef = zoneDocRef.collection("bin_level");
+          zoneEntries.forEach(entry => {
+            requests.push(
+              colRef.doc(entry.binId).get()
+                .then(doc => ({
+                  entryId: entry.id,
+                  exists: doc.exists,
+                  data: doc.data() || {}
+                }))
+                .catch(err => {
+                  console.warn("ไม่สามารถอัปเดตข้อมูลถัง", zoneId, entry.binId, err);
+                  return null;
+                })
+            );
+          });
+        });
+
+        if(!requests.length){
+          syncBinsRealtimeUI({ updateStatus:true });
+          return;
+        }
+
+        const results = await Promise.all(requests);
+        results.forEach(result => {
+          if(!result || !result.exists) return;
+          const entry = binsCache.get(result.entryId);
+          if(!entry) return;
+          const fillLevel = typeof result.data.fillLevel === "number" ? Math.round(result.data.fillLevel) : null;
+          const updatedAt = result.data.updatedAt && typeof result.data.updatedAt.toDate === "function"
+            ? result.data.updatedAt.toDate()
+            : entry.levelUpdatedAt || null;
+          binsCache.set(entry.id, {
+            ...entry,
+            fillLevel,
+            levelUpdatedAt: updatedAt
+          });
+        });
+        syncBinsRealtimeUI({ updateStatus:true });
+      }catch(err){
+        console.error("ไม่สามารถอัปเดตข้อมูลถังแบบเรียลไทม์", err);
+      }finally{
+        binRefreshInFlight = false;
+      }
+    }
+
+    function clearBinSelection(){
+      selectedBinId = null;
+      selectedBinInfo = null;
+      Array.from(binListEl.children).forEach(el => {
+        el.classList.remove("active");
+      });
+    }
+
+    function clearTruckSelection(){
+      selectedTruckId = null;
+      Array.from(truckListEl.children).forEach(el => {
+        el.classList.remove("active");
+      });
+    }
+
+    function renderList(bins){
+      binListEl.innerHTML = "";
+      if(!bins.length){
+        binListEl.innerHTML = "<p class='muted'>ยังไม่มีถังที่มีพิกัด</p>";
+        return;
+      }
+      bins.forEach(entry => {
+        const fillText = typeof entry.fillLevel === "number" ? `${entry.fillLevel}%` : "ไม่ทราบ";
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "bin-card" + (entry.id === selectedBinId ? " active" : "");
+        card.dataset.id = entry.id;
+        card.innerHTML = `
+          <strong>${entry.binId} (${entry.zone})</strong>
+          <span>${entry.details || "ไม่มีรายละเอียด"}</span>
+          <span>ระดับ: ${fillText}</span>
+          <span>พิกัด: ${entry.lat?.toFixed(4) ?? "-"}, ${entry.lng?.toFixed(4) ?? "-"}</span>
+        `;
+        card.addEventListener("click", () => {
+          highlightBin(entry.id, { focus:true });
+        });
+        binListEl.appendChild(card);
+      });
+    }
+
+    function highlightBin(id, options = {}){
+      const focus = !!options.focus;
+      const zoom = typeof options.zoom === "number" ? options.zoom : BIN_FOCUS_ZOOM;
+      clearTruckSelection();
+      selectedBinId = id;
+      selectedBinInfo = binsCache.get(id) || null;
+      Array.from(binListEl.children).forEach((el) => {
+        el.classList.toggle("active", el.dataset.id === id);
+      });
+      renderTruckList();
+      updateAllTruckMarkers();
+      if(focus){
+        focusBinOnMap(id, zoom);
+      }
+    }
+
+    function focusBinOnMap(id, zoom = BIN_FOCUS_ZOOM){
+      const marker = binMarkers.get(id);
+      if(!marker) return;
+      const center = marker.getLatLng();
+      const targetZoom = typeof zoom === "number" ? zoom : BIN_FOCUS_ZOOM;
+      map.setView(center, targetZoom, { animate:true });
+      marker.openPopup();
+      if(mapContainerEl){
+        mapContainerEl.scrollIntoView({ behavior:"smooth", block:"center" });
+      }
+    }
+
+    function updateUserZonesFromBins(bins){
+      const zones = new Set(
+        bins
+          .map(b => (b.zone || "").trim())
+          .filter(z => z && z !== "-")
+      );
+      let changed = zones.size !== userZones.size;
+      if(!changed){
+        zones.forEach(z => {
+          if(!userZones.has(z)){
+            changed = true;
+          }
+        });
+      }
+      if(changed){
+        userZones = zones;
+        restartTruckListener();
+      }
+    }
+
+    function cleanupTruckListeners(){
+      if(typeof trucksUnsub === "function"){
+        trucksUnsub();
+        trucksUnsub = null;
+      }
+      truckRunUnsubs.forEach(unsub => {
+        if(typeof unsub === "function") unsub();
+      });
+      truckRunUnsubs.clear();
+
+      selectedTruckId = null;
+      truckStore.clear();
+      truckMarkers.forEach(marker => map.removeLayer(marker));
+      truckMarkers.clear();
+    }
+
+    function normalizeTimestamp(value){
+      if(!value) return null;
+      if(value instanceof Date){
+        return value;
+      }
+      if(typeof value.toDate === "function"){
+        return value.toDate();
+      }
+      if(typeof value === "number"){
+        const ts = value < 1e12 ? value * 1000 : value;
+        return new Date(ts);
+      }
+      if(typeof value === "string"){
+        const asNumber = Number(value);
+        if(!Number.isNaN(asNumber)){
+          return normalizeTimestamp(asNumber);
+        }
+        const parsed = Date.parse(value);
+        if(!Number.isNaN(parsed)){
+          return new Date(parsed);
+        }
+      }
+      return null;
+    }
+
+    function formatTruckTime(value){
+      const date = normalizeTimestamp(value);
+      if(!date || Number.isNaN(date.getTime())){
+        return "-";
+      }
+      return date.toLocaleString("th-TH",{ hour12:false });
+    }
+
+    function getTruckCoordinates(entry){
+      if(typeof entry?.lat === "number" && typeof entry?.lng === "number"){
+        return {
+          lat: entry.lat,
+          lng: entry.lng,
+          ts: entry.updatedAt || null
+        };
+      }
+      return null;
+    }
+
+    function isTruckOnline(entry){
+      if(entry.hasActiveRun !== true) return false;
+
+      const d = normalizeTimestamp(entry.updatedAt);
+      if(!d) return false;
+
+      const diff = Date.now() - d.getTime();
+      if(diff > 120000) return false;
+
+      return typeof entry.lat === "number" && typeof entry.lng === "number";
+    }
+
+    function buildTruckIcon(entry){
+      const isLive = isTruckOnline(entry);
+      const statusEmoji = isLive ? "🚛" : "🚚";
+      const color = isLive ? "#fb7185" : "#94a3b8";
+      return L.divIcon({
+        className: "truck-icon",
+        html: `
+          <div class="truck-pin" style="--pin-color:${color};">
+            <div class="truck-pin__bubble">${statusEmoji}</div>
+            <div class="truck-pin__pointer"></div>
+          </div>
+        `.trim(),
+        iconSize: [50, 70],
+        iconAnchor: [25, 55],
+        popupAnchor: [0, -50]
+      });
+    }
+
+    function updateTruckMarkerFromStore(id){
+      const entry = truckStore.get(id);
+      if(!entry) return;
+
+      if(!isTruckOnline(entry)){
+        if(truckMarkers.has(id)){
+          map.removeLayer(truckMarkers.get(id));
+          truckMarkers.delete(id);
+        }
+        return;
+      }
+
+      const coords = getTruckCoordinates(entry);
+      if(!coords){
+        if(truckMarkers.has(id)){
+          map.removeLayer(truckMarkers.get(id));
+          truckMarkers.delete(id);
+        }
+        return;
+      }
+
+      const popup = `<strong>${entry.name || entry.id}</strong><br>เขต ${entry.zones.join(", ") || "-"}`;
+      if(truckMarkers.has(id)){
+        const marker = truckMarkers.get(id);
+        marker.setLatLng([coords.lat, coords.lng]);
+        marker.setPopupContent(popup);
+        marker.setIcon(buildTruckIcon(entry));
+      }else{
+        const marker = L.marker([coords.lat, coords.lng], { icon: buildTruckIcon(entry) }).addTo(map)
+          .bindPopup(popup, { autoPan:false });
+        marker.on("click", () => focusTruck(id));
+        marker.on("popupclose", () => {
+          if(selectedTruckId === id){
+            clearTruckSelection();
+          }
+        });
+        truckMarkers.set(id, marker);
+      }
+
+      if(selectedTruckId === id){
+        focusTruck(id);
+      }
+    }
+
+    function updateAllTruckMarkers(){
+      truckStore.forEach((_, id) => updateTruckMarkerFromStore(id));
+    }
+
+    function highlightTruck(id){
+      clearBinSelection();
+      selectedTruckId = id;
+      Array.from(truckListEl.children).forEach(el => {
+        if(el.dataset?.id){
+          el.classList.toggle("active", el.dataset.id === id);
+        }
+      });
+    }
+
+    function focusTruck(id){
+      const entry = truckStore.get(id);
+      if(!entry) return;
+      highlightTruck(id);
+      const coords = getTruckCoordinates(entry);
+      if(coords){
+        const target = L.latLng(coords.lat, coords.lng);
+        map.setView(target, BIN_FOCUS_ZOOM, { animate:true });
+        const marker = truckMarkers.get(id);
+        if(marker){
+          marker.openPopup();
+        }
+        if(mapContainerEl){
+          mapContainerEl.scrollIntoView({ behavior:"smooth", block:"center" });
+        }
+      }
+    }
+
+    function renderTruckList(){
+      truckListEl.innerHTML = "";
+      const trucks = Array.from(truckStore.values());
+      const filterZones = selectedBinInfo && selectedBinInfo.zone && selectedBinInfo.zone !== "-"
+        ? new Set([selectedBinInfo.zone])
+        : userZones;
+
+      const filtered = trucks.filter(entry => {
+        if(!isTruckOnline(entry)) return false;
+        const zones = entry.zones || [];
+        if(!zones.length) return false;
+        if(!filterZones.size) return true;
+        return zones.some(z => filterZones.has(z));
+      });
+
+      if(!filtered.length){
+        const msg = selectedBinInfo?.zone
+          ? `ยังไม่มีรถที่ออนไลน์ในเขต ${selectedBinInfo.zone}`
+          : "ยังไม่มีรถที่ออนไลน์ในเขตของคุณ";
+        setTruckStatus(msg, "");
+        selectedTruckId = null;
+        updateAllTruckMarkers();
+        return;
+      }
+
+      filtered.sort((a, b) => {
+        const zoneA = a.zones[0] || "";
+        const zoneB = b.zones[0] || "";
+        if(zoneA === zoneB){
+          return (a.name || a.id).localeCompare(b.name || b.id);
+        }
+        return zoneA.localeCompare(zoneB);
+      });
+
+      const hasSelectedStillVisible = selectedTruckId && filtered.some(entry => entry.id === selectedTruckId);
+      if(!hasSelectedStillVisible){
+        selectedTruckId = null;
+      }
+
+      filtered.forEach(entry => {
+        const coords = getTruckCoordinates(entry);
+        const coordLabel = coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : "—";
+        const timeLabel = formatTruckTime(entry.updatedAt);
+
+        const card = document.createElement("button");
+        card.type = "button";
+        card.dataset.id = entry.id;
+        card.className = "bin-card truck-card" + (entry.id === selectedTruckId ? " active" : "");
+        card.innerHTML = `
+          <strong>${entry.name || entry.id}</strong>
+          <span>เขต: ${entry.zones.join(", ") || "-"}</span>
+          <span>พิกัด: ${coordLabel}</span>
+          <span class="live">กำลังส่งพิกัด</span>
+          <span>อัปเดต: ${timeLabel}</span>
+        `;
+        card.addEventListener("click", () => focusTruck(entry.id));
+        truckListEl.appendChild(card);
+      });
+
+      if(selectedTruckId){
+        highlightTruck(selectedTruckId);
+      }else{
+        Array.from(truckListEl.children).forEach(el => {
+          if(el.classList){
+            el.classList.remove("active");
+          }
+        });
+      }
+
+      setTruckStatus(`แสดงรถที่ออนไลน์ทั้งหมด ${filtered.length} คัน`, "ok");
+      updateAllTruckMarkers();
+    }
+
+    function deriveZoneFromTruckDoc(docId, data){
+      if(data.zone && typeof data.zone === "string" && data.zone.trim()){
+        return data.zone.trim();
+      }
+      const parts = String(docId).split("_");
+      return (parts[0] || "").trim();
+    }
+
+    function ensureTruckRunListener(truckId){
+      if(truckRunUnsubs.has(truckId)){
+        return;
+      }
+      const runQuery = firestore
+        .collection("trucks")
+        .doc(truckId)
+        .collection("runs")
+        .orderBy("startAt", "desc")
+        .limit(5);
+
+      const unsub = runQuery.onSnapshot(runSnap => {
+        const base = truckStore.get(truckId);
+        if (!base) return;
+
+        let activeRun = null;
+        runSnap.forEach(doc => {
+          const d = doc.data() || {};
+          if (d.isActive === true) {
+            activeRun = { id: doc.id, ...d };
+          }
+        });
+
+        if (!activeRun) {
+          truckStore.set(truckId, {
+            ...base,
+            hasActiveRun: false,
+            currentRunId: null
+          });
+        } else {
+          truckStore.set(truckId, {
+            ...base,
+            hasActiveRun: true,
+            currentRunId: activeRun.id,
+            lastRunStartAt: activeRun.startAt || null
+          });
+        }
+
+        renderTruckList();
+        updateAllTruckMarkers();
+
+      }, err => {
+        console.error("ไม่สามารถฟัง runs ของรถ", truckId, err);
+      });
+
+      truckRunUnsubs.set(truckId, unsub);
+    }
+
+    async function restartTruckListener(){
+      cleanupTruckListeners();
+      truckStore.clear();
+      truckListEl.innerHTML = "";
+      setTruckStatus("", "");
+
+      if(!userZones.size){
+        setTruckStatus("ยังไม่พบเขตจากถังของคุณ จึงยังไม่แสดงรถ", "");
+        return;
+      }
+
+      try{
+        setTruckStatus("กำลังโหลดรถในเขตของคุณ...", "");
+        trucksUnsub = firestore.collection("trucks").onSnapshot(snap => {
+          const seenIds = new Set();
+
+          snap.forEach(doc => {
+            const d = doc.data() || {};
+            const zone = deriveZoneFromTruckDoc(doc.id, d);
+            if(!zone || !userZones.has(zone)) return;
+
+            const lat = typeof d.lat === "number" ? d.lat : null;
+            const lng = typeof d.lng === "number" ? d.lng : null;
+
+            const prev = truckStore.get(doc.id) || {};
+
+            truckStore.set(doc.id, {
+              ...prev,
+              id: doc.id,
+              name: d.truckId || doc.id,
+              zones: [zone],
+              lat,
+              lng,
+              updatedAt: d.updatedAt || null,
+              hasActiveRun: prev.hasActiveRun === true,
+              currentRunId: prev.currentRunId || null
+            });
+
+            ensureTruckRunListener(doc.id);
+            seenIds.add(doc.id);
+          });
+
+          Array.from(truckStore.keys()).forEach(id => {
+            if(!seenIds.has(id)){
+              truckStore.delete(id);
+              if(truckMarkers.has(id)){
+                map.removeLayer(truckMarkers.get(id));
+                truckMarkers.delete(id);
+              }
+              if(truckRunUnsubs.has(id)){
+                const unsub = truckRunUnsubs.get(id);
+                if(typeof unsub === "function") unsub();
+                truckRunUnsubs.delete(id);
+              }
+            }
+          });
+
+          renderTruckList();
+          updateAllTruckMarkers();
+        }, err => {
+          console.error("ไม่สามารถโหลดรถได้", err);
+          setTruckStatus("ไม่สามารถโหลดรถได้: " + (err.message || err), "err");
+        });
+      }catch(err){
+        console.error(err);
+        setTruckStatus("เกิดข้อผิดพลาดในการโหลดรถ: " + (err.message || err), "err");
+      }
+    }
+
+    restartTruckListener();
+
+    // ✅ เปลี่ยนมาใช้ collectionGroup("bin_data") + ownerUsername
+    firestore.collectionGroup("bin_data")
+      .where("ownerUsername","==", currentUser.username)
+      .onSnapshot(async snapshot => {
+        const resolved = await Promise.all(snapshot.docs.map(async doc => {
+          const data = doc.data() || {};
+
+          if (data.isHidden === true) {
+            return null; // ส่งค่า null กลับไป เพื่อให้ถูกตัดออกในขั้นตอนถัดไป
+          }
+          
+          let zone = (data.zone || "").trim();
+          let binId = data.binId || doc.id;
+          let lat = typeof data.lat === "number" ? data.lat : null;
+          let lng = typeof data.lng === "number" ? data.lng : null;
+          let details = data.details || "";
+          let fillLevel = typeof data.fillLevel === "number" ? data.fillLevel : null;
+
+          if((lat === null || lng === null || !zone || zone === "-" || !details) && data.binDocPath){
+            const linked = await fetchLinkedBinDoc(data.binDocPath);
+            if(linked){
+              if(lat === null && typeof linked.lat === "number"){
+                lat = linked.lat;
+              }
+              if(lng === null && typeof linked.lng === "number"){
+                lng = linked.lng;
+              }
+              if(!details){
+                details = linked.details || linked.address || "";
+              }
+              if(!zone || zone === "-"){
+                zone = linked.zone || linked.zoneHint || zone;
+              }
+              if(!binId){
+                binId = linked.binId || linked.id;
+              }
+              if(fillLevel === null && typeof linked.fillLevel === "number"){
+                fillLevel = linked.fillLevel;
+              }
+            }
+          }
+
+          if(typeof lat !== "number" || typeof lng !== "number"){
+            return null;
+          }
+          return {
+            id: doc.ref.path,         // ใช้ path เต็มกันชนกันข้ามโซน
+            binId: binId || doc.id,
+            zone: zone || "-",
+            lat,
+            lng,
+            details: details || "",
+            fillLevel: typeof fillLevel === "number" ? Math.round(fillLevel) : null
+          };
+        }));
+
+        const docs = resolved.filter(Boolean);
+        binsCache.clear();
+        docs.forEach(entry => binsCache.set(entry.id, entry));
+
+        if(!docs.length){
+          renderList([]);
+          removeStaleBinMarkers([]);
+          updateUserZonesFromBins([]);
+          selectedBinId = null;
+          selectedBinInfo = null;
+          renderTruckList();
+          setStatus("ยังไม่มีถังที่มีพิกัดแสดงบนแผนที่", "err");
+          stopBinRealtimeLoop();
+          return;
+        }
+
+        const validIds = docs.map(d => d.id);
+        docs.forEach(entry => upsertBinMarker(entry));
+        removeStaleBinMarkers(validIds);
+        renderList(docs);
+        updateUserZonesFromBins(docs);
+
+        if(selectedBinId && binsCache.has(selectedBinId)){
+          highlightBin(selectedBinId);
+        }else{
+          clearBinSelection();
+          renderTruckList();
+        }
+
+        setStatus(`แสดงถังทั้งหมด ${docs.length} ใบ`, "ok");
+        startBinRealtimeLoop();
+      }, err => {
+        console.error(err);
+        setStatus("ไม่สามารถโหลดข้อมูลได้: " + (err.message || err), "err");
+      });
+
+    window.addEventListener("beforeunload", () => {
+      cleanupTruckListeners();
+      stopBinRealtimeLoop();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1739 @@
+﻿﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - คนขับรถเก็บขยะ</title>
+  <link rel="stylesheet" href="a_style.css">
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script src="../Login/auth.js"></script>
+  <script src="admin-lang.js"></script>
+  <script src="admin-user.js" defer></script>
+  <script src="admin-nav.js" defer></script>
+  <script>
+    const currentUser = window.SWAuth.requireAuth([0]); // เฉพาะแอดมิน
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f6fa;
+      flex-direction: row;
+      overflow-x: hidden;
+    }
+
+    :root {
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 16px;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+      height: 100vh;
+      touch-action: none;
+    }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar {
+      width: 250px;
+      background: #2f3640;
+      color: #f5f6fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 20px;
+      transition: .3s;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      color: #00a8ff;
+      margin-bottom: 25px;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar .sw-logout-slot {
+      margin-top: 0 !important;
+      margin-left: 18px;
+      margin-right: 18px;
+      margin-bottom: 24px;
+      padding: 0;
+    }
+
+    .menu a {
+      display: block;
+      color: #f5f6fa;
+      padding: 14px 20px;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      transition: .3s;
+    }
+
+    .menu a:hover,
+    .menu a.active {
+      background: #353b48;
+      border-left: 4px solid #00a8ff;
+    }
+
+    .sidebar .sw-logout-slot .sw-logout-btn{
+      display:block;
+      width:100%;
+      text-align:left;
+      padding:14px 20px;
+      margin-top:6px;
+      border:none;
+      border-radius:10px;
+      background:#dc2626;
+      color:#fff;
+      font-size:15px;
+      font-weight:600;
+      box-shadow:none !important;
+      transform:none !important;
+    }
+    .sidebar .sw-logout-slot .sw-logout-btn:hover,
+    .sidebar .sw-logout-slot .sw-logout-btn:focus{
+      background:#b91c1c;
+      border-left:0;
+    }
+
+    /* ปุ่ม 3 ขีด */
+    .toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      cursor: pointer;
+      z-index: 1000;
+      font-size: var(--btn-font);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    /* ---------- Main ---------- */
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      line-height: 1.25;
+      color: #2f3640;
+      font-size: 22px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .page-header {
+      max-width: 60%;
+    }
+
+    .page-header .muted {
+      font-size: 13px;
+    }
+
+    .content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      background: #f9fafb;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color:#111827;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      border: 1px solid #cbd5e1;
+      font-size: var(--btn-font);
+      background: #f9fafb;
+      margin-bottom: 10px;
+    }
+
+    #searchInput {
+      margin-bottom: 0 !important;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      border-color: #2563eb;
+      background: #fff;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    
+    .row > div {
+      flex: 1 1 220px; /* ค่าเริ่มต้นสำหรับ Desktop */
+    }
+
+    /* Class พิเศษสำหรับกล่องค้นหา */
+    .search-box-wrapper {
+       flex: 0 0 260px;
+    }
+
+    button {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      border: none;
+      font-size: var(--btn-font);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, filter .2s;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .ghost {
+      background: #f4f4f5;
+      color: #111827;
+    }
+
+    .danger {
+      background:#ef4444;
+      color:#fff;
+    }
+
+    button:hover {
+      filter: brightness(1.03);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    button:focus,
+    .toggle-btn:focus,
+    input:focus,
+    select:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    .muted {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    /* zone filter chips */
+    .chips-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .chip {
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid #d4d4d8;
+      background:#f4f4f5;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .chip.active {
+      background:#2563eb;
+      color:#fff;
+      border-color:#2563eb;
+    }
+
+    .table-tools {
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-top:4px;
+    }
+
+    .table-tools input[type="text"] {
+      max-width:260px;
+      margin-bottom:0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #f9fafb;
+      font-weight:600;
+    }
+
+    td:last-child {
+      text-align:right;
+    }
+
+    .badge-zone {
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      font-size:12px;
+    }
+
+    .btn-small {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      font-size: var(--btn-font);
+      border-radius: var(--btn-radius);
+    }
+
+    .btn-edit {
+      background:#e5e7eb;
+      color:#111827;
+    }
+
+    .btn-delete {
+      background:#ef4444;
+      color:#fff;
+      margin-left:6px;
+    }
+
+    .count-label {
+      font-size:13px;
+      color:#16a34a;
+    }
+
+    .add-driver-header {
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:4px;
+      margin-top:4px;
+    }
+
+    .add-driver-title {
+      font-size:18px;
+      font-weight:600;
+      color:#111827;
+      margin-right:auto;
+    }
+
+    .add-driver-hint {
+      font-size:13px;
+      color:#6b7280;
+      margin-top:4px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 12px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, .35);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+
+    .modal-footer-row {
+      margin-top:10px;
+      align-items:center;
+    }
+
+    .bin-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .bin-actions .icon-btn {
+      width: 32px;
+      height: 32px;
+      padding: 4px;
+      border-radius: 999px;
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
+    }
+
+    .bin-actions .icon-btn:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .bin-actions .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .icon-edit-btn svg {
+      fill: #2563eb; /* สีน้ำเงิน */
+    }
+
+    .icon-delete-btn svg {
+      fill: #dc2626; /* สีแดง */
+    }
+
+    .icon-btn:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    /* Responsive */
+    @media(max-width:900px){
+      body{flex-direction:column;}
+      .sidebar{
+        position:fixed;
+        left:-250px;
+        top:0;
+        height:100%;
+        z-index:999;
+      }
+      .sidebar.show{left:0;}
+      .toggle-btn{display:inline-flex;}
+      main{padding:70px 16px 20px;}
+      
+      .row{
+        flex-direction:column;
+        gap: 0; 
+      }
+      
+      .row > div {
+        width: 100%;
+        /* ===== แก้ไขจุดสำคัญ: รีเซ็ตความสูงที่ถูกดันจาก flex-basis 220px ===== */
+        flex: 1 1 auto; 
+      }
+      
+      .search-box-wrapper {
+        flex: 1 1 auto; 
+        width: 100%;
+        margin-top: 8px;
+      }
+
+      .page-header{max-width:100%;}
+
+      /* Modal บนมือถือ */
+      .modal-backdrop {
+        align-items:flex-start;
+        padding:32px 0;
+      }
+      .modal {
+        max-width:100%;
+        margin:0 16px 24px;
+        -webkit-overflow-scrolling:touch;
+      }
+
+      .add-driver-header{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .add-driver-header button{
+        width:100%;
+        justify-content:center;
+      }
+
+      .bin-actions .icon-btn {
+        width: 28px;
+        height: 28px;
+        padding: 3px;
+      }
+      .bin-actions .icon-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    @media(min-width:901px){
+      .toggle-btn{
+        display:none !important;
+      }
+    }
+  </style>
+
+  <style>
+    /* ---------- Loader Animation ---------- */
+    #loader-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(245, 246, 250, 0.95);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transition: opacity 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loader-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .loading-text {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2f3640;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    /* Bouncing dots loader */
+    .spinner {
+      margin: 0 auto 20px;
+      width: 70px;
+      text-align: center;
+    }
+    .spinner > div {
+      width: 15px;
+      height: 15px;
+      background-color: #2563eb;
+      border-radius: 100%;
+      display: inline-block;
+      animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+    }
+    .spinner .bounce1 { animation-delay: -0.32s; }
+    .spinner .bounce2 { animation-delay: -0.16s; }
+
+    @keyframes sk-bouncedelay {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1.0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loader-overlay">
+    <div class="spinner">
+      <div class="bounce1"></div>
+      <div class="bounce2"></div>
+      <div class="bounce3"></div>
+    </div>
+    <div class="loading-text" id="loaderText">กำลังโหลด...</div>
+  </div>
+
+  <button class="toggle-btn" id="menuToggleBtn">☰ เมนู</button>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Smart Waste</h2>
+    <nav class="menu" data-admin-menu data-active="addDriver"></nav>
+    <div class="sw-logout-slot" data-sw-logout-slot></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="page-header">
+        <h1 id="mainTitle">จัดการคนขับรถเก็บขยะ</h1>
+        <p class="muted" id="pageHint">
+          เพิ่ม / จัดการบัญชีผู้ใช้ของพนักงานขับรถเก็บขยะในแต่ละเขตพื้นที่
+        </p>
+      </div>
+      <div class="topbar-right">
+          <!-- ไอคอนเลือกภาษา -->
+          <div class="lang-switcher">
+          <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+            <img src="images/lang-icon.png" alt="Language" class="top-icon">
+          </button>
+          <div class="lang-menu" id="langMenu">
+            <button type="button" data-lang="th">ไทย</button>
+            <button type="button" data-lang="en">English</button>
+            <button type="button" data-lang="ms">Bahasa Melayu</button>
+          </div>
+          <select id="langSelect" style="display:none;">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+          </select>
+        </div>
+
+          <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
+          <a href="profile.html" class="user-chip" id="profileBtn">
+            <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
+            <div class="user-chip-text">
+              <div class="user-chip-name" id="profileName">User Name</div>
+              <div class="user-chip-role" id="profileRole">Role</div>
+            </div>
+          </a>
+        </div>
+    </div>
+
+    <div class="content">
+
+      <div class="card">
+        <div class="add-driver-header">
+          <div class="add-driver-title" id="addDriverHeaderTitle">เพิ่มคนขับใหม่</div>
+          <button type="button" class="primary" id="btnOpenDriverForm">เพิ่มคนขับ</button>
+        </div>
+        <p class="add-driver-hint" id="addDriverHeaderHint">
+          กดปุ่มเพื่อเพิ่ม / ลงทะเบียนคนขับใหม่ในระบบ
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="row" style="margin-bottom:0;">
+          <div style="flex:1 1 auto;">
+            <label class="muted" style="margin-bottom:6px;" id="labelZoneFilter">เขตพื้นที่</label>
+            <div class="chips-row" id="zoneChips">
+              <button type="button" class="chip active" data-zone="__all" id="chipAllZones">เขตทั้งหมด</button>
+            </div>
+          </div>
+          
+          <div class="search-box-wrapper">
+            <label for="searchInput" class="muted" style="margin-bottom:6px;" id="labelSearch">ค้นหา Driver ID / Username</label>
+            <input id="searchInput" type="text" placeholder="เช่น DRV001 หรือชื่อผู้ใช้" />
+          </div>
+        </div>
+
+        <div class="table-tools">
+          <span class="count-label" id="countLabel">แสดง 0 รายการ</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th id="thZone">เขต</th>
+                <th id="thDriverId">Driver ID</th>
+                <th id="thUsername">ชื่อผู้ใช้</th>
+                <th id="thFullName">ชื่อ - สกุล</th>
+                <th id="thPhone">เบอร์โทรศัพท์</th>
+                <th id="thUpdated">อัปเดตเมื่อ</th>
+                <th id="thActions">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="driversTbody">
+              <!-- Data will be rendered here by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="modal-backdrop" id="driverModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="driverModalTitle">เพิ่มคนขับใหม่</div>
+        <button type="button" class="modal-close" id="btnCloseDriverModal">✕</button>
+      </div>
+
+      <form id="driverForm">
+        <div class="row">
+          <div>
+            <label for="zoneSelect" id="labelZone">เขตพื้นที่ (โซนการทำงาน)</label>
+            <select id="zoneSelect" required>
+              <option value="">เลือกเขต...</option>
+            </select>
+            <p class="muted" id="zoneHelp">เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ</p>
+          </div>
+          <div>
+            <label for="driverId" id="labelDriverId">Driver ID</label>
+            <input id="driverId" type="text" readonly placeholder="เลือกเขตก่อน" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label for="fullName" id="labelFullName">ชื่อ - นามสกุล</label>
+            <input id="fullName" type="text" required placeholder="เช่น นายสมชาย ขับรถดี" />
+          </div>
+          <div>
+            <label for="phone" id="labelPhone">เบอร์โทรศัพท์</label>
+            <input id="phone" type="text" required placeholder="เช่น 0812345678" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label for="username" id="labelUsername">ชื่อผู้ใช้ (ใช้เข้าสู่ระบบ)</label>
+            <input id="username" type="text" required placeholder="เช่น drv_somchai หรือหมายเลขโทรศัพท์" />
+          </div>
+          <div>
+            <label for="password" id="labelPassword">รหัสผ่านเริ่มต้น</label>
+            <input id="password" type="password" required placeholder="กำหนดรหัสผ่านสำหรับคนขับ" />
+          </div>
+        </div>
+
+        <div class="row modal-footer-row">
+          <div class="muted" id="formStatus"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;flex:1;">
+            <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
+            <button type="submit" class="primary" id="btnSaveDriver">บันทึกคนขับ</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    /* ---------- Firebase ---------- */
+    var firebaseConfig = {
+      apiKey:"AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
+      authDomain:"smart-waste-a2bf4.firebaseapp.com",
+      projectId:"smart-waste-a2bf4",
+      storageBucket:"smart-waste-a2bf4.firebasestorage.app",
+      messagingSenderId:"522733244689",
+      appId:"1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+    const usersCol = fs.collection("users");
+    const ACTIVE_DRIVER_STATUS = new Set([1, "1"]);
+    const zonesCol = fs.collection("zones");
+
+    function isActiveDriver(data){
+      if(!data) return false;
+      if(data.isDeleted === true) return false;
+      const status = typeof data.status === "string" ? data.status.trim() : data.status;
+      return ACTIVE_DRIVER_STATUS.has(status);
+    }
+
+    async function hasPhoneConflict(phoneDigits, rawPhone){
+      const jobs = [];
+      jobs.push(
+        usersCol.where("phoneNormalized","==", phoneDigits).limit(5).get()
+      );
+
+      const variants = Array.from(
+        new Set(
+          [rawPhone ? rawPhone.trim() : "", phoneDigits].filter(Boolean)
+        )
+      );
+      if(variants.length){
+        jobs.push(
+          usersCol.where("phone","in", variants).limit(5).get()
+        );
+      }
+
+      const snaps = await Promise.all(jobs);
+      for(const snap of snaps){
+        for(const doc of snap.docs){
+          const data = doc.data() || {};
+          if(isActiveDriver(data)){
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    /* ---------- Auth UI ---------- */
+    const adminNameEl = document.getElementById('adminName');
+    const adminAvatarEl = document.getElementById('adminAvatar');
+    const adminRoleEl = document.getElementById('adminRole');
+
+    /* ---------- DOM refs ---------- */
+    const zoneSelect = document.getElementById('zoneSelect');
+    const driverIdInput = document.getElementById('driverId');
+    const fullNameInput = document.getElementById('fullName');
+    const phoneInput = document.getElementById('phone');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const formStatus = document.getElementById('formStatus');
+    const driverForm = document.getElementById('driverForm');
+    const btnClear = document.getElementById('btnClear');
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+
+    const addDriverHeaderTitle = document.getElementById('addDriverHeaderTitle');
+    const addDriverHeaderHint = document.getElementById('addDriverHeaderHint');
+    const btnOpenDriverForm = document.getElementById('btnOpenDriverForm');
+    const driverModalBackdrop = document.getElementById('driverModalBackdrop');
+    const btnCloseDriverModal = document.getElementById('btnCloseDriverModal');
+    const driverModalTitle = document.getElementById('driverModalTitle');
+
+    const zoneChips = document.getElementById('zoneChips');
+    const searchInput = document.getElementById('searchInput');
+    const driversTbody = document.getElementById('driversTbody');
+    const countLabel = document.getElementById('countLabel');
+    const loaderOverlay = document.getElementById('loader-overlay');
+
+    /* ---------- State ---------- */
+    let zones = [];        // {id, name}
+    let drivers = [];      // {docId, driverId, username, fullName, phone, zoneId, zoneName, updatedAt}
+    let activeZoneFilter = "__all";
+    let searchText = "";
+    let editingDriverDocId = null; // State for editing
+
+    /* ---------- แปลภาษา ---------- */
+    const translations = {
+      th: {
+        menuBtn: "☰ เมนู",
+        pageTitle: "Smart Waste - คนขับรถเก็บขยะ",
+        mainTitle: "จัดการคนขับรถเก็บขยะ",
+        pageHint: "เพิ่ม / จัดการบัญชีผู้ใช้ของพนักงานขับรถเก็บขยะในแต่ละเขตพื้นที่",
+
+        addDriverTitle: "เพิ่มคนขับใหม่",
+        addDriverHint: "กดปุ่มเพื่อเพิ่ม / ลงทะเบียนคนขับใหม่ในระบบ",
+        btnOpenDriverForm: "เพิ่มคนขับ",
+        editDriverTitle: "แก้ไขข้อมูลคนขับ",
+
+        labelZone: "เขตพื้นที่ (โซนการทำงาน)",
+        zoneHelp: "เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ",
+        labelDriverId: "Driver ID",
+        labelFullName: "ชื่อ - นามสกุล",
+        labelPhone: "เบอร์โทรศัพท์",
+        labelUsername: "ชื่อผู้ใช้ (ใช้เข้าสู่ระบบ)",
+        labelPassword: "รหัสผ่านเริ่มต้น",
+
+        zonePlaceholder: "เลือกเขต...",
+        driverIdPlaceholder: "เลือกเขตก่อน",
+        fullNamePh: "เช่น นายสมชาย ขับรถดี",
+        phonePh: "เช่น 0812345678",
+        usernamePh: "เช่น drv_somchai หรือหมายเลขโทรศัพท์",
+        passwordPh: "กำหนดรหัสผ่านสำหรับคนขับ",
+        searchPh: "เช่น DRV001 หรือชื่อผู้ใช้",
+
+        btnClear: "ล้างฟอร์ม",
+        btnSaveDriver: "บันทึกคนขับ",
+        btnUpdateDriver: "บันทึกการเปลี่ยนแปลง",
+
+        labelZoneFilter: "เขตพื้นที่",
+        chipAllZones: "เขตทั้งหมด",
+        labelSearch: "ค้นหา Driver ID / Username",
+
+        thZone: "เขต",
+        thDriverId: "Driver ID",
+        thUsername: "ชื่อผู้ใช้",
+        thFullName: "ชื่อ - สกุล",
+        thPhone: "เบอร์โทรศัพท์",
+        thUpdated: "อัปเดตเมื่อ",
+        thActions: "จัดการ",
+        loadingText: "กำลังโหลดข้อมูล...",
+        loaderText: "กำลังโหลด...",
+
+        countPrefix: "แสดง",
+        countSuffix: "รายการ",
+        noDrivers: "ไม่พบข้อมูล",
+
+        btnEdit: "แก้ไข",
+        btnDelete: "ลบ",
+
+        statusSelectZoneFirst: "กรุณาเลือกเขตก่อน",
+        statusComputingId: "กำลังคำนวณ Driver ID...",
+        statusIdGenerated: "ระบบสร้าง Driver ID อัตโนมัติแล้ว",
+        statusIdErrorPrefix: "ไม่สามารถสร้าง Driver ID ได้: ",
+
+        statusRequiredZone: "กรุณาเลือกเขตพื้นที่",
+        statusMissingDriverId: "ยังไม่มี Driver ID กรุณาเลือกเขตอีกครั้ง",
+        statusMissingNamePhone: "กรุณากรอกชื่อ-นามสกุล และเบอร์โทรศัพท์",
+        statusMissingUserPass: "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน",
+        statusSaving: "กำลังบันทึกข้อมูล...",
+        statusUsernameExists: "มีชื่อผู้ใช้นี้ในระบบแล้ว กรุณาใช้ชื่ออื่น",
+        statusPhoneExists: "มีเบอร์โทรนี้ในระบบแล้ว กรุณาใช้หมายเลขอื่น",
+        statusSaveOk: "บันทึกข้อมูลคนขับเรียบร้อย",
+        statusUpdateOk: "อัปเดตข้อมูลเรียบร้อย",
+        statusSaveErrorPrefix: "เกิดข้อผิดพลาด: ",
+
+        confirmDelete: "ต้องการลบ (ซ่อน) คนขับคนนี้หรือไม่?",
+        deleteFailPrefix: "ลบไม่สำเร็จ: ",
+
+        passwordEditHint: "เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน",
+        roleAdmin: "ผู้ดูแลระบบ",
+        roleDriver: "พนักงานขับรถ",
+        roleUser: "ผู้ใช้ทั่วไป",
+        logout: "ออกจากระบบ"
+      },
+      en: {
+        menuBtn: "☰ Menu",
+        pageTitle: "Smart Waste - Drivers",
+        mainTitle: "Manage Garbage Truck Drivers",
+        pageHint: "Create and manage driver accounts for each operation zone.",
+
+        addDriverTitle: "Add New Driver",
+        addDriverHint: "Click the button to register a new driver.",
+        btnOpenDriverForm: "Add Driver",
+        editDriverTitle: "Edit Driver Information",
+
+        labelZone: "Zone (Operation Area)",
+        zoneHelp: "Select a zone first and the system will generate a Driver ID automatically.",
+        labelDriverId: "Driver ID",
+        labelFullName: "Full Name",
+        labelPhone: "Phone Number",
+        labelUsername: "Username (for login)",
+        labelPassword: "Initial Password",
+
+        zonePlaceholder: "Select zone...",
+        driverIdPlaceholder: "Select zone first",
+        fullNamePh: "e.g. Mr. Somchai Driver",
+        phonePh: "e.g. 0812345678",
+        usernamePh: "e.g. drv_somchai or phone number",
+        passwordPh: "Set an initial password for the driver",
+        searchPh: "e.g. DRV001 or username",
+
+        btnClear: "Reset Form",
+        btnSaveDriver: "Save Driver",
+        btnUpdateDriver: "Save Changes",
+
+        labelZoneFilter: "Zone",
+        chipAllZones: "All Zones",
+        labelSearch: "Search Driver ID / Username",
+
+        thZone: "Zone",
+        thDriverId: "Driver ID",
+        thUsername: "Username",
+        thFullName: "Full Name",
+        thPhone: "Phone",
+        thUpdated: "Updated At",
+        thActions: "Actions",
+        loadingText: "Loading data...",
+        loaderText: "Loading...",
+
+        countPrefix: "Showing",
+        countSuffix: "items",
+        noDrivers: "No drivers found",
+
+        btnEdit: "Edit",
+        btnDelete: "Delete",
+
+        statusSelectZoneFirst: "Please select a zone first",
+        statusComputingId: "Calculating Driver ID...",
+        statusIdGenerated: "Driver ID has been generated automatically",
+        statusIdErrorPrefix: "Unable to generate Driver ID: ",
+
+        statusRequiredZone: "Please select a zone",
+        statusMissingDriverId: "Driver ID is missing, please select zone again",
+        statusMissingNamePhone: "Please enter full name and phone number",
+        statusMissingUserPass: "Please enter username and password",
+        statusSaving: "Saving driver data...",
+        statusUsernameExists: "This username already exists, please use another",
+        statusPhoneExists: "This phone number is already used by another driver.",
+        statusSaveOk: "Driver saved successfully",
+        statusUpdateOk: "Driver updated successfully",
+        statusSaveErrorPrefix: "Error: ",
+
+        confirmDelete: "Are you sure you want to delete (hide) this driver?",
+        deleteFailPrefix: "Delete failed: ",
+
+        passwordEditHint: "Leave blank if you don't want to change the password",
+        roleAdmin: "Administrator",
+        roleDriver: "Driver",
+        roleUser: "User",
+        logout: "Logout"
+      },
+      ms: {
+        menuBtn: "☰ Menu",
+        pageTitle: "Smart Waste - Pemandu",
+        mainTitle: "Urus Pemandu Lori Sampah",
+        pageHint: "Cipta dan urus akaun pemandu mengikut zon operasi.",
+
+        addDriverTitle: "Tambah Pemandu Baharu",
+        addDriverHint: "Klik butang untuk daftar pemandu baharu.",
+        btnOpenDriverForm: "Tambah Pemandu",
+        editDriverTitle: "Ubah Maklumat Pemandu",
+
+        labelZone: "Zon (Kawasan Operasi)",
+        zoneHelp: "Pilih zon dahulu, sistem akan jana ID Pemandu secara automatik.",
+        labelDriverId: "ID Pemandu",
+        labelFullName: "Nama Penuh",
+        labelPhone: "Nombor Telefon",
+        labelUsername: "Nama Pengguna (untuk log masuk)",
+        labelPassword: "Kata Laluan Asal",
+
+        zonePlaceholder: "Pilih zon...",
+        driverIdPlaceholder: "Pilih zon dahulu",
+        fullNamePh: "cth. Encik Somchai Pemandu",
+        phonePh: "cth. 0812345678",
+        usernamePh: "cth. drv_somchai atau nombor telefon",
+        passwordPh: "Tetapkan kata laluan awal untuk pemandu",
+        searchPh: "cth. DRV001 atau nama pengguna",
+
+        btnClear: "Kosongkan Borang",
+        btnSaveDriver: "Simpan Pemandu",
+        btnUpdateDriver: "Simpan Perubahan",
+
+        labelZoneFilter: "Zon",
+        chipAllZones: "Semua Zon",
+        labelSearch: "Cari ID Pemandu / Nama Pengguna",
+
+        thZone: "Zon",
+        thDriverId: "ID Pemandu",
+        thUsername: "Nama Pengguna",
+        thFullName: "Nama Penuh",
+        thPhone: "Telefon",
+        thUpdated: "Dikemas Kini",
+        thActions: "Tindakan",
+        loadingText: "Memuatkan data...",
+        loaderText: "Memuatkan...",
+
+        countPrefix: "Menunjukkan",
+        countSuffix: "rekod",
+        noDrivers: "Tiada pemandu",
+
+        btnEdit: "Ubah",
+        btnDelete: "Padam",
+
+        statusSelectZoneFirst: "Sila pilih zon dahulu",
+        statusComputingId: "Mengira ID Pemandu...",
+        statusIdGenerated: "ID Pemandu dijana secara automatik",
+        statusIdErrorPrefix: "Tidak dapat menjana ID Pemandu: ",
+
+        statusRequiredZone: "Sila pilih zon",
+        statusMissingDriverId: "ID Pemandu tiada, sila pilih zon semula",
+        statusMissingNamePhone: "Sila isi nama penuh dan nombor telefon",
+        statusMissingUserPass: "Sila isi nama pengguna dan kata laluan",
+        statusSaving: "Menyimpan data pemandu...",
+        statusUsernameExists: "Nama pengguna ini sudah wujud, sila guna yang lain",
+        statusPhoneExists: "Nombor telefon ini telah digunakan oleh pemandu lain.",
+        statusSaveOk: "Pemandu berjaya disimpan",
+        statusUpdateOk: "Maklumat pemandu berjaya dikemas kini",
+        statusSaveErrorPrefix: "Ralat: ",
+
+        confirmDelete: "Adakah anda pasti mahu memadam (sembunyi) pemandu ini?",
+        deleteFailPrefix: "Gagal memadam: ",
+
+        passwordEditHint: "Biarkan kosong jika tidak mahu menukar kata laluan",
+        roleAdmin: "Pentadbir",
+        roleDriver: "Pemandu",
+        roleUser: "Pengguna",
+        logout: "Keluar"
+      }
+    };
+
+    const LangState = window.AdminLang;
+    let currentLang = (LangState && typeof LangState.getLang === "function")
+      ? LangState.getLang()
+      : (localStorage.getItem("sw_lang") || "th");
+    const langSelect = document.getElementById("langSelect");
+
+    function tr(key){
+      const t = translations[currentLang] || translations.th;
+      return t[key] !== undefined ? t[key] : key;
+    }
+
+    function setFormStatus(text, type){
+      formStatus.textContent = text || "";
+      formStatus.style.color = type === "err" ? "#dc2626" :
+                               type === "ok" ? "#16a34a" : "#6b7280";
+    }
+
+    function normalizePhone(value){
+      return (value || "").replace(/[^0-9]/g,"");
+    }
+
+    /* hash password เหมือนหน้า login */
+    async function hashPassword(pw){
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pw);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2,"0"))
+        .join("");
+    }
+
+    /* ---------- lock scroll ตอนเปิด modal ---------- */
+    function lockBodyScroll(lock){
+      document.body.classList.toggle("modal-open", !!lock);
+    }
+
+    /* ---------- Loader ---------- */
+    function showLoader() {
+      if (loaderOverlay) loaderOverlay.classList.add('show');
+    }
+
+    function hideLoader() {
+      if (loaderOverlay) loaderOverlay.classList.remove('show');
+    }
+
+    /* ---------- Load zones ---------- */
+    async function loadZones(){
+      const snap = await zonesCol.get();
+      zones = [];
+      zoneSelect.innerHTML = '<option value="">' + tr("zonePlaceholder") + '</option>';
+
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const id = doc.id;
+        const name = d.name || id;
+        zones.push({id, name});
+
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = name;
+        zoneSelect.appendChild(opt);
+      });
+
+      // chips
+      while(zoneChips.children.length > 1){
+        zoneChips.removeChild(zoneChips.lastChild);
+      }
+      zones.forEach(z => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip";
+        btn.dataset.zone = z.id;
+        btn.textContent = z.name;
+        zoneChips.appendChild(btn);
+      });
+    }
+
+    /* ---------- Compute next driverId (per zone) ---------- */
+    async function computeNextDriverId(zoneId){
+      if(!zoneId){
+        driverIdInput.value = "";
+        return;
+      }
+      const snap = await usersCol
+        .where("zoneId","==",zoneId)
+        .get();
+
+      let maxNum = 0;
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        const idStr = d.driverId || doc.id;
+        const m = idStr.match(/(\d+)$/);
+        if(m){
+          const n = parseInt(m[1],10);
+          if(!isNaN(n) && n > maxNum) maxNum = n;
+        }
+      });
+
+      const next = maxNum + 1;
+      const driverId = "DRV" + String(next).padStart(3,"0");
+      driverIdInput.value = driverId;
+    }
+
+    zoneSelect.addEventListener("change", () => {
+      const zoneId = zoneSelect.value;
+      if(!zoneId){
+        driverIdInput.value = "";
+        setFormStatus(tr("statusSelectZoneFirst"), "err");
+        return;
+      }
+      setFormStatus(tr("statusComputingId"), "");
+      computeNextDriverId(zoneId).then(() => {
+        setFormStatus(tr("statusIdGenerated"), "ok");
+      }).catch(err => {
+        console.error(err);
+        setFormStatus(tr("statusIdErrorPrefix") + err.message, "err");
+      });
+    });
+
+    /* ---------- Load drivers ---------- */
+    async function loadDrivers(){
+      driversTbody.innerHTML = `<tr><td colspan="7" class="muted">${tr("loadingText")}</td></tr>`;
+      const snap = await usersCol.get();
+      drivers = [];
+      snap.forEach(doc => {
+        const d = doc.data() || {};
+        if(!isActiveDriver(d)) return;
+        const updatedAt = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : null;
+        const phoneValue = d.phone || d.phoneNormalized || "";
+        drivers.push({
+          docId: doc.id,
+          driverId: d.driverId || "",
+          username: d.username || doc.id,
+          fullName: d.fullName || "",
+          phone: phoneValue,
+          zoneId: d.zoneId || "",
+          zoneName: d.zoneName || d.zoneId || "",
+          updatedAt
+        });
+      });
+      drivers.sort((a,b) => {
+        const ta = a.updatedAt ? a.updatedAt.getTime() : 0;
+        const tb = b.updatedAt ? b.updatedAt.getTime() : 0;
+        return tb - ta;
+      });
+      renderDrivers();
+    }
+
+    /* ---------- Render table ---------- */
+    function renderDrivers(){
+      const zoneFilter = activeZoneFilter;
+      const keyword = (searchText || "").trim().toLowerCase();
+
+      let filtered = drivers.slice();
+      if(zoneFilter !== "__all"){
+        filtered = filtered.filter(d => d.zoneId === zoneFilter);
+      }
+      if(keyword){
+        filtered = filtered.filter(d =>
+          (d.driverId || "").toLowerCase().includes(keyword) ||
+          (d.username || "").toLowerCase().includes(keyword)
+        );
+      }
+
+      countLabel.textContent = tr("countPrefix") + " " + filtered.length + " " + tr("countSuffix");
+
+      if(filtered.length === 0){
+        const msg = tr("noDrivers");
+        driversTbody.innerHTML = '<tr><td colspan="7" class="muted">'+msg+'</td></tr>';
+        return;
+      }
+
+      const rows = filtered.map(d => {
+        const zoneName = d.zoneName || d.zoneId || "-";
+        const t = d.updatedAt ? d.updatedAt.toLocaleString() : "-";
+        const editLabel = tr("btnEdit");
+        const delLabel = tr("btnDelete");
+        return `
+          <tr>
+            <td><span class="badge-zone">${zoneName}</span></td>
+            <td>${d.driverId || "—"}</td>
+            <td>${d.username || "—"}</td>
+            <td>${d.fullName || "—"}</td>
+            <td>${d.phone || "—"}</td>
+            <td>${t}</td>
+            <td>
+              <div class="bin-actions">
+                <button class="icon-btn icon-edit-btn" 
+                        type="button" 
+                        data-action="edit" 
+                        data-id="${d.docId}" 
+                        aria-label="${editLabel}"
+                        title="${editLabel}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
+                  </svg>
+                </button>
+
+                <button class="icon-btn icon-delete-btn" 
+                        type="button" 
+                        data-action="delete" 
+                        data-id="${d.docId}" 
+                        aria-label="${delLabel}"
+                        title="${delLabel}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 3h6a1 1 0 0 1 1 1v1h4v2h-1v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7H3V5h4V4a1 1 0 0 1 1-1zm1 2v1h4V5h-4zm-2 4h2v9H8V9zm4 0h2v9h-2V9z"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+      driversTbody.innerHTML = rows;
+    }
+
+    /* ---------- Filter chips ---------- */
+    zoneChips.addEventListener("click", (e) => {
+      const btn = e.target.closest(".chip");
+      if(!btn) return;
+      const z = btn.dataset.zone;
+      if(typeof z === "undefined") return;
+
+      activeZoneFilter = z;
+
+      zoneChips.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+
+      renderDrivers();
+    });
+
+    searchInput.addEventListener("input", () => {
+      searchText = searchInput.value;
+      renderDrivers();
+    });
+
+    /* ---------- Add driver (submit form) ---------- */
+    driverForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const zoneId = zoneSelect.value;
+      const driverId = driverIdInput.value.trim();
+      const fullName = fullNameInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const phoneDigits = normalizePhone(phone);
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+      const btnSaveDriver = document.getElementById('btnSaveDriver');
+
+      if(!fullName || !phoneDigits){
+        setFormStatus(tr("statusMissingNamePhone"), "err");
+        return;
+      }
+
+      btnSaveDriver.disabled = true;
+      setFormStatus(tr("statusSaving"), ""); // "กำลังบันทึก..."
+
+      try{
+        // --- Edit Mode ---
+        if (editingDriverDocId) {
+          const originalDriver = drivers.find(d => d.docId === editingDriverDocId);
+          if (!originalDriver) {
+            throw new Error("Original driver data not found for editing.");
+          }
+
+          const newUsername = username;
+          const usernameChanged = newUsername !== editingDriverDocId;
+
+          const dataToUpdate = {
+            driverId,
+            zoneId,
+            zoneName: zones.find(z => z.id === zoneId)?.name || zoneId,
+            fullName,
+            phone: phoneDigits,
+            phoneNormalized: phoneDigits,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          if(usernameChanged){
+            dataToUpdate.username = newUsername;
+          }
+
+          // Only update password if a new one is provided
+          if (password) {
+            dataToUpdate.passwordHash = await hashPassword(password);
+          }
+
+          // Check for phone number conflict, excluding the current user
+          const phoneQuery = await usersCol.where("phoneNormalized", "==", phoneDigits).get();
+          let phoneConflict = false;
+          phoneQuery.forEach(doc => {
+            if (doc.id !== editingDriverDocId && isActiveDriver(doc.data())) {
+              phoneConflict = true;
+            }
+          });
+
+          if (phoneConflict) {
+            setFormStatus(tr("statusPhoneExists"), "err");
+            btnSaveDriver.disabled = false;
+            return;
+          }
+
+          // Handle username change (re-create document)
+          if (usernameChanged) {
+            // Check if new username already exists
+            const newDocRef = usersCol.doc(newUsername);
+            const newDocSnap = await newDocRef.get();
+            if (newDocSnap.exists && isActiveDriver(newDocSnap.data())) {
+              setFormStatus(tr("statusUsernameExists"), "err");
+              btnSaveDriver.disabled = false;
+              return;
+            }
+
+            // Get old data, merge with new, create new doc, then delete old
+            const oldDocSnap = await usersCol.doc(editingDriverDocId).get();
+            if (!oldDocSnap.exists) throw new Error("Original document to edit is gone.");
+            
+            const oldData = oldDocSnap.data();
+            const newData = { ...oldData, ...dataToUpdate };
+
+            await newDocRef.set(newData);
+            await usersCol.doc(editingDriverDocId).delete();
+
+          } else {
+            // Simple update if username is not changed
+            await usersCol.doc(editingDriverDocId).update(dataToUpdate);
+          }
+
+          setFormStatus(tr("statusUpdateOk"), "ok");
+
+        // --- Create Mode ---
+        } else {
+          if(!zoneId || !driverId || !username || !password){
+            setFormStatus(tr("statusMissingAllFields"), "err"); // Custom message for creation
+            return;
+          }
+          const existed = await usersCol.doc(username).get();
+          if(existed.exists && existed.data() && existed.data().isDeleted !== true){
+            setFormStatus(tr("statusUsernameExists"), "err");
+            btnSaveDriver.disabled = false;
+            return;
+          }
+
+          const phoneConflict = await hasPhoneConflict(phoneDigits, phone);
+          if(phoneConflict){
+            setFormStatus(tr("statusPhoneExists"), "err");
+            btnSaveDriver.disabled = false;
+            return;
+          }
+
+          const passwordHash = await hashPassword(password);
+
+          const zoneName = zones.find(z => z.id === zoneId)?.name || zoneId;
+          // ใช้ docId = username เพื่อให้หน้า login ใช้ username เป็น key ได้
+          const docId = username;
+
+          await usersCol.doc(docId).set({
+            username, driverId, fullName,
+            phone: phoneDigits, phoneNormalized: phoneDigits,
+            status: 1, // 1 = คนขับรถ
+            zoneId, zoneName, passwordHash,
+            isDeleted: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          setFormStatus(tr("statusSaveOk"), "ok");
+        }
+
+        await loadDrivers();
+        setTimeout(closeDriverModal, 800);
+      }catch(err){
+        console.error(err);
+        setFormStatus(tr("statusSaveErrorPrefix") + (err.message || err), "err");
+      } finally {
+        btnSaveDriver.disabled = false;
+      }
+    });
+
+    btnClear.addEventListener("click", () => {
+      zoneSelect.value = "";
+      driverIdInput.value = "";
+      fullNameInput.value = "";
+      phoneInput.value = "";
+      usernameInput.value = "";
+      passwordInput.value = "";
+      setFormStatus("", "");
+    });
+
+    /* ---------- Soft delete (ซ่อน ไม่ลบจริง) ---------- */
+    driversTbody.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-action]");
+      if(!btn) return;
+      const action = btn.dataset.action;
+      const docId = btn.dataset.id;
+      if(!docId) return;
+
+      if(action === "delete"){
+        const confirmMsg = tr("confirmDelete");
+        const ok = confirm(confirmMsg);
+        if(!ok) return;
+
+        try{
+          await usersCol.doc(docId).update({
+            isDeleted: true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          drivers = drivers.filter(d => d.docId !== docId);
+          renderDrivers();
+        }catch(err){
+          alert(tr("deleteFailPrefix") + (err.message || err));
+        }
+      }else if(action === "edit"){
+        const driverToEdit = drivers.find(d => d.docId === docId);
+        if (driverToEdit) {
+          openDriverModal(driverToEdit);
+        } else {
+          console.error("Driver not found for editing:", docId);
+        }
+      }
+    });
+
+    /* ---------- Sidebar mobile ---------- */
+    function toggleMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      const isShow = sidebar.classList.toggle('show');
+      if (window.innerWidth <= 900) {
+        btn.style.display = isShow ? 'none' : 'inline-flex';
+      }
+    }
+    window.toggleMenu = toggleMenu;
+
+    menuToggleBtn.addEventListener("click", toggleMenu);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.menu a').forEach(a => {
+        a.addEventListener('click', () => {
+          const sidebar = document.getElementById('sidebar');
+          const btn = document.querySelector('.toggle-btn');
+          if (window.innerWidth <= 900) {
+            sidebar.classList.remove('show');
+            btn.style.display = 'inline-flex';
+          }
+        });
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.querySelector('.toggle-btn');
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('show');
+        btn.style.display = 'none';
+      } else {
+        sidebar.classList.remove('show');
+        btn.style.display = 'inline-flex';
+      }
+    });
+
+    /* ---------- เปิด/ปิด Modal เพิ่มคนขับ ---------- */
+    function openDriverModal(driverToEdit = null) {
+      driverForm.reset();
+      setFormStatus("", "");
+      editingDriverDocId = null;
+
+      if (driverToEdit) {
+        // --- Edit Mode ---
+        editingDriverDocId = driverToEdit.docId;
+        driverModalTitle.textContent = tr('editDriverTitle');
+        btnSaveDriver.textContent = tr('btnUpdateDriver');
+
+        zoneSelect.value = driverToEdit.zoneId;
+        driverIdInput.value = driverToEdit.driverId;
+        fullNameInput.value = driverToEdit.fullName;
+        phoneInput.value = driverToEdit.phone;
+        usernameInput.value = driverToEdit.username;
+        passwordInput.placeholder = tr('passwordEditHint');
+        passwordInput.required = false;
+
+        // Allow editing all fields
+        zoneSelect.disabled = false;
+        usernameInput.disabled = false;
+      } else {
+        // --- Add Mode ---
+        driverModalTitle.textContent = tr('addDriverTitle');
+        btnSaveDriver.textContent = tr('btnSaveDriver');
+        passwordInput.placeholder = tr('passwordPh');
+        passwordInput.required = true;
+        zoneSelect.disabled = false;
+        usernameInput.disabled = false;
+      }
+
+      driverModalBackdrop.classList.add('show');
+      lockBodyScroll(true);
+    }
+
+    function closeDriverModal(){
+      driverModalBackdrop.classList.remove('show');
+      lockBodyScroll(false);
+    }
+
+    btnOpenDriverForm.addEventListener("click", openDriverModal);
+    btnCloseDriverModal.addEventListener("click", closeDriverModal);
+
+    driverModalBackdrop.addEventListener("click", (e) => {
+      if(e.target === driverModalBackdrop){
+        closeDriverModal();
+      }
+    });
+
+    /* ---------- apply language ---------- */
+    function applyLanguage() {
+      const tMap = translations[currentLang] || translations.th;
+
+      document.title = tMap.pageTitle;
+      document.getElementById("mainTitle").textContent = tMap.mainTitle;
+      document.getElementById("pageHint").textContent = tMap.pageHint;
+
+      // หัวข้อ + hint + ปุ่มของหัวการ์ด
+      if(addDriverHeaderTitle) addDriverHeaderTitle.textContent = tMap.addDriverTitle;
+      if(addDriverHeaderHint) addDriverHeaderHint.textContent = tMap.addDriverHint;
+      if(btnOpenDriverForm) btnOpenDriverForm.textContent = tMap.btnOpenDriverForm; // This is for the top button
+      if(driverModalTitle) driverModalTitle.textContent = tMap.addDriverTitle;
+
+      document.getElementById("labelZone").textContent = tMap.labelZone;
+      document.getElementById("zoneHelp").textContent = tMap.zoneHelp;
+      document.getElementById("labelDriverId").textContent = tMap.labelDriverId;
+      document.getElementById("labelFullName").textContent = tMap.labelFullName;
+      document.getElementById("labelPhone").textContent = tMap.labelPhone;
+      document.getElementById("labelUsername").textContent = tMap.labelUsername;
+      document.getElementById("labelPassword").textContent = tMap.labelPassword;
+      document.getElementById("btnClear").textContent = tMap.btnClear;
+
+      // Set button text based on mode (add/edit)
+      const btnSave = document.getElementById("btnSaveDriver");
+      if (editingDriverDocId) {
+        btnSave.textContent = tMap.btnUpdateDriver;
+      } else { btnSave.textContent = tMap.btnSaveDriver; }
+
+      document.getElementById("labelZoneFilter").textContent = tMap.labelZoneFilter;
+      document.getElementById("chipAllZones").textContent = tMap.chipAllZones;
+      document.getElementById("labelSearch").textContent = tMap.labelSearch;
+
+      document.getElementById("thZone").textContent = tMap.thZone;
+      document.getElementById("thDriverId").textContent = tMap.thDriverId;
+      document.getElementById("thUsername").textContent = tMap.thUsername;
+      document.getElementById("thFullName").textContent = tMap.thFullName;
+      document.getElementById("thPhone").textContent = tMap.thPhone;
+      document.getElementById("thUpdated").textContent = tMap.thUpdated;
+      document.getElementById("thActions").textContent = tMap.thActions;      
+      document.getElementById("loaderText").textContent = tMap.loaderText;
+
+      // placeholders
+      if (zoneSelect.options.length > 0) {
+        zoneSelect.options[0].textContent = tMap.zonePlaceholder;
+      }
+      driverIdInput.placeholder = tMap.driverIdPlaceholder;
+      fullNameInput.placeholder = tMap.fullNamePh;
+      phoneInput.placeholder = tMap.phonePh;
+      usernameInput.placeholder = tMap.usernamePh;
+      if (editingDriverDocId) {
+        passwordInput.placeholder = tMap.passwordEditHint;
+      } else {
+        passwordInput.placeholder = tMap.passwordPh;
+      }
+      searchInput.placeholder = tMap.searchPh;
+
+      // ปุ่มเมนู
+      menuToggleBtn.textContent = tMap.menuBtn;
+
+      // ให้เมนูซ้ายเปลี่ยนภาษาด้วย
+      if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {
+        window.AdminNav.setLanguage(currentLang);
+      }
+
+      if (window.AdminUser) {
+        window.AdminUser.setLanguage(currentLang);
+      }
+
+      // re-render ตารางให้ข้อความในปุ่ม/ไม่มีข้อมูลเปลี่ยนภาษา
+      renderDrivers();
+    }
+
+    function changeLanguage(lang) {
+      if (!translations[lang]) return;
+      if (LangState && typeof LangState.setLang === "function") {
+        LangState.setLang(lang);
+        currentLang = LangState.getLang();
+      } else {
+        currentLang = lang;
+        localStorage.setItem("sw_lang", lang);
+      }
+      langSelect.value = currentLang;
+      applyLanguage();
+    }
+
+    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+    langSelect.value = currentLang;
+
+    langIconBtn.addEventListener("click", () => {
+      langMenu.classList.toggle("show");
+    });
+
+    langMenu.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      changeLanguage(btn.dataset.lang);
+      langMenu.classList.remove("show");
+    });
+
+    if (LangState && typeof LangState.onChange === "function") {
+      LangState.onChange(lang => {
+        if (lang && lang !== currentLang) {
+          currentLang = lang;
+          langSelect.value = lang;
+          applyLanguage();
+        }
+      });
+    }
+
+    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
+    document.addEventListener("click", e => {
+      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+      if (!clickedInLang) langMenu.classList.remove("show");
+    });
+
+    /* ---------- Init data ---------- */
+(async () => {
+    showLoader();
+    await loadZones();
+    await loadDrivers();
+    // *** เพิ่มบรรทัดนี้เพื่อ apply ภาษาที่ดึงมาจาก localStorage/AdminLang ทันที
+    applyLanguage(); 
+    hideLoader();
+})();
+  </script>
+</body>
+</html>

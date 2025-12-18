@@ -1,0 +1,143 @@
+#include <WiFi.h>
+#include <Firebase_ESP_Client.h>
+#include <SPI.h>
+#include <MFRC522.h>
+
+#define WIFI_SSID "3BB"
+#define WIFI_PASSWORD "12082546"
+#define FIREBASE_HOST "smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app" 
+#define FIREBASE_API_KEY "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk" 
+#define FIREBASE_RTDB_SECRET "Irran8J7yjOyDsoyi7btfcKr9Cz6KnSax0FLwoKe" 
+
+const String DEVICES_STATUS_BASE_PATH = "/esp32_devices";
+const String COMMAND_PATH = "/esp32_commands/";
+// 🚨 แก้ไข: ไม่ใช้ค่าคงที่ แต่จะสร้าง Path ใน setup()
+String current_rfid_path = ""; 
+
+#define SS_PIN 5
+#define RST_PIN 22
+#define ULTRASONIC_TRIG_PIN 12
+#define ULTRASONIC_ECHO_PIN 14
+#define BIN_HEIGHT_CM 80
+#define CONFIRM_LED_PIN 2
+
+FirebaseData fbdo;
+FirebaseData fbdo_ping;
+FirebaseAuth auth;
+FirebaseConfig config;
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+bool firebaseSetupDone = false;
+String macAddress;
+unsigned long lastSensorRead = 0;
+const unsigned long SENSOR_READ_INTERVAL = 5000;
+unsigned long lastPingCheck = 0;
+const unsigned long PING_CHECK_INTERVAL = 1000;
+unsigned long lastRfidClear = 0;
+const unsigned long RTDB_CLEAR_DELAY = 10000;
+
+void firebaseTokenStatusCallback(TokenInfo info);
+
+int readUltrasonicLevel() {
+    digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(ULTRASONIC_TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+    long duration = pulseIn(ULTRASONIC_ECHO_PIN, HIGH, 30000);
+    float distance_cm = duration * 0.0343 / 2;
+    float fill_depth = BIN_HEIGHT_CM - distance_cm;
+    if (fill_depth < 0) fill_depth = 0;
+    if (fill_depth > BIN_HEIGHT_CM) fill_depth = BIN_HEIGHT_CM;
+    int fillLevel = (int)((fill_depth / BIN_HEIGHT_CM) * 100);
+    return (fillLevel > 100) ? 100 : (fillLevel < 0 ? 0 : fillLevel);
+}
+
+void checkPingCommand() {
+    String pingPath = COMMAND_PATH + macAddress + "/confirm_status";
+    if (Firebase.RTDB.getString(&fbdo_ping, pingPath)) {
+        String command = fbdo_ping.stringData();
+        if (command == "PING") {
+            for (int i = 0; i < 3; i++) {
+                digitalWrite(CONFIRM_LED_PIN, LOW); delay(150);
+                digitalWrite(CONFIRM_LED_PIN, HIGH); delay(150);
+            }
+            lastSensorRead = 0; 
+            Firebase.RTDB.setString(&fbdo, pingPath, "");
+        }
+    }
+}
+
+void setup() {
+    Serial.begin(115200);
+    SPI.begin();
+    mfrc522.PCD_Init();
+    pinMode(ULTRASONIC_TRIG_PIN, OUTPUT);
+    pinMode(ULTRASONIC_ECHO_PIN, INPUT);
+    pinMode(CONFIRM_LED_PIN, OUTPUT);
+    digitalWrite(CONFIRM_LED_PIN, HIGH);
+
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+    
+    macAddress = WiFi.macAddress();
+    macAddress.replace(":", "");
+    macAddress.toUpperCase();
+
+    // 🚨 สร้าง Path สำหรับ RFID เฉพาะบอร์ดนี้
+    current_rfid_path = DEVICES_STATUS_BASE_PATH + "/" + macAddress + "/rfid_input/tagId";
+
+    config.database_url = FIREBASE_HOST;
+    config.api_key = FIREBASE_API_KEY;
+    if (String(FIREBASE_RTDB_SECRET).length() > 0) {
+        config.signer.tokens.legacy_token = FIREBASE_RTDB_SECRET;
+    }
+    Firebase.begin(&config, &auth);
+    Firebase.reconnectWiFi(true);
+    firebaseSetupDone = true;
+}
+
+void loop() {
+    if (!firebaseSetupDone) return;
+
+    if (WiFi.isConnected() && Firebase.ready() && (millis() - lastPingCheck > PING_CHECK_INTERVAL)) {
+        checkPingCommand();
+        lastPingCheck = millis();
+    }
+
+    if (WiFi.isConnected() && Firebase.ready() && (millis() - lastSensorRead > SENSOR_READ_INTERVAL || lastSensorRead == 0)) {
+        int fillLevel = readUltrasonicLevel();
+        FirebaseJson json;
+        json.set("mac", macAddress);
+        json.set("status", "Connected");
+        json.set("fillLevel", fillLevel);
+        json.set("lastUpdate", Firebase.getCurrentTime());
+        String dataPath = DEVICES_STATUS_BASE_PATH + "/" + macAddress;
+        Firebase.RTDB.setJSON(&fbdo, dataPath, &json);
+        lastSensorRead = millis();
+    }
+
+    if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
+        String uidText = "";
+        for (byte i = 0; i < mfrc522.uid.size; i++) {
+            uidText += (mfrc522.uid.uidByte[i] < 0x10 ? "0" : "") + String(mfrc522.uid.uidByte[i], HEX);
+        }
+        uidText.toUpperCase();
+
+        // 🚨 ส่งไปที่ Path ของบอร์ดตัวเอง
+        if (Firebase.RTDB.setString(&fbdo, current_rfid_path, uidText)) {
+            Serial.println("✅ RFID Sent to Device Path");
+            lastRfidClear = millis();
+        }
+        mfrc522.PICC_HaltA();
+        mfrc522.PCD_StopCrypto1();
+    }
+
+    if (millis() - lastRfidClear > RTDB_CLEAR_DELAY && lastRfidClear != 0) {
+        // 🚨 ล้างค่าที่ Path ของบอร์ดตัวเอง
+        Firebase.RTDB.deleteNode(&fbdo, current_rfid_path);
+        lastRfidClear = 0;
+    }
+}
+
+void firebaseTokenStatusCallback(TokenInfo info) {}

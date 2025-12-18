@@ -1,0 +1,688 @@
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f6fa;
+            flex-direction: row;
+        }
+
+        /* ล็อกหน้าเว็บไม่ให้เลื่อนตอนเปิดโมดอล */
+        body.modal-open {
+            overflow: hidden;
+            height: 100vh;
+            touch-action: none;
+            /* กันเลื่อนในมือถือ */
+        }
+
+
+        /* ─ Sidebar ─ */
+        .sidebar {
+            width: 250px;
+            background: #2f3640;
+            color: #f5f6fa;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 20px;
+            transition: .3s;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            color: #00a8ff;
+            margin-bottom: 25px;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .sidebar .sw-logout-slot {
+            margin-top: 0 !important;
+            margin-left: 18px;
+            margin-right: 18px;
+            margin-bottom: 24px;
+            padding: 0;
+        }
+
+        .menu a {
+            display: block;
+            color: #f5f6fa;
+            padding: 14px 20px;
+            text-decoration: none;
+            border-left: 4px solid transparent;
+            transition: .3s;
+        }
+
+        .menu a:hover,
+        .menu a.active {
+            background: #353b48;
+            border-left: 4px solid #00a8ff;
+        }
+
+        .sidebar .sw-logout-slot .sw-logout-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 14px 20px;
+            margin-top: 6px;
+            border: none;
+            border-radius: 10px;
+            background: #dc2626;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        .sidebar .sw-logout-slot .sw-logout-btn:hover,
+        .sidebar .sw-logout-slot .sw-logout-btn:focus {
+            background: #b91c1c;
+            border-left: 0;
+        }
+
+        /* ─ ปุ่มเปิด/ปิดเมนู (มือถือ) ─ */
+        .toggle-btn {
+            display: none;
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            background: #00a8ff;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: #2f3640;
+            margin-bottom: 16px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .topbar-right {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            z-index: 1000;
+            gap: 8px;
+        }
+
+        fieldset {
+            border: 1px solid #e3e3e3;
+            border-radius: 12px;
+            margin: 16px 0;
+            padding: 16px;
+        }
+
+        legend {
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 6px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d7d7d7;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        textarea {
+            min-height: 60px;
+            white-space: pre-wrap;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .row>div {
+            flex: 1 1 240px;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .ghost {
+            background: #f4f4f5;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .ok {
+            color: #16a34a;
+        }
+
+        .err {
+            color: #dc2626;
+        }
+
+        .error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .gps-actions {
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .gps-actions>button {
+            width: 100%;
+        }
+
+        .preview {
+            display: block;
+            margin-top: 8px;
+            max-width: 100%;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* ========== ส่วนหัวฟอร์มเพิ่มถัง + ปุ่มเพิ่มถัง ========== */
+        .add-bin-header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+            margin-top: 4px;
+        }
+
+        /* ซ่อนหัวข้อ "เพิ่มข้อมูลถังขยะ" ให้เหลือแค่ปุ่ม */
+        .add-bin-title {
+            display: none;
+        }
+
+        .add-bin-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        /* ========== ส่วนรายการถัง + ตัวกรอง ========== */
+        .section-title {
+            margin-top: 24px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .section-hint {
+            margin: 4px 0 10px;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 8px;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .filter-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+            width: 100%;
+        }
+
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1 1 0;
+            min-width: 180px;
+        }
+
+        .filter-field span {
+            font-size: 12px;
+            color: #4b5563;
+        }
+
+        .filter-field select,
+        .filter-field input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #d4d4d8;
+            font-size: 14px;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 6px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #cbd5f5;
+            border-radius: 999px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 640px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #eee;
+            padding: 8px 10px;
+            text-align: left;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        th {
+            background: #fafafa;
+        }
+
+        .bin-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        /* ปรับขนาดไอคอน แก้ไข/ลบ ให้เล็กลง และให้แสดงในมือถือ */
+        .bin-actions .icon-btn {
+            width: 32px;
+            height: 32px;
+            padding: 4px;
+            border-radius: 999px;
+            border: none;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .bin-actions .icon-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+
+        .icon-edit-btn svg {
+            fill: #2563eb;
+        }
+
+        .icon-delete-btn svg {
+            fill: #dc2626;
+        }
+
+        .icon-btn:focus {
+            outline: 3px solid #93c5fd;
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 900px) {
+            .bin-actions .icon-btn {
+                width: 28px;
+                height: 28px;
+                padding: 3px;
+            }
+
+            .bin-actions .icon-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        /* Modal zones + edit bin + add bin ใช้สไตล์เดียวกัน */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1500;
+            /* Z-index สำหรับ Add Bin และ Edit Bin */
+        }
+
+        .modal-backdrop.zone-area-modal {
+            z-index: 1600;
+            /* Z-index สำหรับ Zone/Area Modal ให้สูงกว่า Add Bin */
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px 18px 12px;
+            max-width: 620px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, .35);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            /* ลดช่องว่างหัวข้อ ↔ เขตพื้นที่ ให้ชิดขึ้น */
+        }
+
+        .modal-title {
+            font-size: 20px;
+            /* ขยายขนาดตัวอักษร “เพิ่มข้อมูลถังขยะ” */
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 4px 8px;
+        }
+
+        .zone-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .zone-row input {
+            flex: 1;
+            padding: 7px 10px;
+            font-size: 14px;
+            border-radius: 10px;
+            border: 1px solid #d4d4d8;
+        }
+
+        .zone-row button {
+            font-size: 12px;
+            padding: 6px 9px;
+            border-radius: 8px;
+        }
+
+        .zone-row .danger {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .zone-row .primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .modal-footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ========== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า (เหมือน home) ========== */
+        :root {
+            --btn-min-h: 44px;
+            --btn-pad-x: 16px;
+            --btn-pad-y: 10px;
+            --btn-radius: 12px;
+            --btn-font: 16px;
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            line-height: 1.25;
+        }
+
+        legend {
+            line-height: 1.35;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select,
+        textarea,
+        button {
+            min-height: var(--btn-min-h);
+            padding: var(--btn-pad-y) var(--btn-pad-x);
+            border-radius: var(--btn-radius);
+            font-size: var(--btn-font);
+            line-height: 1.2;
+        }
+
+        button,
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
+            border: 0;
+        }
+
+        .primary:hover {
+            filter: brightness(1.05);
+        }
+
+        .primary:active {
+            transform: translateY(1px);
+        }
+
+        .ghost:hover {
+            filter: brightness(0.98);
+        }
+
+        .ghost:active {
+            transform: translateY(1px);
+        }
+
+        .toggle-btn {
+            min-height: var(--btn-min-h);
+            padding: var(--btn-pad-y) var(--btn-pad-x);
+            border-radius: var(--btn-radius);
+            font-size: var(--btn-font);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+        }
+
+        button:focus,
+        .toggle-btn:focus,
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 3px solid #93c5fd;
+            outline-offset: 2px;
+        }
+
+        /* ========== MOBILE LAYOUT ========== */
+        @media(max-width:900px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                top: 0;
+                height: 100%;
+                z-index: 999;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .toggle-btn {
+                display: block;
+            }
+
+            main {
+                padding: 70px 16px 20px;
+            }
+
+            .row>div {
+                flex: 1 1 100%;
+            }
+
+            h1 {
+                text-align: center;
+            }
+
+            /* ให้ backdrop ขยับลง และใช้แบบ top-align เพื่อเลื่อนง่าย */
+            .modal-backdrop {
+                align-items: flex-start;
+                padding: 32px 0px;
+                /* มีระยะห่างทั้งบนและล่าง */
+
+            }
+
+            /* ฟอร์มเพิ่มถังบนมือถือ: ไม่ชิดขอบจอ และเลื่อนลื่นขึ้น */
+            .modal {
+                max-width: 100%;
+                margin: 0 16px 24px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-inputs {
+                width: 100%;
+            }
+
+            .filter-field {
+                min-width: 100%;
+            }
+
+            .table-wrapper {
+                margin-top: 4px;
+                border-radius: 14px;
+            }
+
+            table {
+                font-size: 12px;
+                min-width: 580px;
+            }
+
+            th,
+            td {
+                padding: 6px 8px;
+            }
+        }
+
+        @media(max-width:900px) {
+            .menu-open .toggle-btn {
+                display: none;
+            }
+
+            .add-bin-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .add-bin-header button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* CSS สำหรับซ่อนฟิลด์ในฟอร์มเพิ่มถัง เมื่อยังไม่ได้ป้อน RFID */
+        #binForm .additional-fields {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            /* ปิดการใช้งานเมื่อซ่อน */
+        }
+
+        #binForm.rfid-entered .additional-fields {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* ทำให้ input RFID เด่นขึ้นเมื่อฟอร์มเปิด */
+        #rfid:focus {
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.5);
+            /* สีน้ำเงินของ primary */
+        }
+  
