@@ -6,6 +6,7 @@
   <title>Smart Waste - Sign In</title>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
@@ -289,116 +290,100 @@
   </div>
 
   <script>
-    const $ = id => document.getElementById(id);
-    const loginForm = $("loginForm");
-    const registerBtn = $("registerBtn");
-    const statusEl = $("status");
-    const togglePassBtn = $("togglePass");
-    const passwordInput = $("password");
+  const $ = id => document.getElementById(id);
+  const loginForm = $("loginForm");
+  const statusEl = $("status");
 
-    togglePassBtn.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
-      togglePassBtn.textContent = type === "password" ? "SHOW" : "HIDE";
-    });
+  function setStatus(text, type){
+    statusEl.textContent = text || "";
+    statusEl.className = type || "";
+  }
 
-    function setStatus(text, type){
-      statusEl.textContent = text || "";
-      statusEl.className = type || "";
-      if(text) setTimeout(() => {
-          if(statusEl.className !== 'ok') statusEl.textContent = "";
-          statusEl.className = "";
-      }, 4000);
+  // Firebase
+  var firebaseConfig = {
+    apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+    authDomain: "smart-waste2568.firebaseapp.com",
+    projectId: "smart-waste2568",
+    storageBucket: "smart-waste2568.firebasestorage.app",
+    messagingSenderId: "122699752010",
+    appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  const routes = {
+    0: "../Admin/addBin.html",
+    1: "../Driver/Driver.html",
+    2: "../User/home.html"
+  };
+
+  loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const username = $("username").value.trim();
+  const password = $("password").value;
+
+  if (!username || !password) {
+    return setStatus("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน", "err");
+  }
+
+  try {
+    // 1️⃣ หา user จาก username
+    const userRef = db.collection("users").doc(username);
+    const snap = await userRef.get();
+
+    if (!snap.exists) {
+      throw new Error("ไม่พบชื่อผู้ใช้นี้");
     }
 
-    // ---- Firebase Config ----
-    var firebaseConfig = {
-      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
-      authDomain: "smart-waste2568.firebaseapp.com",
-      projectId: "smart-waste2568",
-      storageBucket: "smart-waste2568.firebasestorage.app",
-      messagingSenderId: "122699752010",
-      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
-      measurementId: "G-H82914YP66"
-    };
-    if (!firebase.apps.length) {
-       firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    const usersCol = db.collection("users");
+    const userData = snap.data();
+    const email = userData.email;
 
-    async function hashPassword(pw){
-      const encoder = new TextEncoder();
-      const data = encoder.encode(pw);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,"0")).join("");
+    // 2️⃣ Login ด้วย Firebase Auth (email + password)
+    const cred = await firebase
+      .auth()
+      .signInWithEmailAndPassword(email, password);
+
+    // 3️⃣ ตรวจ uid ให้ตรง (ความปลอดภัยเพิ่ม)
+    if (cred.user.uid !== userData.uid) {
+      throw new Error("บัญชีผู้ใช้ไม่ตรงกัน");
     }
 
-    const statusRoutes = {
+    // 4️⃣ ใช้ status จาก Firestore เท่านั้น
+    const statusValue = typeof userData.status === "number"
+      ? userData.status
+      : 2;
+
+    localStorage.setItem("sw_user", JSON.stringify({
+      uid: cred.user.uid,
+      username,
+      status: statusValue
+    }));
+
+    const routes = {
       0: "../Admin/addBin.html",
       1: "../Driver/Driver.html",
       2: "../User/home.html"
     };
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const username = $("username").value.trim();
-      const password = $("password").value.trim();
+    setStatus("เข้าสู่ระบบสำเร็จ", "ok");
+    setTimeout(() => {
+      location.href = routes[statusValue] || routes[2];
+    }, 800);
 
-      if(!username || !password){
-        setStatus("กรุณากรอกข้อมูลให้ครบถ้วน", "err");
-        return;
-      }
+  } catch (err) {
+    console.error(err);
+    setStatus(err.message || "เข้าสู่ระบบไม่สำเร็จ", "err");
+  }
+});
 
-      const btn = loginForm.querySelector('.btn-submit');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Checking...';
-      btn.disabled = true;
+  $("registerBtn").addEventListener("click", () => {
+    location.href = "register.html";
+  });
+</script>
 
-      try{
-        const docSnap = await usersCol.doc(username).get();
-        if(!docSnap.exists){
-          setStatus("ไม่พบชื่อผู้ใช้นี้", "err");
-          throw new Error("User not found");
-        }
-        
-        const hash = await hashPassword(password);
-        const data = docSnap.data() || {};
-        
-        if(data.passwordHash !== hash){
-          setStatus("รหัสผ่านไม่ถูกต้อง", "err");
-          throw new Error("Wrong password");
-        }
-
-        const statusValue = typeof data.status === "number" ? data.status : 2;
-        localStorage.setItem("sw_user", JSON.stringify({
-          username,
-          status: statusValue,
-          fullName: data.fullName || "",
-          email: data.email || "",
-          loginAt: Date.now()
-        }));
-
-        const target = statusRoutes[statusValue] || statusRoutes[2];
-        setStatus("เข้าสู่ระบบสำเร็จ! กำลังนำทาง...", "ok");
-        setTimeout(() => window.location.href = target, 1000);
-
-      }catch(err){
-        console.error(err);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        if(statusEl.textContent === "") setStatus("Error: " + err.message, "err");
-      }
-    });
-
-    registerBtn.addEventListener("click", () => {
-      document.querySelector('.login-card').style.transform = 'translateY(-20px)';
-      document.querySelector('.login-card').style.opacity = '0';
-      setTimeout(() => {
-          window.location.href = "register.html";
-      }, 300);
-    });
-  </script>
 </body>
 </html>
 

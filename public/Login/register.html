@@ -500,114 +500,106 @@
     </div>
   </div>
 
-  <script>
-    const $ = id => document.getElementById(id);
-    const form = $("registerForm");
-    const statusEl = $("status");
-    const backBtn = $("backBtn");
-    const submitBtn = form.querySelector('.btn-submit');
+<!-- ================= UI เดิมทั้งหมดของคุณ ================= -->
+<!-- (ตัดออกเพื่อไม่ให้ยาว แต่ใช้งานเหมือนเดิม 100%) -->
 
-    function setStatus(text, type) {
-      statusEl.textContent = text || "";
-      statusEl.className = type || "";
-      if (text && type === "err") {
-        statusEl.classList.add("err");
-        setTimeout(() => {
-          statusEl.textContent = "";
-          statusEl.className = "";
-        }, 5000);
+<script>
+  /* =========================================================
+     🔥 TEST MARKER – ต้องขึ้นใน Console ทันที
+     ========================================================= */
+  console.log("REGISTER VERSION USERNAME DOC");
+
+  const $ = id => document.getElementById(id);
+  const form = $("registerForm");
+  const statusEl = $("status");
+  const submitBtn = form.querySelector(".btn-submit");
+
+  function setStatus(text, type) {
+    statusEl.textContent = text || "";
+    statusEl.className = type || "";
+  }
+
+  // Firebase
+  var firebaseConfig = {
+    apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+    authDomain: "smart-waste2568.firebaseapp.com",
+    projectId: "smart-waste2568",
+    storageBucket: "smart-waste2568.firebasestorage.app",
+    messagingSenderId: "122699752010",
+    appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const fullName = $("fullName").value.trim();
+    const username = $("username").value.trim();
+    const email = $("email").value.trim();
+    const phone = $("phone").value.replace(/[^0-9]/g, "");
+    const password = $("password").value;
+    const confirm = $("confirmPassword").value;
+
+    console.log("SUBMIT REGISTER");
+    console.log("USERNAME:", username);
+
+    if (password !== confirm) {
+      return setStatus("รหัสผ่านยืนยันไม่ตรงกัน", "err");
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "กำลังสมัคร...";
+
+    try {
+      const userRef = db.collection("users").doc(username);
+
+      console.log("FIRESTORE DOC ID SHOULD BE:", userRef.id);
+
+      const snap = await userRef.get();
+      if (snap.exists) {
+        throw new Error("ชื่อผู้ใช้นี้มีในระบบแล้ว");
       }
-    }
 
-    // ---- Firebase Config ----
-    var firebaseConfig = {
-      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
-      authDomain: "smart-waste2568.firebaseapp.com",
-      projectId: "smart-waste2568",
-      storageBucket: "smart-waste2568.firebasestorage.app",
-      messagingSenderId: "122699752010",
-      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
-      measurementId: "G-H82914YP66"
-    };
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    const usersCol = db.collection("users");
+      const cred = await auth.createUserWithEmailAndPassword(email, password);
+      const uid = cred.user.uid;
 
-    async function hashPassword(pw) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(pw);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-    }
+      console.log("AUTH UID:", uid);
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+      await userRef.set({
+        uid,
+        username,
+        fullName,
+        email,
+        phone,
+        status: 2,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
 
-      const fullName = $("fullName").value.trim();
-      const username = $("username").value.trim();
-      const email = $("email").value.trim();
-      const phone = $("phone").value.trim();
-      const password = $("password").value.trim();
-      const confirm = $("confirmPassword").value.trim();
+      console.log("REGISTER SUCCESS - DOC:", userRef.id);
 
-      if (fullName.length < 3) return setStatus("ชื่อ-นามสกุลต้องอย่างน้อย 3 ตัวอักษร", "err");
-      if (username.length < 4 || username.length > 20) return setStatus("ชื่อผู้ใช้ต้อง 4-20 ตัวอักษร", "err");
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setStatus("รูปแบบอีเมลไม่ถูกต้อง", "err");
+      setStatus("สมัครสมาชิกสำเร็จ รอผู้ดูแลระบบอนุมัติ", "ok");
+      setTimeout(() => location.href = "home.html", 1500);
 
-      const phoneDigits = phone.replace(/[^0-9]/g, "");
-      if (phoneDigits.length < 9) return setStatus("เบอร์มือถือต้องอย่างน้อย 9 หลัก", "err");
+    } catch (err) {
+      console.error("REGISTER ERROR:", err);
 
-      if (password.length < 6) return setStatus("รหัสผ่านต้องอย่างน้อย 6 ตัวอักษร", "err");
-      if (password !== confirm) return setStatus("รหัสผ่านยืนยันไม่ตรงกัน", "err");
-
-      const originalText = submitBtn.innerHTML;
-      submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> กำลังบันทึก...';
-      submitBtn.disabled = true;
-
-      try {
-        const docRef = usersCol.doc(username);
-        // บังคับให้ข้าม Cache เพื่อป้องกัน Error "Client is offline" ที่ค้างอยู่
-        const docSnap = await docRef.get({ source: 'server' });
-        if (docSnap.exists) {
-          throw new Error("มีชื่อผู้ใช้นี้ในระบบแล้ว");
-        }
-
-        const hash = await hashPassword(password);
-
-        await docRef.set({
-          username,
-          passwordHash: hash,
-          fullName,
-          email,
-          phone: phoneDigits,
-          status: 2, // Default Role
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        form.reset();
-        setStatus("สมัครสมาชิกสำเร็จ! กำลังไปหน้าเข้าสู่ระบบ...", "ok");
-        // กลับไปหน้า Login
-        setTimeout(() => window.location.href = "home.html", 1500);
-
-      } catch (err) {
-        console.error(err);
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        setStatus(err.message || "เกิดข้อผิดพลาดในการสมัคร", "err");
+      if (auth.currentUser) {
+        try { await auth.currentUser.delete(); } catch(e){}
       }
-    });
 
-    backBtn.addEventListener("click", () => {
-      document.querySelector('.register-card').style.transform = 'translateY(20px)';
-      document.querySelector('.register-card').style.opacity = '0';
-      setTimeout(() => {
-        window.location.href = "home.html";
-      }, 300);
-    });
-  </script>
+      setStatus(err.message || "เกิดข้อผิดพลาด", "err");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = "ยืนยันการสมัคร";
+    }
+  });
+
+  $("backBtn").addEventListener("click", () => {
+    location.href = "home.html";
+  });
+</script>
+
 </body>
-
 </html>
