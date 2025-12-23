@@ -13,6 +13,8 @@
   <script src="admin-lang.js"></script>
   <script src="admin-user.js" defer></script>
   <script src="admin-nav.js" defer></script>
+  <script src="admin-profile.js" defer></script>
+
   <script>
     const currentUser = window.SWAuth.requireAuth([0]);
   </script>
@@ -22,520 +24,248 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
-    }
+    * /* ป้องกันจอเลื่อนแนวนอน (ไม่มีใน css กลาง) */
+body {
+  overflow-x: hidden;
+}
+
+/* ================================
+   การ์ดสรุป (หน้า dashboard / home)
+   ================================ */
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 4px 0 8px;
+}
+
+.cards .card {
+  flex: 1 1 220px;
+  background: #f9fafb;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+  transition: .2s;
+  margin: 0;
+}
+
+.cards .card:hover {
+  background: #e0f2fe;
+  transform: translateY(-2px);
+}
+
+.cards .card h3 {
+  font-size: 17px;
+  color: #2f3640;
+  margin: 0 0 6px;
+}
+
+.cards .card p {
+  font-size: 21px;
+  font-weight: bold;
+  color: #00a8ff;
+  margin: 0;
+}
+
+/* ================================
+   แผนที่
+   ================================ */
+#map {
+  width: 100%;
+  height: 460px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+/* wrapper ตารางเลื่อนแนวนอน */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+/* ================================
+   Overlay เพิ่มรถ (ไม่ใช้ modal กลาง)
+   ================================ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.overlay-card {
+  width: min(520px, 92vw);
+  max-width: 520px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.38);
+  padding: 20px 18px 16px;
+  transform: translateY(8px) scale(.97);
+  opacity: 0;
+  animation: overlayIn .18s ease-out forwards;
+}
+
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (min-width: 640px) {
+  .overlay-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .overlay-actions button {
+    min-width: 120px;
+  }
+}
+
+/* ================================
+   ICON รถ (Leaflet)
+   ================================ */
+.leaflet-marker-icon.truck-icon {
+  background: transparent;
+  border: none;
+}
+
+.truck-pin {
+  --pin-color: #f43f5e;
+  --pin-label: #0f172a;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
+}
+
+.truck-pin__bubble {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px 16px 12px 12px;
+  background: linear-gradient(135deg, var(--pin-color), rgba(255, 255, 255, .25));
+  border: 2px solid rgba(255, 255, 255, .9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--pin-label);
+}
+
+.truck-pin__pointer {
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-top-color: var(--pin-color);
+  margin-top: -6px;
+  filter: brightness(.95);
+}
+
+/* ================================
+   ICON ถัง (Leaflet)
+   ================================ */
+.leaflet-marker-icon.bin-icon {
+  background: transparent;
+  border: none;
+}
+
+.bin-pin {
+  --pin-color: #16a34a;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
+}
+
+.bin-pin__bubble {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px 16px 12px 12px;
+  background: linear-gradient(135deg, var(--pin-color), rgba(255, 255, 255, .2));
+  border: 2px solid rgba(255, 255, 255, .85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.bin-pin__pointer {
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-top-color: var(--pin-color);
+  margin-top: -6px;
+  filter: brightness(.9);
+}
+
+.bin-pin__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, .12);
+}
+
+.bin-pin__label.is-unknown {
+  color: #475569;
+  background: #f8fafc;
+}
+
+/* ================================
+   Responsive เฉพาะส่วน cards + map
+   ================================ */
+@media(max-width:900px) {
+  #map {
+    height: 45vh;
+  }
+
+  .cards {
+    gap: 8px;
+  }
+
+  .cards .card {
+    flex: 0 0 calc(50% - 8px);
+    max-width: calc(50% - 8px);
+    padding: 10px 8px;
+  }
+
+  .cards .card h3 {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+
+  .cards .card p {
+    font-size: 16px;
+  }
+}
 
-    body {
-      display: flex;
-      min-height: 100vh;
-      background: #f5f6fa;
-      flex-direction: row;
-      overflow-x: hidden;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 250px;
-      background: #2f3640;
-      color: #f5f6fa;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      padding-top: 20px;
-      transition: .3s;
-    }
-
-    .sidebar h2 {
-      text-align: center;
-      color: #00a8ff;
-      margin-bottom: 25px
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 4px;
-    }
-
-    .menu a {
-      display: block;
-      color: #f5f6fa;
-      padding: 14px 20px;
-      text-decoration: none;
-      border-left: 4px solid transparent;
-      transition: .3s;
-    }
-
-    .menu a:hover,
-    .menu a.active {
-      background: #353b48;
-      border-left: 4px solid #00a8ff
-    }
-
-    .sidebar .sw-logout-slot {
-      margin-top: 0 !important;
-      margin-left: 18px;
-      margin-right: 18px;
-      margin-bottom: 24px;
-      padding: 0;
-    }
-
-    .sidebar .sw-logout-slot .sw-logout-btn {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 14px 20px;
-      margin-top: 6px;
-      border: none;
-      border-radius: 10px;
-      background: #dc2626;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      box-shadow: none !important;
-      transform: none !important;
-    }
-
-    .sidebar .sw-logout-slot .sw-logout-btn:hover,
-    .sidebar .sw-logout-slot .sw-logout-btn:focus {
-      background: #b91c1c;
-      border-left: 0;
-    }
-
-    /* ปุ่ม 3 ขีด */
-    .toggle-btn {
-      display: none;
-      position: fixed;
-      top: 14px;
-      left: 14px;
-      background: #00a8ff;
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 12px;
-      cursor: pointer;
-      z-index: 1000;
-      font-size: 16px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-    }
-
-    /* Main */
-    main {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto
-    }
-
-    h1 {
-      color: #2f3640;
-      margin: 0 0 16px;
-      line-height: 1.25;
-    }
-
-    .content {
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-      position: static;
-    }
-
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center
-    }
-
-    label {
-      display: block;
-      margin: 6px 0 4px
-    }
-
-    select,
-    button,
-    input {
-      min-height: 44px;
-      padding: 10px 16px;
-      border-radius: 12px;
-      border: 1px solid #cbd5e1;
-      font-size: 16px;
-    }
-
-    button {
-      cursor: pointer;
-      border: 0
-    }
-
-    .primary {
-      background: #2563eb;
-      color: #fff
-    }
-
-    .ghost {
-      background: #f4f4f5;
-      color: #111827
-    }
-
-    .muted {
-      color: #6b7280;
-      font-size: 13px
-    }
-
-    .card {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 14px;
-      margin: 12px 0
-    }
-
-    /* การ์ดสรุประดับถัง (เหมือนหน้า home) */
-    .cards {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin: 4px 0 8px;
-    }
-
-    .cards .card {
-      flex: 1 1 220px;
-      background: #f9fafb;
-      padding: 18px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
-      transition: .2s;
-      margin: 0;
-    }
-
-    .cards .card:hover {
-      background: #e0f2fe;
-      transform: translateY(-2px)
-    }
-
-    .cards .card h3 {
-      font-size: 17px;
-      color: #2f3640;
-      margin: 0 0 6px
-    }
-
-    .cards .card p {
-      font-size: 21px;
-      font-weight: bold;
-      color: #00a8ff;
-      margin: 0
-    }
-
-    #map {
-      width: 100%;
-      height: 460px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px
-    }
-
-    th,
-    td {
-      border-bottom: 1px solid #eee;
-      padding: 8px 10px;
-      text-align: left;
-      white-space: nowrap;
-    }
-
-    th {
-      background: #fafafa
-    }
-
-    .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-      margin-top: 8px;
-    }
-
-    .ok {
-      color: #16a34a;
-    }
-
-    .err {
-      color: #dc2626;
-    }
-
-    /* Responsive */
-    @media(max-width:900px) {
-      body {
-        flex-direction: column
-      }
-
-      .sidebar {
-        position: fixed;
-        left: -250px;
-        top: 0;
-        height: 100%;
-        z-index: 999;
-      }
-
-      .sidebar.show {
-        left: 0
-      }
-
-      .toggle-btn {
-        display: block
-      }
-
-      main {
-        padding: 70px 16px 20px
-      }
-
-      h1 {
-        text-align: center
-      }
-
-      .row {
-        flex-direction: column;
-        align-items: stretch
-      }
-
-      .row>div,
-      .row>button {
-        width: 100%;
-      }
-
-      #map {
-        height: 45vh
-      }
-
-      .cards {
-        gap: 8px;
-      }
-
-      .cards .card {
-        flex: 0 0 calc(50% - 8px);
-        max-width: calc(50% - 8px);
-        padding: 10px 8px;
-      }
-
-      .cards .card h3 {
-        font-size: 13px;
-        margin-bottom: 3px;
-      }
-
-      .cards .card p {
-        font-size: 16px;
-      }
-    }
-
-    /* ===== OVERRIDES ให้หน้าตาเท่ากันทุกหน้า ===== */
-    :root {
-      --btn-min-h: 44px;
-      --btn-pad-x: 16px;
-      --btn-pad-y: 10px;
-      --btn-radius: 12px;
-      --btn-font: 16px;
-    }
-
-    h3 {
-      margin: 0 0 10px;
-      line-height: 1.35;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="month"],
-    select,
-    button {
-      min-height: var(--btn-min-h);
-      padding: var(--btn-pad-y) var(--btn-pad-x);
-      border-radius: var(--btn-radius);
-      font-size: var(--btn-font);
-      line-height: 1.2;
-    }
-
-    button,
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease;
-    }
-
-    .primary:hover,
-    .ghost:hover {
-      filter: brightness(1.03);
-    }
-
-    .primary:active,
-    .ghost:active {
-      transform: translateY(1px);
-    }
-
-    button:focus,
-    .toggle-btn:focus,
-    input:focus,
-    select:focus {
-      outline: 3px solid #93c5fd;
-      outline-offset: 2px;
-    }
-
-    /* ===== Overlay การ์ดเด้งเพิ่มรถ ===== */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1100;
-    }
-
-    .overlay-card {
-      width: min(520px, 92vw);
-      max-width: 520px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.38);
-      padding: 20px 18px 16px;
-      transform: translateY(8px) scale(.97);
-      opacity: 0;
-      animation: overlayIn .18s ease-out forwards;
-    }
-
-    .overlay-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: stretch;
-    }
-
-    @keyframes overlayIn {
-      from {
-        opacity: 0;
-        transform: translateY(8px) scale(.96);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @media (min-width: 640px) {
-      .overlay-actions {
-        flex-direction: row;
-        justify-content: flex-end;
-      }
-
-      .overlay-actions button {
-        min-width: 120px;
-      }
-    }
-
-    /* ===== ICON รถแบบเดียวกับฝั่งผู้ใช้ ===== */
-    .leaflet-marker-icon.truck-icon {
-      background: transparent;
-      border: none;
-    }
-
-    .truck-pin {
-      --pin-color: #f43f5e;
-      --pin-label: #0f172a;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
-    }
-
-    .truck-pin__bubble {
-      width: 46px;
-      height: 46px;
-      border-radius: 16px 16px 12px 12px;
-      background: linear-gradient(135deg, var(--pin-color), rgba(255, 255, 255, .25));
-      border: 2px solid rgba(255, 255, 255, .9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: var(--pin-label);
-    }
-
-    .truck-pin__pointer {
-      width: 0;
-      height: 0;
-      border: 10px solid transparent;
-      border-top-color: var(--pin-color);
-      margin-top: -6px;
-      filter: brightness(.95);
-    }
-
-    /* ===== ICON ถังแบบเดียวกับฝั่งผู้ใช้ ===== */
-    .leaflet-marker-icon.bin-icon {
-      background: transparent;
-      border: none;
-    }
-
-    .bin-pin {
-      --pin-color: #16a34a;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
-    }
-
-    .bin-pin__bubble {
-      position: relative;
-      width: 46px;
-      height: 46px;
-      border-radius: 16px 16px 12px 12px;
-      background: linear-gradient(135deg, var(--pin-color), rgba(255, 255, 255, .2));
-      border: 2px solid rgba(255, 255, 255, .85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: #0f172a;
-    }
-
-    .bin-pin__pointer {
-      width: 0;
-      height: 0;
-      border: 10px solid transparent;
-      border-top-color: var(--pin-color);
-      margin-top: -6px;
-      filter: brightness(.9);
-    }
-
-    .bin-pin__label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #0f172a;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 999px;
-      padding: 2px 8px;
-      line-height: 1;
-      box-shadow: 0 4px 10px rgba(15, 23, 42, .12);
-    }
-
-    .bin-pin__label.is-unknown {
-      color: #475569;
-      background: #f8fafc;
-    }
   </style>
 </head>
 
