@@ -14,8 +14,9 @@
   <script src="admin-lang.js"></script>
   <script src="admin-user.js" defer></script>
   <script src="admin-nav.js" defer></script>
+  <script src="admin-profile.js" defer></script>
   <script>
-    //const currentUser = window.SWAuth.requireAuth([0]); // เฉพาะแอดมิน
+    const currentUser = window.SWAuth.requireAuth([0]); // เฉพาะแอดมิน
   </script>
 
   <style>
@@ -1049,12 +1050,6 @@
       return { ok: true };
     }
 
-
-    /* ---------- Auth UI ---------- */
-    const adminNameEl = document.getElementById('adminName');
-    const adminAvatarEl = document.getElementById('adminAvatar');
-    const adminRoleEl = document.getElementById('adminRole');
-
     /* ---------- DOM refs ---------- */
     const langIconBtn = document.getElementById("langIconBtn");
     const langMenu = document.getElementById("langMenu");
@@ -1619,9 +1614,9 @@
 
       const rows = filtered.map(d => {
         const zoneName =
-   d.zoneName && d.zoneName !== "undefined"
-     ? d.zoneName
-     : d.zoneId || "-";
+          d.zoneName && d.zoneName !== "undefined"
+            ? d.zoneName
+            : d.zoneId || "-";
         const t = d.updatedAt ? d.updatedAt.toLocaleString() : "-";
         const editLabel = tr("btnEdit");
         const delLabel = tr("btnDelete");
@@ -1910,20 +1905,6 @@
 
     menuToggleBtn.addEventListener("click", toggleMenu);
 
-    // document.addEventListener('DOMContentLoaded', () => {
-    //   const currentUser = window.SWAuth.requireAuth([0]);
-    //   document.querySelectorAll('.menu a').forEach(a => {
-    //     a.addEventListener('click', () => {
-    //       const sidebar = document.getElementById('sidebar');
-    //       const btn = document.querySelector('.toggle-btn');
-    //       if (window.innerWidth <= 900) {
-    //         sidebar.classList.remove('show');
-    //         btn.style.display = 'inline-flex';
-    //       }
-    //     });
-    //   });
-    // });
-
     window.addEventListener('resize', () => {
       const sidebar = document.getElementById('sidebar');
       const btn = document.querySelector('.toggle-btn');
@@ -1959,9 +1940,9 @@
         }
 
         driverIdInput.value = driver.driverId || "";
-fullNameInput.value = driver.fullName || "";
-phoneInput.value = driver.phone || "";
-usernameInput.value = driver.username || "";
+        fullNameInput.value = driver.fullName || "";
+        phoneInput.value = driver.phone || "";
+        usernameInput.value = driver.username || "";
 
 
         // 🔒 ล็อกค่าที่ห้ามแก้
@@ -2074,8 +2055,8 @@ usernameInput.value = driver.username || "";
 
 
       driverIdInput.placeholder = tMap.driverIdPlaceholder || "";
-fullNameInput.placeholder = tMap.fullNamePh || "";
-phoneInput.placeholder = tMap.phonePh || "";
+      fullNameInput.placeholder = tMap.fullNamePh || "";
+      phoneInput.placeholder = tMap.phonePh || "";
       usernameInput.placeholder = tMap.usernamePh || "";
       if (editingDriverDocId) {
         passwordInput.placeholder = tMap.passwordEditHint;
@@ -2161,6 +2142,9 @@ phoneInput.placeholder = tMap.phonePh || "";
 
         console.log("STEP 5: done");
 
+        if (window.AdminProfile) {
+          window.AdminProfile.init(currentUser);
+        }
       } catch (err) {
         console.error("❌ INIT ERROR:", err);
         alert("เกิดข้อผิดพลาดในการโหลดข้อมูล\nดู Console");

@@ -525,22 +525,28 @@
         // ---------- ดึงข้อมูลผู้ใช้ปัจจุบันจาก /users/{username} ----------
         async function loadCurrentUserProfile() {
             try {
-                let usernameKey = currentUser && (currentUser.username || currentUser.uid || currentUser.email);
+                const usernameKey =
+                    currentUser?.username ||
+                    currentUser?.uid ||
+                    currentUser?.email;
+
                 if (!usernameKey) return;
 
-                const docSnap = await usersCol.doc(usernameKey).get();
-                if (docSnap.exists) {
-                    const data = docSnap.data() || {};
+                const snap = await usersCol.doc(usernameKey).get();
+
+                if (snap.exists) {
+                    const data = snap.data() || {};
                     currentUserProfile = {
                         ...data,
-                        username: data.username || docSnap.id
+                        username: data.username || snap.id
                     };
                 } else {
                     currentUserProfile = {
                         username: usernameKey,
-                        status: currentUser && typeof currentUser.status === "number" ? currentUser.status : 0
+                        status: currentUser?.status ?? 0
                     };
                 }
+
                 applyProfileInfo();
             } catch (e) {
                 console.error("loadCurrentUserProfile error", e);
@@ -548,14 +554,19 @@
         }
 
         function applyProfileInfo() {
-            if (!profileNameEl || !profileRoleEl) return;
             if (!currentUserProfile) return;
 
+            const profileNameEl = document.getElementById("profileName");
+            const profileRoleEl = document.getElementById("profileRole");
+            if (!profileNameEl || !profileRoleEl) return;
+
             const fullName = (currentUserProfile.fullName || "").trim();
-            const username = currentUserProfile.username || currentUser?.username || "";
-            const statusVal = typeof currentUserProfile.status === "number" ?
-                currentUserProfile.status :
-                (currentUser && typeof currentUser.status === "number" ? currentUser.status : 0);
+            const username = currentUserProfile.username || "";
+
+            const statusVal =
+                typeof currentUserProfile.status === "number"
+                    ? currentUserProfile.status
+                    : 0;
 
             const roleMap = ROLE_LABELS[currentLang] || ROLE_LABELS.th;
 
