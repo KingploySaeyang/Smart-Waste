@@ -8,10 +8,12 @@
     <link rel="stylesheet" href="addBin_style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app-check.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="../Login/auth.js"></script>
     <script src="admin-lang.js"></script>
+    <script src="translations.js"></script>
     <script src="admin-user.js" defer></script>
     <script src="admin-nav.js" defer></script>
     <script>
@@ -116,7 +118,7 @@
     <div class="modal-backdrop zone-area-modal" id="zoneModalBackdrop">
         <div class="modal">
             <div class="modal-header">
-                <div class="modal-title">จัดการเขตพื้นที่</div>
+                <div class="modal-title" id="zoneModalTitle"></div>
                 <button type="button" class="modal-close" id="btnCloseZoneModal">✕</button>
             </div>
 
@@ -332,6 +334,9 @@
 
 
     <script>
+        // ✅ App Check DEBUG MODE (ต้องอยู่บนสุด)
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+
         // ---------- Firebase Configuration (จากโค้ดเดิมของคุณ) ----------
         var firebaseConfig = {
             apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
@@ -344,9 +349,15 @@
             // 🚨 เพิ่มบรรทัดนี้ (ก๊อป URL มาจากหน้า Realtime Database ของคุณ)
             databaseURL: "https://smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
+
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
+
+        firebase.appCheck().activate(
+            '6LfMPzAsAAAAAP31yhBP7M9ZYW3_nd7mvINgLIP6',
+            true
+        );
         const db = firebase.firestore();
         const rtdb = firebase.database();
 
@@ -469,161 +480,29 @@
         }
 
         let currentUserProfile = null;
-
-        const translations = {
-            th: {
-                pageTitle: "Smart Waste - รายการถังขยะ",
-                menuBtn: "☰ เมนู",
-                navHome: "หน้าหลัก",
-                navRegister: "ลงทะเบียนถังขยะ",
-                navaddDriver: "พนักงานขับรถ",
-                navCapacity: "ความจุถังขยะ",
-                navTruck: "ตำแหน่งรถเก็บขยะ",
-                navReport: "รายงานย้อนหลัง",
-                navBins: "รายการถังขยะ",
-                mainTitle: "รายการถังขยะ",
-                formLegend: "เพิ่มข้อมูลถังขยะ",
-                addBinHeaderTitle: "เพิ่มข้อมูลถังขยะ",
-                btnShowForm: "เพิ่มถังขยะ",
-                btnHideForm: "ซ่อนฟอร์มเพิ่มถังขยะ",
-                labelZone: "เขตพื้นที่",
-                labelArea: "พื้นที่ย่อย (Area)",
-                labelBinId: "ชื่อถัง",
-                labelOwner: "ผู้ใช้เจ้าของถัง",
-                labelRfid: "RFID Tag",
-                labelPosition: "ตำแหน่ง (ที่อยู่)",
-                labelDetails: "รายละเอียดเพิ่มเติมของถังขยะ",
-                labelMacAddress: "อุปกรณ์บอร์ด (MAC Address)", // 🚨 NEW
-                btnConfirmMac: "ยืนยันอุปกรณ์", // 🚨 NEW
-                macSelectLoading: "กำลังโหลด MAC Address ที่ออนไลน์...", // 🚨 NEW
-                macSelectDefault: "-- เลือก MAC Address --", // 🚨 NEW
-                macSelectOffline: "-- ไม่พบอุปกรณ์ออนไลน์ --", // 🚨 NEW
-                statusSelectMac: "กรุณาเลือกอุปกรณ์บอร์ด (MAC Address)", // 🚨 NEW
-                statusPingSuccess: "✅ ส่ง PING ไปที่ %s สำเร็จ! กรุณาสังเกตไฟ LED บนบอร์ด", // 🚨 NEW
-                statusPingError: "❌ ส่ง PING ไม่สำเร็จ:", // 🚨 NEW
-                placeholderBinId: "เลือกเขต/Area ก่อน ระบบจะสร้าง A001 ให้",
-                placeholderRfid: "สแกน RFID Tag หรือป้อนเอง (เช่น 04A1B2C3D4)",
-                placeholderLng: "ลองจิจูด (longitude)",
-                placeholderLat: "ละติจูด (latitude)",
-                placeholderDetails: "เช่น หน้าอาคารวิทย์ คณะ...",
-                btnGetGps: "ดึงพิกัดจาก GPS",
-                btnSave: "บันทึก",
-                btnReset: "เคลียร์ฟอร์ม",
-                statusSaving: "กำลังบันทึกข้อมูล...",
-                statusSaveSuccess: "✅ บันทึกถังขยะสำเร็จ",
-                statusSaveError: "❌ บันทึกไม่สำเร็จ:",
-                statusGettingPos: "กำลังดึงตำแหน่ง...",
-                statusGetPosSuccess: "ดึงตำแหน่งสำเร็จ",
-                statusGetPosError: "ดึงตำแหน่งไม่สำเร็จ:",
-                statusNoGps: "อุปกรณ์ไม่รองรับการดึงตำแหน่ง",
-                statusSelectZone: "กรุณาเลือกเขตพื้นที่",
-                statusSelectArea: "กรุณาเลือกพื้นที่ย่อย (Area)",
-                zoneModalTitle: "จัดการเขตพื้นที่",
-                zoneModalNoZones: "ยังไม่มีเขตพื้นที่ ให้เพิ่มเขตใหม่ด้านล่าง",
-                zoneModalNewZonePlaceholder: "ชื่อเขตใหม่ เช่น เมือง, เขต1",
-                zoneModalAddBtn: "เพิ่มเขต",
-                zoneModalConfirmBtn: "ยืนยัน",
-                zoneModalEmptyName: "ชื่อเขตห้ามว่าง",
-                zoneModalExists: "มีเขตนี้อยู่แล้ว",
-                zoneModalAddSuccess: "เพิ่มเขตสำเร็จ",
-                zoneModalAddError: "เพิ่มเขตไม่สำเร็จ:",
-                zoneModalDeleteBtn: "ลบ",
-                zoneModalSaveBtn: "บันทึก",
-                zoneModalNoChange: "ไม่มีการเปลี่ยนแปลง",
-                zoneModalCannotChange: "ไม่สามารถเปลี่ยนชื่อเขตที่มีถังอยู่แล้ว",
-                zoneModalSaveSuccess: "บันทึกชื่อเขตใหม่สำเร็จ",
-                zoneModalSaveError: "เกิดข้อผิดพลาด:",
-                zoneModalConfirmDelete: "ลบเขต",
-                zoneModalCannotDelete: "ไม่สามารถลบเขตที่มีถังอยู่แล้ว",
-                zoneModalDeleteSuccess: "ลบเขตสำเร็จ",
-                zoneModalDeleteError: "ลบเขตไม่สำเร็จ:",
-                areaModalTitle: "จัดการพื้นที่ย่อย (Area)",
-                areaModalNoAreas: "ยังไม่มีพื้นที่ย่อย ให้เพิ่ม Area ใหม่ด้านล่าง",
-                areaModalNewAreaPlaceholder: "ชื่อพื้นที่ย่อยใหม่ เช่น อาคารวิทย์, A1",
-                areaModalAddBtn: "เพิ่ม Area",
-                areaModalConfirmBtn: "ยืนยัน",
-                areaModalEmptyName: "ชื่อ Area ห้ามว่าง",
-                areaModalExists: "มี Area นี้อยู่แล้ว",
-                areaModalAddSuccess: "เพิ่ม Area สำเร็จ",
-                areaModalAddError: "เพิ่ม Area ไม่สำเร็จ:",
-                areaModalDeleteBtn: "ลบ",
-                areaModalSaveBtn: "บันทึก",
-                areaModalNoChange: "ไม่มีการเปลี่ยนแปลง",
-                areaModalCannotChange: "ไม่สามารถเปลี่ยนชื่อ Area ที่มีถังอยู่แล้ว",
-                areaModalSaveSuccess: "บันทึกชื่อ Area ใหม่สำเร็จ",
-                areaModalSaveError: "เกิดข้อผิดพลาด:",
-                areaModalConfirmDelete: "ลบ Area",
-                areaModalCannotDelete: "ไม่สามารถลบ Area ที่มีถังอยู่แล้ว",
-                areaModalDeleteSuccess: "ลบ Area สำเร็จ",
-                areaModalDeleteError: "ลบ Area ไม่สำเร็จ:",
-                zoneSelectDefault: "-- เลือกเขต --",
-                zoneSelectNoZones: "-- ยังไม่มีเขต --",
-                zoneSelectAdd: "+ เพิ่มเขตใหม่…",
-                areaSelectDefault: "-- เลือก Area --",
-                areaSelectNoAreas: "-- เลือกเขตก่อน --",
-                areaSelectLoading: "-- กำลังโหลด Area --",
-                areaSelectAdd: "+ เพิ่ม Area ใหม่…",
-                ownerSelectDefault: "-- เลือกผู้ใช้ --",
-                ownerSelectLoading: "กำลังโหลดรายชื่อผู้ใช้...",
-                ownerSelectEmpty: "-- ยังไม่มีผู้ใช้ --",
-                ownerSelectError: "-- โหลดรายชื่อผู้ใช้ไม่สำเร็จ --",
-                statusSelectOwner: "กรุณาเลือกผู้ใช้เจ้าของถัง",
-                ownerLoadError: "ไม่สามารถโหลดรายชื่อผู้ใช้ได้:",
-                binsSectionTitle: "รายการถังขยะ",
-                binsSectionHint: "",
-                filterZoneLabel: "เขตพื้นที่",
-                filterZoneAll: "เขตทั้งหมด",
-                filterAreaLabel: "พื้นที่ย่อย (Area)",
-                filterAreaAll: "ทั้งหมด",
-                filterBinLabel: "BIN / เจ้าของ",
-                filterBinPlaceholder: "กรองตาม BIN หรือชื่อเจ้าของ เช่น A001 หรือคุณเอ",
-                tableHeaderZone: "เขต",
-                tableHeaderArea: "พื้นที่ย่อย",
-                tableHeaderBin: "BIN",
-                tableHeaderOwner: "เจ้าของถัง",
-                tableHeaderRfid: "RFID",
-                tableHeaderCoords: "พิกัด (lat,lng)",
-                tableHeaderDetails: "รายละเอียด",
-                tableHeaderUpdated: "อัปเดตเมื่อ",
-                tableHeaderManage: "จัดการ",
-                noData: "ไม่พบข้อมูลถังขยะตามเงื่อนไขที่กรอง",
-                loading: "กำลังโหลดข้อมูลถังขยะ...",
-                showing: "แสดง",
-                items: "รายการ",
-                btnEdit: "แก้ไข",
-                btnDelete: "ลบ",
-                inZone: "ในเขต",
-                inArea: "Area",
-                confirmDelete: "แน่ใจหรือไม่ว่าต้องการลบถัง",
-                deleteSuccess: "ลบถังสำเร็จ",
-                deleteError: "ลบถังไม่สำเร็จ:",
-                editModalTitle: "แก้ไขข้อมูลถังขยะ",
-                editLabelZone: "เขตพื้นที่",
-                editLabelArea: "พื้นที่ย่อย",
-                editLabelBinId: "ชื่อถัง (BIN)",
-                editLabelRfid: "RFID Tag",
-                editLabelMacAddress: "MAC Address", // 🚨 NEW Edit Label
-                editLabelPosition: "ตำแหน่ง",
-                editLabelDetails: "รายละเอียดเพิ่มเติม",
-                editSaving: "กำลังบันทึกการแก้ไข...",
-                editSaveSuccess: "✅ บันทึกการแก้ไขสำเร็จ",
-                editSaveError: "❌ บันทึกไม่สำเร็จ:",
-                btnCancel: "ยกเลิก",
-                btnSaveChanges: "บันทึกการแก้ไข",
-                duplicateModalTitle: "สถานะการลงทะเบียน",
-                duplicateScanNew: "ปิดและสแกนแท็กใหม่",
-                duplicateWarning: "หากต้องการแก้ไขข้อมูลถังนี้ โปรดไปที่รายการถังขยะเพื่อค้นหาและแก้ไข"
-            }
-        };
+        let duplicatedRfidDetected = false;
+        let isHandlingRfid = false;
 
         const LangState = window.AdminLang;
         let currentLang = (LangState && typeof LangState.getLang === "function") ?
             LangState.getLang() :
             (localStorage.getItem('sw_lang') || 'th');
+        // 🔥 ฟังการเปลี่ยนภาษา จาก admin-lang.js (ศูนย์กลาง)
+        if (window.AdminLang && typeof window.AdminLang.onChange === "function") {
+            window.AdminLang.onChange(lang => {
+                if (lang && lang !== currentLang) {
+                    currentLang = lang;
+                    changeLanguage(lang, true);
+                }
+            });
+        }
 
         function getTranslation(key) {
-            return translations[currentLang][key] || key;
+            const dict = window.SW_Translations || {};
+            const langPack = dict[currentLang] || dict.th || {};
+            return langPack[key] || key;
         }
+
 
         function t(key) {
             return getTranslation(key);
@@ -1278,34 +1157,34 @@
         }
 
         async function assignBinIdForZone(zoneName, areaName) {
-            if (!zoneName) return "";
+            if (!zoneName || !areaName) return "";
 
-            // ใช้ตัวอักษรแรกของ Zone เป็น Prefix (ตัวใหญ่)
-            const prefix = zoneName.charAt(0).toUpperCase();
+            // 1. ดึงอักษรตัวแรกของ Zone (ตัวพิมพ์ใหญ่) เช่น Yala -> Y
+            const zonePrefix = zoneName.charAt(0).toUpperCase();
 
-            // ใช้ collection "bin_data" ใน doc zoneName
+            // 2. รูปแบบ Prefix ของรหัสที่จะเช็คใน Area นั้นๆ เช่น Betong_Y
+            const fullPrefix = `${areaName}_${zonePrefix}`;
+
             try {
                 const binsCol = db
                     .collection("smartbins")
-                    .doc(zoneName) // Zone is the parent doc for smartbins
+                    .doc(zoneName)
                     .collection("bin_data");
 
-                // กรองถังที่อยู่ใน Zone และ Area ที่กำหนด
-                let query = binsCol
-                    .where("zone", "==", zoneName);
-
-                if (areaName) {
-                    query = query.where("area", "==", areaName);
-                }
-
-                const snap = await query.get();
+                // 3. Query เฉพาะถังที่อยู่ใน Zone และ Area เดียวกัน
+                const snap = await binsCol
+                    .where("zone", "==", zoneName)
+                    .where("area", "==", areaName)
+                    .get();
 
                 const usedNumbers = new Set();
                 snap.forEach(doc => {
                     const data = doc.data() || {};
-                    const binCode = (data.binId || doc.id || "").toString();
-                    // Match pattern like A001, B010 based on the derived prefix
-                    const match = new RegExp(`^${prefix}(\\d+)$`).exec(binCode);
+                    const existingBinId = (data.binId || doc.id || "").toString();
+
+                    // ตรวจสอบ pattern เช่น Betong_Y001 -> ดึง 001 ออกมา
+                    const regex = new RegExp(`^${fullPrefix}(\\d+)$`);
+                    const match = regex.exec(existingBinId);
                     if (match) {
                         const num = Number(match[1]);
                         if (!Number.isNaN(num)) {
@@ -1314,15 +1193,17 @@
                     }
                 });
 
+                // 4. หาเลขถัดไปที่ยังว่างอยู่
                 let candidate = 1;
                 while (usedNumbers.has(candidate)) candidate++;
 
-                const binId = prefix + pad3(candidate);
-                binIdEl.value = binId;
-                return binId;
+                // 5. ประกอบร่างเป็น Betong_Y001
+                const finalBinId = fullPrefix + pad3(candidate);
+                binIdEl.value = finalBinId; // แสดงใน Input ของ Form
+                return finalBinId;
             } catch (err) {
                 console.error("assignBinIdForZone error", err);
-                const fallback = prefix + "001";
+                const fallback = fullPrefix + "001";
                 binIdEl.value = fallback;
                 return fallback;
             }
@@ -1398,6 +1279,16 @@
             }
         });
 
+        rfidEl.addEventListener('blur', async () => {
+            const rfidValue = rfidEl.value.trim().toUpperCase();
+            if (!rfidValue) return;
+
+            const dup = await checkDuplicateRfidRealtime(rfidValue);
+            if (dup) {
+                showDuplicateRfidModal(dup, rfidValue);
+            }
+        });
+
         // ---------- GPS ----------
         btnGetPos.addEventListener("click", () => {
             if (!navigator.geolocation) {
@@ -1423,6 +1314,7 @@
         });
         // ---------- clear form ----------
         function clearForm() {
+            duplicatedRfidDetected = false;   // ✅ เพิ่มตรงนี้
             binForm.reset();
             binIdEl.value = "";
             ownerEl.classList.remove("error");
@@ -1441,10 +1333,33 @@
 
         // 🚨 NEW: Event listeners for MAC Address confirmation
         if (macAddressEl && btnConfirmMac) {
-            macAddressEl.addEventListener("change", () => {
-                btnConfirmMac.disabled = (macAddressEl.value === "");
-                setStatusForm("", "");
+            macAddressEl.addEventListener("change", async () => {
+                const mac = macAddressEl.value;
+                if (!mac) return;
+
+                const snap = await db
+                    .collectionGroup("bin_data")
+                    .where("macAddress", "==", mac)
+                    .where("isHidden", "==", false)
+                    .limit(1)
+                    .get();
+
+                if (!snap.empty) {
+                    const d = snap.docs[0].data();
+
+                    showDuplicateMacModal({
+                        mac: mac,
+                        binId: d.binId,
+                        zone: d.zone,
+                        area: d.area || "—",
+                        owner: d.ownerName || "—"
+                    });
+
+                    macAddressEl.value = "";
+                    btnConfirmMac.disabled = true;
+                }
             });
+
 
             btnConfirmMac.addEventListener("click", () => {
                 sendPingCommand(macAddressEl.value);
@@ -1456,7 +1371,7 @@
         binForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             try {
-                const rfid = rfidEl.value.trim() || null;
+                const rfid = rfidEl.value.trim().toUpperCase() || null;
                 if (!rfid) {
                     rfidEl.classList.add("error");
                     setStatusForm("กรุณาสแกนหรือป้อน RFID Tag", "err");
@@ -1465,6 +1380,16 @@
                     rfidEl.classList.remove("error");
                 }
 
+                const dup = await checkDuplicateRfidRealtime(rfid);
+                if (dup) {
+                    duplicatedRfidDetected = true;
+                    showDuplicateRfidModal(dup, rfid);
+                    return;
+                }
+                if (duplicatedRfidDetected) {
+                    setStatusForm("❌ RFID นี้ถูกใช้ไปแล้ว ไม่สามารถบันทึกได้", "err");
+                    return;
+                }
 
                 const zone = zoneEl.value.trim();
                 if (!zone || zone === "_add_zone_") {
@@ -1519,15 +1444,16 @@
 
                 const zoneDocRef = db.collection("smartbins").doc(zone);
 
+                // ค้นหาบรรทัดที่เตรียมข้อมูล data ก่อนบันทึก และแก้ไขดังนี้:
                 const data = {
-                    binId,
+                    binId, // ค่าที่ได้จากฟังก์ชันใหม่ (เช่น Betong_Y001)
                     zone,
                     area,
                     ownerUsername,
                     ownerName,
                     RFID: rfid,
-                    rfid: rfid,
-                    macAddress, // 🚨 NEW: Save MAC Address
+                    macAddress,
+                    locked: true,
                     lng,
                     lat,
                     details,
@@ -1537,13 +1463,14 @@
                 };
 
                 setStatusForm(t('statusSaving'), "");
+
+                // บันทึกลง bin_data โดยใช้ binId ใหม่เป็นชื่อ Document
                 await zoneDocRef
                     .collection("bin_data")
-                    .doc(binId)
-                    .set(data, {
-                        merge: false
-                    });
+                    .doc(binId) // จะได้ path: smartbins/{zone}/bin_data/Betong_Y001
+                    .set(data, { merge: false });
 
+                // บันทึกลง bin_level เพื่อใช้แสดงค่าระดับขยะ
                 await zoneDocRef
                     .collection("bin_level")
                     .doc(binId)
@@ -1552,11 +1479,9 @@
                         zone: zone,
                         area: area,
                         fillLevel: 0,
-                        macAddress: macAddress, // 🚨 NEW: Save MAC Address to bin_level
+                        macAddress: macAddress,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, {
-                        merge: true
-                    });
+                    }, { merge: true });
 
                 // 🚨 NEW: ล้างสถานะ PING ใน RTDB หากมีการผูกสำเร็จ
                 rtdb.ref(`${COMMAND_PATH}/${macAddress}`).remove();
@@ -1572,6 +1497,38 @@
         });
 
         // ---------- bins list ----------
+        // ---------- RFID Duplicate Check (Firestore) ----------
+        async function checkDuplicateRfidRealtime(rfidValue) {
+            try {
+                const snap = await db
+                    .collectionGroup("bin_data")
+                    .where("RFID", "==", rfidValue)
+                    .limit(5)
+                    .get();
+
+                if (snap.empty) return null;
+
+                for (const doc of snap.docs) {
+                    const d = doc.data() || {};
+                    if (d.isHidden === true) continue; // ✅ กรองใน JS
+
+                    return {
+                        binId: d.binId || doc.id,
+                        zone: d.zone,
+                        area: d.area || "—",
+                        owner: d.ownerName || d.ownerUsername || "—",
+                        updatedAt: d.updatedAt?.toDate?.().toLocaleString() || "—"
+                    };
+                }
+
+                return null;
+            } catch (e) {
+                console.error("checkDuplicateRfidRealtime error", e);
+                return null;
+            }
+        }
+
+
         let zoneUnsubMap = {};
         let areasCache = new Map(); // Cache to store areas per zone
         let bins = [];
@@ -1619,7 +1576,7 @@
                 const zone = d.zone || item.zone;
                 const area = d.area || "—"; // New Area
                 const binId = d.binId || item.binId;
-                const rfidVal = d.RFID || d.rfid || "—";
+                const rfidVal = d.RFID || "—";
                 const lat = (d.lat !== undefined && d.lat !== null) ? d.lat : "—";
                 const lng = (d.lng !== undefined && d.lng !== null) ? d.lng : "—";
                 const det = d.details || "—";
@@ -1777,7 +1734,6 @@
                 });
                 zoneUnsubMap[z.id] = unsub;
             });
-            changeLanguage(currentLang, true);
         });
 
         // ---------- Edit modal ----------
@@ -1819,6 +1775,101 @@
             editMsg.className = "muted";
             lockBodyScroll(false);
         }
+        // ---------- Duplicate RFID Modal ----------
+        function showDuplicateRfidModal(info, rfid) {
+            // ปิดหน้าต่างอื่นๆ ทั้งหมด (ถ้ามี)
+            closeAddModal(false);
+            closeZoneModal();
+            closeAreaModal();
+            changeLanguage(currentLang, true); // 🔥
+
+
+            const modalHtml = `
+        <div class="modal-title">${t('duplicateModalTitle')}</div>
+            <button type="button" class="modal-close" id="btnDupCloseTop">✕</button>
+        </div>
+        <div style="padding: 15px 0;">
+            <div style="border:1.5px solid #ef4444; background:#fef2f2; border-radius:12px; padding:16px;">
+                <p style="font-weight:bold; color:#991b1b; margin-bottom:10px; font-size:1.1rem;">
+                    RFID: ${rfid} ถูกใช้งานแล้ว
+                </p>
+                <div style="font-size:0.95rem; color:#451a03; line-height:1.6;">
+                    <p><b>ชื่อถัง:</b> ${info.binId}</p>
+                    <p><b>เขต/พื้นที่:</b> ${info.zone} (${info.area})</p>
+                    <p><b>เจ้าของ:</b> ${info.owner}</p>
+                </div>
+                <p style="margin-top:12px; font-size:0.85rem; color:#b91c1c; font-style:italic;">
+                    * กรุณาเปลี่ยนแท็กใหม่ หรือตรวจสอบข้อมูลในรายการถังขยะ
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="primary" id="btnScanNew" style="width:100%">ตกลง และสแกนใหม่</button>
+        </div>
+    `;
+
+            // ใช้พื้นที่ของ editModal ในการแสดงผลแจ้งเตือน
+            editModal.innerHTML = modalHtml;
+
+            // ผูก Event ปุ่มปิด
+            document.getElementById("btnScanNew").onclick = closeDuplicateModal;
+            document.getElementById("btnDupCloseTop").onclick = closeDuplicateModal;
+
+            editModalBackdrop.classList.add("show");
+            lockBodyScroll(true);
+        }
+
+        function showDuplicateMacModal(info) {
+            // ปิด Modal อื่นๆ เพื่อไม่ให้ซ้อนกัน
+            closeEditModal();
+
+            const modalHtml = `
+        <div class="modal-header">
+            <div class="modal-title" style="color:#dc2626">❌ อุปกรณ์นี้ถูกใช้งานแล้ว</div>
+            <button type="button" class="modal-close" onclick="closeEditModal()">✕</button>
+        </div>
+        <div style="padding: 15px 0;">
+            <div style="border:1.5px solid #ef4444; background:#fef2f2; border-radius:12px; padding:16px;">
+                <p style="font-weight:bold; color:#991b1b; margin-bottom:10px;">
+                    MAC Address นี้ผูกกับถังใบอื่นอยู่
+                </p>
+                <div style="font-size:0.95rem; color:#451a03; line-height:1.6;">
+                    <p><b>MAC:</b> ${info.mac}</p>
+                    <p><b>ถังที่ใช้อยู่:</b> ${info.binId}</p>
+                    <p><b>พื้นที่:</b> ${info.zone} (${info.area})</p>
+                    <p><b>เจ้าของ:</b> ${info.owner}</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="primary" onclick="closeEditModal()" style="width:100%">รับทราบ</button>
+        </div>
+    `;
+
+            // แสดงผลในพื้นที่ editModal (ซึ่งเราใช้เป็นกล่องแจ้งเตือนกลาง)
+            editModal.innerHTML = modalHtml;
+
+            // เปิดแสดงผล
+            editModalBackdrop.classList.add("show");
+            lockBodyScroll(true);
+        }
+
+
+        function closeDuplicateModal() {
+            editModalBackdrop.classList.remove("show");
+            lockBodyScroll(false);
+
+            // คืนโครงสร้างฟอร์มแก้ไข (Edit Form) กลับมาเป็นปกติ
+            editModal.innerHTML = originalEditModalContent;
+
+            // เคลียร์ค่าที่ช่องสแกน (เผื่อมีค้าง) และโฟกัสไปที่ช่อง RFID เพื่อรอการสแกนใหม่
+            rfidEl.value = "";
+            binForm.classList.remove("rfid-entered");
+
+            setTimeout(() => {
+                rfidEl.focus();
+            }, 300);
+        }
 
         btnEditClose.addEventListener("click", closeEditModal);
         btnEditCancel.addEventListener("click", closeEditModal);
@@ -1839,9 +1890,28 @@
                 const lat = editLat.value ? Number(editLat.value) : null;
                 const det = document.getElementById("editDetails").value.trim() || null; // ต้องอ้างอิงจาก ID เดิม
 
+                const docRef = db
+                    .collection("smartbins")
+                    .doc(zone)
+                    .collection("bin_data")
+                    .doc(binId);
+
+                const snapOld = await docRef.get();
+                if (snapOld.exists && snapOld.data().locked === true) {
+                    throw new Error("BIN นี้ถูกล็อก ไม่สามารถแก้ไข RFID หรือ MAC ได้");
+                }
+
+                // ✅ ตรวจ RFID ซ้ำ (ถ้าไม่ใช่ถังตัวเอง)
+                if (rfid) {
+                    const dup = await checkDuplicateRfidRealtime(rfid);
+                    if (dup && dup.binId !== binId) {
+                        throw new Error("RFID นี้ถูกใช้กับถังอื่นแล้ว");
+                    }
+                }
+
+
                 const data = {
                     RFID: rfid,
-                    rfid: rfid,
                     lng,
                     lat,
                     details: det,
@@ -1850,12 +1920,6 @@
 
                 editMsg.textContent = t('editSaving');
                 editMsg.className = "muted";
-
-                const docRef = db
-                    .collection("smartbins")
-                    .doc(zone)
-                    .collection("bin_data")
-                    .doc(binId);
 
                 await docRef.set(data, {
                     merge: true
@@ -1890,6 +1954,14 @@
                     return;
                 }
                 const d = snap.data() || {};
+
+                if (d.locked === true) {
+                    editRfid.disabled = true;
+                    editMacAddress.disabled = true;
+                } else {
+                    editRfid.disabled = false;
+                }
+
 
                 // กำหนดค่าให้กับฟิลด์ (หลังจากคืนโครงสร้างแล้ว)
                 editDocZone.value = zone;
@@ -1997,14 +2069,9 @@
         }
 
         function changeLanguage(lang, isUpdate = false) {
-            if (!translations[lang]) return;
+            if (!window.SW_Translations || !window.SW_Translations[lang]) return;
             currentLang = lang;
-            if (window.AdminLang && typeof window.AdminLang.setLang === "function") {
-                window.AdminLang.setLang(lang);
-                currentLang = window.AdminLang.getLang();
-            } else {
-                localStorage.setItem('sw_lang', lang);
-            }
+
             langSelect.value = currentLang;
 
             document.title = getTranslation('pageTitle');
@@ -2019,7 +2086,7 @@
 
             $("pageTitleHeading").textContent = getTranslation('mainTitle');
 
-            $("labelZone").textContent = getTranslation('labelZone');
+            if ($("labelZone")) $("labelZone").textContent = getTranslation('labelZone');
             $("labelArea").textContent = getTranslation('labelArea'); // New Area
             $("labelBinId").textContent = getTranslation('labelBinId');
             $("labelOwner").textContent = getTranslation('labelOwner');
@@ -2074,7 +2141,6 @@
 
             renderZoneFilterOptions();
             renderAreaFilterOptions(); // New Area
-            renderBinsTable();
             updateLangMenuActive();
             applyProfileInfo();
 
@@ -2091,20 +2157,17 @@
         langMenu.addEventListener("click", e => {
             const btn = e.target.closest("button[data-lang]");
             if (!btn) return;
+
             const lang = btn.dataset.lang;
-            changeLanguage(lang);
+
+            if (window.AdminLang) {
+                window.AdminLang.setLang(lang); // 🔥 จุดเดียวพอ
+            } else {
+                changeLanguage(lang);
+            }
+
             langMenu.classList.remove("show");
         });
-
-        if (window.AdminLang && typeof window.AdminLang.onChange === "function") {
-            window.AdminLang.onChange(lang => {
-                if (lang && lang !== currentLang) {
-                    currentLang = lang;
-                    langSelect.value = lang;
-                    changeLanguage(lang);
-                }
-            });
-        }
 
         // ---------- เมนู 3 ขีด ----------
         function toggleMenu() {
@@ -2230,16 +2293,20 @@
 
                 // 2. ตรวจสอบ MAC Address ที่ถูกผูกไปแล้วจาก Firestore (เพื่อไม่ให้แสดงซ้ำ)
                 try {
-                    const boundMacs = new Set();
                     // ค้นหา bin_data ทั้งหมดที่มี macAddress
                     const allBinsSnapshot = await db.collectionGroup("bin_data")
                         .where("macAddress", "!=", null)
-                        .where("isHidden", "!=", true)
                         .get();
 
+                    const boundMacs = new Set();
+
                     allBinsSnapshot.forEach(doc => {
-                        const mac = doc.data().macAddress;
-                        if (mac) boundMacs.add(mac);
+                        const d = doc.data();
+                        if (d.isHidden === true) return; // กรองเอง
+                        // 🔒 ถ้า BIN ถูก lock ถือว่า MAC ใช้งานแล้ว
+                        if (d.macAddress && d.locked === true) {
+                            boundMacs.add(d.macAddress);
+                        }
                     });
 
                     // 3. กรองเฉพาะ MAC ที่ออนไลน์และ "ยังไม่ถูกผูก"
@@ -2265,137 +2332,55 @@
         // 🚨 โค้ดที่แก้ไข: อ่านค่า RFID จาก Realtime Database (RTDB) และตรวจสอบซ้ำ
         // -----------------------------------------------------------
 
-        // ฟังก์ชันเดิม checkRfidForDuplicate
-        async function checkRfidForDuplicate(rfidValue) {
-            try {
-                // ใช้ collectionGroup เพื่อค้นหา bin_data ทั่วทุก zone
-                const snap = await db.collectionGroup("bin_data")
-                    .where("rfid", "==", rfidValue)
-                    .limit(1)
-                    .get();
-
-                if (snap.empty) {
-                    // ไม่พบ: ไม่ซ้ำ
-                    return null;
-                } else {
-                    // พบ: ซ้ำ
-                    const doc = snap.docs[0];
-                    const data = doc.data() || {};
-                    // หา owner name จาก owner username
-                    const ownerInfo = ownerMap.get(data.ownerUsername);
-                    const ownerDisplay = ownerInfo?.displayName || data.ownerName || data.ownerUsername || "—";
-
-                    return {
-                        zone: data.zone,
-                        area: data.area || "—",
-                        binId: data.binId || doc.id,
-                        ownerName: ownerDisplay,
-                        updatedAt: data.updatedAt ? data.updatedAt.toDate().toLocaleString() : "—"
-                    };
-                }
-            } catch (error) {
-                console.error("Error checking for duplicate RFID:", error);
-                return null;
-            }
-        }
-
-        // ฟังก์ชันเดิม showDuplicateRfidModal
-        function showDuplicateRfidModal(binInfo, rfid) {
-
-            // 1. ปิด Modal อื่นๆ และคืนโครงสร้าง Edit Modal เดิม
-            closeAddModal(false);
-            closeZoneModal(false);
-            closeAreaModal(false);
-            closeEditModal(); // คืนโครงสร้างให้ Edit Modal เป็นฟอร์มเปล่าก่อน
-
-            const modalTitle = document.getElementById("editModalTitle");
-            const modalHeader = editModal.querySelector('.modal-header'); // อ้างอิง header ของ Modal
-            const btnClose = document.getElementById("btnEditClose");
-
-            // 2. สร้าง HTML Card แจ้งเตือน
-            const cardHtml = `
-                <div style="padding: 10px 0;">
-                    <div id="duplicateInfoCard" style="padding: 12px; border: 1px solid #cc0000; border-radius: 8px; background: #fffde7; margin-bottom: 15px;">
-                        <p style="font-weight: bold; color: #cc0000; margin-bottom: 8px;">แท็กนี้ถูกลงทะเบียนแล้วในถังขยะ:</p>
-                        <p style="margin-bottom: 4px; padding-left: 10px;"><b>BIN ID:</b> ${binInfo.binId}</p>
-                        <p style="margin-bottom: 4px; padding-left: 10px;"><b>เขตพื้นที่:</b> ${binInfo.zone}</p>
-                        <p style="margin-bottom: 4px; padding-left: 10px;"><b>พื้นที่ย่อย (Area):</b> ${binInfo.area}</p>
-                        <p style="margin-bottom: 4px; padding-left: 10px;"><b>เจ้าของ:</b> ${binInfo.ownerName}</p>
-                        <p style="margin-bottom: 8px; padding-left: 10px;"><b>อัปเดตล่าสุด:</b> ${binInfo.updatedAt}</p>
-                        <p style="margin-top: 10px; font-size: 14px;">${t('duplicateWarning')}</p>
-                    </div>
-                </div>
-            `;
-
-            const buttonHtml = `
-                <div class="modal-footer" style="justify-content: flex-end;">
-                    <button type="button" class="primary" id="btnDuplicateClose">${t('duplicateScanNew')}</button>
-                </div>
-            `;
-
-            // 3. แทรกเนื้อหา Card เข้าไปใน Modal (แทนที่ฟอร์มทั้งหมด)
-            editModal.innerHTML = `
-                <div class="modal-header">
-                    <div class="modal-title" id="editModalTitle">${t('duplicateModalTitle')}</div>
-                    <button type="button" class="modal-close" id="btnEditCloseDuplicate">✕</button>
-                </div>
-                ${cardHtml}
-                ${buttonHtml}
-            `;
-
-            // 4. ตั้งค่า Event Listeners ใหม่สำหรับปุ่ม "ปิด"
-            document.getElementById("btnDuplicateClose").addEventListener("click", closeEditModal);
-            document.getElementById("btnEditCloseDuplicate").addEventListener("click", closeEditModal);
-
-
-            // 5. เปิด Modal แจ้งเตือน
-            openEditModal();
-        }
-
         // โค้ด listenForRfidFromRtdb ที่ถูกปรับปรุงให้ใช้ RTDB object
         function listenForRfidFromRtdb() {
-            const rfidEl = document.getElementById('rfid');
-
-            // ดักฟังข้อมูลทั้งหมดภายใต้ esp32_devices
             rtdb.ref('esp32_devices').on('value', async (snapshot) => {
-                const devicesData = snapshot.val();
-                if (!devicesData) return;
 
-                // วนลูปตรวจสอบทุก MAC Address ใน esp32_devices
-                for (const mac in devicesData) {
-                    const device = devicesData[mac];
+                // 🔒 กันไม่ให้ handler ทำงานซ้อน
+                if (isHandlingRfid) return;
+                isHandlingRfid = true;
 
-                    // เช็คว่าบอร์ดนี้มี rfid_input และ tagId หรือไม่
-                    if (device.rfid_input && device.rfid_input.tagId) {
+                try {
+                    const allDevices = snapshot.val();
+                    if (!allDevices) return;
+
+                    for (const mac in allDevices) {
+                        const device = allDevices[mac];
+                        if (!device?.rfid_input?.tagId) continue;
+
                         const rfidValue = device.rfid_input.tagId.trim().toUpperCase();
+                        if (!rfidValue) continue;
 
-                        // ถ้ามีค่า และไม่ใช่ค่าเดิมที่ค้างอยู่ใน Input
-                        if (rfidValue !== "" && rfidEl.value !== rfidValue) {
+                        // 🔍 ตรวจ RFID ซ้ำ
+                        const duplicateInfo = await checkDuplicateRfidRealtime(rfidValue);
+                        if (duplicateInfo) {
+                            showDuplicateRfidModal(duplicateInfo, rfidValue);
 
-                            console.log(`New RFID [${rfidValue}] from board [${mac}]`);
+                            // ล้างค่าใน RTDB
+                            await rtdb.ref(`esp32_devices/${mac}/rfid_input`).remove();
 
-                            // 1. ตรวจสอบการลงทะเบียนซ้ำใน Firestore
-                            const duplicateInfo = await checkRfidForDuplicate(rfidValue);
-
-                            if (duplicateInfo) {
-                                showDuplicateRfidModal(duplicateInfo, rfidValue);
-                            } else {
-                                // 2. ถ้าไม่ซ้ำ ให้เปิด Modal เพิ่มถัง
-                                if (!addBinBackdrop.classList.contains('show')) {
-                                    openAddModal();
-                                } else {
-                                    clearForm();
-                                }
-                                rfidEl.value = rfidValue;
-                                rfidEl.dispatchEvent(new Event('input'));
-                                rfidEl.focus();
-                                setStatusForm(`✅ รับค่า RFID: ${rfidValue} จากบอร์ด ${mac}`, "ok");
-                            }
-
-                            // 3. 🚨 สำคัญ: สั่งล้างค่าใน RTDB เฉพาะของบอร์ดนั้นๆ ทันที
-                            rtdb.ref(`esp32_devices/${mac}/rfid_input/tagId`).set("");
+                            return; // ❗ออกจาก handler
                         }
+
+                        // ✅ ไม่ซ้ำ → เปิดฟอร์ม
+                        if (!addBinBackdrop.classList.contains("show")) {
+                            openAddModal();
+                        } else {
+                            clearForm();
+                        }
+
+                        rfidEl.value = rfidValue;
+                        rfidEl.dispatchEvent(new Event("input"));
+                        rfidEl.focus();
+
+                        setStatusForm(`✅ รับค่า RFID: ${rfidValue}`, "ok");
+
+                        // ล้างค่าเพื่อรอ scan ใหม่
+                        await rtdb.ref(`esp32_devices/${mac}/rfid_input`).remove();
                     }
+                } finally {
+                    // 🔓 ปลดล็อก ไม่ว่า success หรือ error
+                    isHandlingRfid = false;
                 }
             });
         }

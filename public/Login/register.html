@@ -575,7 +575,7 @@
         email,
         phone,
         status: 2,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: FieldValue.serverTimestamp()
       });
 
       console.log("REGISTER SUCCESS - DOC:", userRef.id);

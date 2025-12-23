@@ -1043,7 +1043,7 @@
           binId: rfidBinData.binId || rfidBinSelect.value,
           zone: zoneTodayId,
           fillLevel: v,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          updatedAt: FieldValue.serverTimestamp()
         }, {merge:true});
         rfidFillInput.value = v;
         setRfidMsg("อัปเดตระดับความเต็มแล้ว", false);
@@ -1102,7 +1102,7 @@
           levelBefore,
           lat,
           lng,
-          emptiedAt: firebase.firestore.FieldValue.serverTimestamp()
+          emptiedAt: FieldValue.serverTimestamp()
         });
 
         // ตั้งระดับถังเป็น 0 ด้วย
@@ -1110,7 +1110,7 @@
           binId,
           zone: zoneTodayId,
           fillLevel: 0,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          updatedAt: FieldValue.serverTimestamp()
         }, {merge:true});
 
         rfidFillInput.value = 0;
@@ -1200,7 +1200,7 @@
 
           await truckDocRef.set({
             lat, lng,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: FieldValue.serverTimestamp()
           }, {merge:true});
 
           setGpsStatus("gpsSent");

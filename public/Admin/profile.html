@@ -663,7 +663,7 @@
           email,
           phone,
           avatarData: avatarData || null,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          updatedAt: FieldValue.serverTimestamp()
         };
 
         await userRef.set(payload, { merge: true });
