@@ -385,7 +385,6 @@
         // 🚨 NEW: RTDB Paths for RFID and MAC/Sensor
         const RTDB_RFID_PATH = 'rfid_input/tagId';
         const DEVICES_STATUS_BASE_PATH = 'esp32_devices';
-        const ONLINE_TIMEOUT_MS = 15000; // MAC ถือว่าออนไลน์หากอัปเดตไม่เกิน 15 วินาที
         // END NEW
         // -----------------------------------------------------------
         // 🔌 ควบคุมไฟ LED ของบอร์ด ESP32 (ON / OFF)
@@ -493,7 +492,10 @@
         let macAddressListenerUnsub = null;
         // 🧠 MAC ที่ถูกยืนยันแล้วแต่ยังไม่บันทึก
         let confirmedMacTemp = null;
-
+        // 🕒 เก็บเวลาที่เว็บเห็น MAC ล่าสุด
+        const macLastSeenMap = {};
+        let lastDevicesSnapshot = {};   // ← ขาดตัวนี้
+        const OFFLINE_TIMEOUT_MS = 5 * 60 * 1000;
         // END NEW
 
 
@@ -1483,8 +1485,11 @@
                     }, { merge: true });
 
                 setStatusForm(`${t('statusSaveSuccess')} (${binId})`, "ok");
-                // 🔌 ดับไฟบอร์ด
-                await setBoardLed(macAddress, "OFF");
+                // ✅ บอกบอร์ดว่าผูกถาวรแล้ว
+                await rtdb
+                    .ref(`esp32_devices/${macAddress}/bound`)
+                    .set(true);
+
                 confirmedMacTemp = null;
                 btnConfirmMac.classList.remove("confirmed");
 
@@ -2298,80 +2303,53 @@
             if (btnConfirmMac) btnConfirmMac.disabled = (macAddressEl.value === "");
         }
 
+        function updateOnlineMacs() {
+            const now = Date.now();
+            const online = [];
+
+            for (const mac in lastDevicesSnapshot) {
+                const device = lastDevicesSnapshot[mac] || {};
+                const lastUpdate = Number(device.lastUpdate || 0);
+                const isBound = device.bound === true; // ⭐ จุดสำคัญ
+
+                // ✅ ออนไลน์ และ ยังไม่ถูกผูก
+                if (
+                    now - lastUpdate <= OFFLINE_TIMEOUT_MS &&
+                    !isBound
+                ) {
+                    online.push({ mac });
+                }
+            }
+
+            macAddresses = online;
+            renderMacAddressSelect();
+        }
+
+
+
         // 🟢🟢🟢 ฟังก์ชันที่แก้ไขแล้ว (ตรวจสอบ status) 🟢🟢🟢
         function listenForOnlineMacAddresses() {
-            // เคลียร์ Listener เก่าถ้ามี
             if (macAddressListenerUnsub) {
                 macAddressListenerUnsub();
                 macAddressListenerUnsub = null;
             }
 
-            macAddresses = [];
-
-            // แสดงสถานะกำลังโหลดใน Dropdown
-            if (macAddressEl) macAddressEl.innerHTML = '<option value="">' + t('macSelectLoading') + '</option>';
-            if (macAddressEl) macAddressEl.disabled = true;
-
-            // อ้างอิงไปที่ Path ของอุปกรณ์ใน Realtime Database
             const macRef = rtdb.ref(DEVICES_STATUS_BASE_PATH);
 
-            const listener = macRef.on('value', async (snapshot) => {
-                const data = snapshot.val();
-                const now = Date.now();
-
-                // 1. ดึง MAC Address ที่ออนไลน์
-                let onlineMacs = [];
-                if (data) {
-                    for (const mac in data) {
-                        const deviceData = data[mac];
-
-                        // ดึงค่า status และ lastUpdate
-                        const status = deviceData.status || "";
-                        const lastUpdate = deviceData.lastUpdate || 0;
-
-                        // 🟢 จุดที่แก้ไข: เช็คว่า status คือ "Connected" หรือไม่
-                        // ถ้าใช่ ให้ถือว่าออนไลน์ทันที (แก้ปัญหาเรื่องเวลาไม่ตรง)
-                        if (status === "Connected" || (now - lastUpdate < ONLINE_TIMEOUT_MS)) {
-                            onlineMacs.push({ mac: mac });
-                        }
-                    }
-                }
-
-                // 2. ตรวจสอบ MAC Address ที่ถูกผูกไปแล้วจาก Firestore (เพื่อไม่ให้แสดงซ้ำ)
-                try {
-                    // ค้นหา bin_data ทั้งหมดที่มี macAddress
-                    const allBinsSnapshot = await db.collectionGroup("bin_data")
-                        .where("macAddress", "!=", null)
-                        .get();
-
-                    const boundMacs = new Set();
-
-                    allBinsSnapshot.forEach(doc => {
-                        const d = doc.data();
-                        if (d.isHidden === true) return; // กรองเอง
-                        // 🔒 ถ้า BIN ถูก lock ถือว่า MAC ใช้งานแล้ว
-                        if (d.macAddress && d.locked === true) {
-                            boundMacs.add(d.macAddress);
-                        }
-                    });
-
-                    // 3. กรองเฉพาะ MAC ที่ออนไลน์และ "ยังไม่ถูกผูก"
-                    macAddresses = onlineMacs
-                        .filter(macObj => !boundMacs.has(macObj.mac))
-                        .sort((a, b) => a.mac.localeCompare(b.mac));
-
-                    renderMacAddressSelect();
-                } catch (e) {
-                    console.error("Error checking bound MACs:", e);
-                    // หากเกิด Error ในการเช็ค Firestore ให้แสดงรายการที่ออนไลน์ทั้งหมดไปก่อน
-                    macAddresses = onlineMacs.sort((a, b) => a.mac.localeCompare(b.mac));
-                    renderMacAddressSelect();
-                }
+            const listener = macRef.on("value", snapshot => {
+                lastDevicesSnapshot = snapshot.val() || {};
+                updateOnlineMacs(); // ← คำนวณทันที 1 รอบ
             });
 
-            // เก็บฟังก์ชันสำหรับยกเลิก Listener เมื่อปิด Modal
-            macAddressListenerUnsub = () => macRef.off('value', listener);
+            macAddressListenerUnsub = () => macRef.off("value", listener);
         }
+
+        // ⏱️ เช็ค MAC ที่ออนไลน์ทุก 5 วินาที (สำคัญมาก)
+        setInterval(() => {
+            updateOnlineMacs();
+        }, 5000);
+
+
         // -----------------------------------------------------------
         // 🚨 NEW: ฟัง RFID จาก RTDB (รองรับ child_added + child_changed)
         // -----------------------------------------------------------
