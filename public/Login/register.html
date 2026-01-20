@@ -3,603 +3,434 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>Smart Waste - Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Smart Waste - สมัครสมาชิก</title>
+
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="../i18n/lang.js" defer></script>
+  <script src="../i18n/th.js" defer></script>
+  <script src="../i18n/en.js" defer></script>
+  <script src="../i18n/ms.js" defer></script>
 
   <style>
-    /* --- Reset & Fonts --- */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: "Prompt", "Segoe UI", sans-serif;
+    /* --- CSS Core Theme (Shared with Login) --- */
+    :root {
+      --primary: #10b981;
+      --primary-dark: #047857;
+      --accent: #0ea5e9;
+      --bg-color: #f0fdf4;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --glass-bg: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.8);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     }
 
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow-x: hidden;
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Prompt", sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    input { user-select: text; }
 
-      /* --- Eco-Tech Theme Gradient --- */
-      background: linear-gradient(-45deg, #064e3b, #059669, #0d9488, #0ea5e9);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background-color: var(--bg-color); position: relative;
     }
 
-    @keyframes gradientBG {
-      0% {
-        background-position: 0% 50%;
-      }
+    /* Fixed Background */
+    .bg-shape {
+      position: absolute; border-radius: 50%; filter: blur(80px);
+      z-index: 0; opacity: 0.6; animation: blobFloat 10s infinite alternate; pointer-events: none;
+    }
+    .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #34d399; }
+    .blob-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #38bdf8; animation-delay: -2s; }
+    .blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: #2dd4bf; animation-delay: -5s; }
+    @keyframes blobFloat { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, 50px) scale(1.1); } }
 
-      50% {
-        background-position: 100% 50%;
-      }
-
-      100% {
-        background-position: 0% 50%;
-      }
+    /* Scroll Container */
+    .scroll-container {
+      width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
+      position: relative; z-index: 10; -webkit-overflow-scrolling: touch; 
+      display: flex; justify-content: center; padding: 40px 20px;
+    }
+    .content-wrapper {
+      width: 100%; max-width: 1100px; display: grid; grid-template-columns: 0.9fr 1.1fr; /* ปรับสัดส่วนให้ฝั่งขวากว้างหน่อยเพราะฟอร์มยาว */
+      gap: 3rem; align-items: center; margin: auto 0;
     }
 
-    /* --- Gimmick: Floating Particles --- */
-    .particles {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      z-index: 0;
-      pointer-events: none;
+    /* --- Fixed UI Elements --- */
+    
+    /* Mobile Logo (Back Button) */
+    .mobile-logo-fixed {
+      display: none; position: absolute; top: 20px; left: 20px; z-index: 50;
+      text-decoration: none;
     }
+    .mobile-logo-fixed .brand-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
+      color: var(--primary-dark); padding: 8px 16px; border-radius: 50px; 
+      font-weight: 600; font-size: 14px; border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s;
+    }
+    .mobile-logo-fixed:active .brand-badge { transform: scale(0.95); }
+    .mobile-logo-fixed .brand-badge i { font-size: 1.2rem; color: var(--primary); }
 
-    .particles span {
-      position: absolute;
-      display: block;
-      list-style: none;
-      width: 20px;
-      height: 20px;
-      background: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
-      animation: floatUp 25s linear infinite;
-      bottom: -150px;
+    /* Lang Switcher */
+    .lang-switcher { position: absolute; top: 20px; right: 20px; z-index: 50; }
+    .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+    .icon-btn img { width: 22px; height: 22px; }
+    .lang-menu { position: absolute; top: 50px; right: 0; background: white; padding: 6px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 140px; }
+    .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
+    .lang-menu button { background: transparent; border: none; padding: 10px; text-align: left; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .lang-menu button:hover { background: #f1f5f9; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent); font-weight: 600; }
+
+    /* Desktop Back Button */
+    .btn-back-desktop {
+      position: absolute; top: 20px; left: 20px; z-index: 50;
+      width: 42px; height: 42px;
       border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+    }
+    .btn-back-desktop:hover {
+      background: white; color: var(--primary);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15); transform: translateY(-2px);
     }
 
-    /* Particle Config */
-    .particles span:nth-child(1) {
-      left: 25%;
-      width: 80px;
-      height: 80px;
-      animation-delay: 0s;
-      animation-duration: 20s;
+    /* --- Content Styles --- */
+    .left-panel { padding: 10px; animation: slideInLeft 0.8s ease-out; }
+    .left-brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(16, 185, 129, 0.15); color: var(--primary-dark);
+      padding: 6px 14px; border-radius: 50px; font-weight: 600; font-size: 13px;
+      margin-bottom: 15px; border: 1px solid rgba(16, 185, 129, 0.2);
     }
-
-    .particles span:nth-child(2) {
-      left: 10%;
-      width: 20px;
-      height: 20px;
-      animation-delay: 2s;
-      animation-duration: 12s;
+    .left-panel h1 { 
+      font-size: 3rem; line-height: 1.1; font-weight: 800;
+      background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+      background-clip: text; -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; margin-bottom: 1rem;
     }
-
-    .particles span:nth-child(3) {
-      left: 70%;
-      width: 20px;
-      height: 20px;
-      animation-delay: 4s;
-    }
-
-    .particles span:nth-child(4) {
-      left: 40%;
-      width: 60px;
-      height: 60px;
-      animation-delay: 0s;
-      animation-duration: 18s;
-    }
-
-    .particles span:nth-child(5) {
-      left: 65%;
-      width: 20px;
-      height: 20px;
-      animation-delay: 0s;
-    }
-
-    .particles span:nth-child(6) {
-      left: 75%;
-      width: 110px;
-      height: 110px;
-      animation-delay: 3s;
-    }
-
-    .particles span:nth-child(7) {
-      left: 35%;
-      width: 150px;
-      height: 150px;
-      animation-delay: 7s;
-    }
-
-    .particles span:nth-child(8) {
-      left: 50%;
-      width: 25px;
-      height: 25px;
-      animation-delay: 15s;
-      animation-duration: 45s;
-    }
-
-    @keyframes floatUp {
-      0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 0.8;
-      }
-
-      100% {
-        transform: translateY(-1000px) rotate(720deg);
-        opacity: 0;
-      }
-    }
-
-    /* --- Container --- */
-    .container {
-      position: relative;
-      width: 100%;
-      max-width: 1000px;
-      /* กว้างกว่า Login เล็กน้อย */
-      padding: 0 20px;
-      display: grid;
-      grid-template-columns: 0.8fr 1.2fr;
-      /* แบ่งสัดส่วน ซ้ายเล็กกว่าขวา */
-      align-items: center;
-      gap: 40px;
-      z-index: 2;
-    }
-
-    /* --- Left Panel --- */
-    .left-panel {
-      color: #fff;
-      padding-right: 20px;
-      animation: fadeIn 0.8s ease-out;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .left-panel h3 {
-      font-size: 24px;
-      font-weight: 600;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      color: #d1fae5;
-    }
-
-    .left-panel h1 {
-      font-size: 42px;
-      font-weight: 700;
-      line-height: 1.2;
-      margin-bottom: 20px;
-    }
-
-    .left-panel p {
-      font-size: 16px;
-      line-height: 1.6;
-      opacity: 0.9;
-    }
-
-    .features-list {
-      list-style: none;
-      margin-top: 20px;
-    }
-
-    .features-list li {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-
-    .features-list li i {
-      color: #34d399;
-      font-size: 18px;
-    }
-
-    /* --- Right Panel (Card) --- */
-    .right-panel {
-      display: flex;
-      justify-content: center;
-    }
+    .left-panel p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; opacity: 0.9; }
 
     .register-card {
-      background: rgba(255, 255, 255, 0.95);
-      width: 100%;
-      max-width: 550px;
-      /* การ์ดกว้างขึ้น */
-      border-radius: 30px;
-      padding: 40px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-      backdrop-filter: blur(5px);
-      animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 100%; max-width: 480px;
+      background: var(--glass-bg); backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border); border-radius: 28px; padding: 2.5rem;
+      box-shadow: var(--shadow-lg); transition: all 0.3s ease; animation: slideInUp 0.8s ease-out;
     }
+    .form-header { text-align: center; margin-bottom: 1.5rem; }
+    .form-header h2 { font-size: 1.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem; }
+    .form-header p { color: var(--text-muted); font-size: 0.9rem; }
 
-    .card-header {
-      text-align: center;
-      margin-bottom: 25px;
+    /* Form Grid & Inputs */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .col-full { grid-column: span 2; }
+    .input-wrapper { position: relative; margin-bottom: 5px; }
+    
+    .input-icon { 
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%); 
+      color: #94a3b8; font-size: 1.2rem; z-index: 5; pointer-events: none;
     }
-
-    .card-header h2 {
-      font-size: 28px;
-      color: #047857;
-      font-weight: 700;
-      margin-bottom: 5px;
+    
+    .toggle-password {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      color: #cbd5e1; font-size: 1.2rem; z-index: 5; cursor: pointer; transition: color 0.2s;
     }
+    .toggle-password:hover { color: var(--primary); }
 
-    .card-header p {
-      color: #64748b;
-      font-size: 14px;
+    input {
+      width: 100%; height: 50px; 
+      padding: 0 48px 0 48px; 
+      border: 2px solid transparent; background: #f8fafc; border-radius: 14px;
+      font-size: 1rem; color: var(--text-main); transition: 0.2s;
+      position: relative; z-index: 1;
     }
+    input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+    input:focus + .input-icon { color: var(--primary); }
 
-    /* --- Form Grid for Inputs --- */
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      /* แบ่ง 2 คอลัมน์ */
-      gap: 15px;
-    }
-
-    .col-full {
-      grid-column: span 2;
-    }
-
-    /* ช่องที่ลากยาวเต็มบรรทัด */
-
-    .form-group {
-      margin-bottom: 0;
-      position: relative;
-    }
-
-    input[type="text"],
-    input[type="password"],
-    input[type="email"],
-    input[type="tel"] {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      font-size: 15px;
-      color: #334155;
-      transition: all 0.3s;
-      background: #f8fafc;
-    }
-
-    input::placeholder {
-      color: #cbd5e1;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #10b981;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-    }
-
-    .hint-text {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 15px;
-      margin-bottom: 20px;
-      text-align: left;
-    }
-
-    /* --- Buttons --- */
     .btn-submit {
-      width: 100%;
-      padding: 14px;
-      background: #059669;
-      /* Solid Color */
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-      margin-top: 10px;
+      width: 100%; height: 54px; margin-top: 15px;
+      background: linear-gradient(90deg, #10b981, #059669); color: white;
+      border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 600;
+      cursor: pointer; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.25);
+      transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-submit:active { transform: scale(0.97); }
+    .btn-submit:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+
+    .form-footer { text-align: center; margin-top: 1.5rem; font-size: 0.95rem; color: var(--text-muted); }
+    .link-login { color: var(--primary-dark); font-weight: 700; cursor: pointer; text-decoration: none; margin-left: 5px; }
+    
+    #status { margin-top: 15px; text-align: center; font-size: 0.9rem; border-radius: 12px; padding: 5px; }
+    .err { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 8px; display: inline-block; }
+
+    /* --- 📱 MOBILE OPTIMIZATIONS --- */
+    @media (max-width: 900px) {
+      .scroll-container { display: block; padding: 80px 20px 40px 20px; }
+      .mobile-logo-fixed { display: flex; } /* Show mobile logo */
+      .btn-back-desktop { display: none; } /* Hide desktop back button */
+      .content-wrapper { display: block; width: 100%; }
+      .left-panel { display: none; } /* Hide left panel on mobile */
+
+      .register-card { width: 100%; max-width: 100%; padding: 25px 20px; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
+      
+      .form-grid { grid-template-columns: 1fr; gap: 12px; } /* Stack inputs on mobile */
+      .col-full { grid-column: span 1; }
+      
+      input { font-size: 16px !important; height: 52px; background: #f1f5f9; }
+      .btn-submit { height: 56px; font-size: 1.15rem; }
     }
 
-    .btn-submit:hover {
-      background: #047857;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3);
-    }
-
-    .btn-submit:disabled {
-      background: #cbd5e1;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-back {
-      width: 100%;
-      padding: 12px;
-      background: #f1f5f9;
-      color: #64748b;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-      margin-top: 10px;
-    }
-
-    .btn-back:hover {
-      background: #e2e8f0;
-      color: #334155;
-    }
-
-    #status {
-      margin-top: 15px;
-      text-align: center;
-      font-size: 13px;
-      min-height: 20px;
-    }
-
-    .err {
-      color: #ef4444;
-    }
-
-    .ok {
-      color: #059669;
-    }
-
-    /* --- Animations --- */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* =========================================
-       📱 Mobile Responsive Styles
-       ========================================= */
-    @media (max-width: 850px) {
-      body {
-        align-items: flex-start;
-        padding: 30px 20px;
-        overflow-y: auto;
-      }
-
-      .container {
-        grid-template-columns: 1fr;
-        gap: 20px;
-        max-width: 500px;
-      }
-
-      /* ซ่อน Panel ซ้ายบนมือถือเพื่อให้โฟกัสที่การสมัคร */
-      .left-panel {
-        display: none;
-      }
-
-      .register-card {
-        padding: 30px 25px;
-      }
-
-      /* บนมือถือให้เรียง Input เป็น 1 คอลัมน์ทั้งหมด */
-      .form-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-      }
-
-      .col-full {
-        grid-column: span 1;
-      }
-
-      /* เพิ่ม Branding บนหัวการ์ด */
-      .card-header::before {
-        content: "Smart Waste Platform";
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #059669;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-    }
+    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
   </style>
 </head>
 
 <body>
+  <div class="bg-shape blob-1"></div>
+  <div class="bg-shape blob-2"></div>
+  <div class="bg-shape blob-3"></div>
 
-  <div class="particles">
-    <span></span><span></span><span></span><span></span><span></span>
-    <span></span><span></span><span></span>
+  <a href="index.html" class="mobile-logo-fixed">
+    <div class="brand-badge"><i class="ri-recycle-line"></i> Smart Waste</div>
+  </a>
+
+  <a href="index.html" class="btn-back-desktop" title="กลับหน้าหลัก">
+    <i class="ri-arrow-left-line"></i>
+  </a>
+
+  <div class="lang-switcher">
+    <button class="icon-btn" id="langIconBtn" type="button">
+      <img src="../Admin/images/lang-icon.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/197/197374.png'" alt="Language">
+    </button>
+    <div class="lang-menu" id="langMenu">
+      <button type="button" data-lang="th">🇹🇭 ไทย</button>
+      <button type="button" data-lang="en">🇬🇧 English</button>
+      <button type="button" data-lang="ms">🇲🇾 Bahasa Melayu</button>
+    </div>
   </div>
 
-  <div class="container">
-    <div class="left-panel">
-      <h3>Join Us</h3>
-      <h1>Create New<br>Account</h1>
-      <p>
-        สมัครสมาชิกเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามสถานะ
-        และร่วมเป็นส่วนหนึ่งของสังคม Eco-City
-      </p>
-      <ul class="features-list">
-        <li><i class="ri-checkbox-circle-fill"></i> จัดการข้อมูลส่วนตัวได้ง่าย</li>
-        <li><i class="ri-checkbox-circle-fill"></i> ติดตามสถานะขยะ Real-time</li>
-        <li><i class="ri-checkbox-circle-fill"></i> ใช้งานได้ทุกที่ผ่านมือถือ</li>
-      </ul>
-    </div>
+  <div class="scroll-container">
+    <div class="content-wrapper">
+      
+      <div class="left-panel">
+        <div class="left-brand"><i class="ri-recycle-line"></i> Smart Waste</div>
+        <h1 id="txtJoinSubtitle">Join Us &<br>Start Tracking</h1>
+        <p id="txtJoinDesc">สมัครสมาชิกเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที</p>
+      </div>
 
-    <div class="right-panel">
       <div class="register-card">
-        <div class="card-header">
-          <h2>Sign Up</h2>
-          <p>กรอกข้อมูลเพื่อสร้างบัญชีใหม่</p>
+        <div class="form-header">
+          <h2 id="txtRegHeader">สมัครสมาชิก</h2>
+          <p id="txtRegHint">กรอกข้อมูลเพื่อสร้างบัญชีใหม่</p>
         </div>
 
         <form id="registerForm">
           <div class="form-grid">
-            <div class="form-group col-full">
-              <input id="fullName" type="text" placeholder="ชื่อ-นามสกุลจริง" required />
+            <div class="col-full input-wrapper">
+              <i class="ri-user-smile-line input-icon"></i>
+              <input id="fullName" type="text" placeholder="ชื่อ-นามสกุล (Full Name)" required />
+            </div>
+            <div class="input-wrapper">
+              <i class="ri-user-3-line input-icon"></i>
+              <input id="username" type="text" placeholder="Username" required />
+            </div>
+            <div class="input-wrapper">
+              <i class="ri-phone-line input-icon"></i>
+              <input id="phone" type="tel" placeholder="Phone" required />
+            </div>
+            <div class="col-full input-wrapper">
+              <i class="ri-mail-line input-icon"></i>
+              <input id="email" type="email" placeholder="อีเมล (Email)" required />
             </div>
 
-            <div class="form-group">
-              <input id="username" type="text" placeholder="ชื่อผู้ใช้" required />
-            </div>
-
-            <div class="form-group">
-              <input id="phone" type="tel" placeholder="เบอร์มือถือ" required />
-            </div>
-
-            <div class="form-group col-full">
-              <input id="email" type="email" placeholder="อีเมล" required />
-            </div>
-
-            <div class="form-group">
+            <div class="input-wrapper">
+              <i class="ri-lock-2-line input-icon"></i>
               <input id="password" type="password" placeholder="รหัสผ่าน" required />
+              <i class="ri-eye-off-line toggle-password" onclick="togglePass('password', this)"></i>
             </div>
 
-            <div class="form-group">
+            <div class="input-wrapper">
+              <i class="ri-shield-check-line input-icon"></i> 
               <input id="confirmPassword" type="password" placeholder="ยืนยันรหัสผ่าน" required />
+              <i class="ri-eye-off-line toggle-password" onclick="togglePass('confirmPassword', this)"></i>
             </div>
           </div>
 
-          <div class="hint-text">
-            <i class="ri-information-line"></i> รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <span id="txtBtnReg">ยืนยันการสมัคร</span> <i class="ri-arrow-right-line"></i>
+          </button>
+
+          <div class="form-footer">
+            <span id="txtHaveAccount">มีบัญชีอยู่แล้ว?</span>
+            <a href="login.html" class="link-login" id="backLoginBtn">เข้าสู่ระบบ</a>
           </div>
-
-          <button type="submit" class="btn-submit">ยืนยันการสมัคร</button>
-          <button type="button" class="btn-back" id="backBtn">กลับไปหน้าเข้าสู่ระบบ</button>
         </form>
-
         <div id="status"></div>
       </div>
     </div>
   </div>
 
-<!-- ================= UI เดิมทั้งหมดของคุณ ================= -->
-<!-- (ตัดออกเพื่อไม่ให้ยาว แต่ใช้งานเหมือนเดิม 100%) -->
+  <script>
+    const $ = id => document.getElementById(id);
+    const form = $("registerForm");
+    const statusEl = $("status");
+    const submitBtn = $("submitBtn");
 
-<script>
-  /* =========================================================
-     🔥 TEST MARKER – ต้องขึ้นใน Console ทันที
-     ========================================================= */
-  console.log("REGISTER VERSION USERNAME DOC");
+    // --- Firebase Config (ตรวจสอบค่า Config ให้ถูกต้อง) ---
+    var firebaseConfig = {
+      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+      authDomain: "smart-waste2568.firebaseapp.com",
+      projectId: "smart-waste2568",
+      storageBucket: "smart-waste2568.firebasestorage.app",
+      messagingSenderId: "122699752010",
+      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-  const $ = id => document.getElementById(id);
-  const form = $("registerForm");
-  const statusEl = $("status");
-  const submitBtn = form.querySelector(".btn-submit");
-
-  function setStatus(text, type) {
-    statusEl.textContent = text || "";
-    statusEl.className = type || "";
-  }
-
-  // Firebase
-  var firebaseConfig = {
-    apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
-    authDomain: "smart-waste2568.firebaseapp.com",
-    projectId: "smart-waste2568",
-    storageBucket: "smart-waste2568.firebasestorage.app",
-    messagingSenderId: "122699752010",
-    appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3"
-  };
-  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const fullName = $("fullName").value.trim();
-    const username = $("username").value.trim();
-    const email = $("email").value.trim();
-    const phone = $("phone").value.replace(/[^0-9]/g, "");
-    const password = $("password").value;
-    const confirm = $("confirmPassword").value;
-
-    console.log("SUBMIT REGISTER");
-    console.log("USERNAME:", username);
-
-    if (password !== confirm) {
-      return setStatus("รหัสผ่านยืนยันไม่ตรงกัน", "err");
+    // --- Toggle Password Logic ---
+    function togglePass(inputId, icon) {
+      const input = document.getElementById(inputId);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace("ri-eye-off-line", "ri-eye-line");
+        icon.style.color = "#10b981"; 
+      } else {
+        input.type = "password";
+        icon.classList.replace("ri-eye-line", "ri-eye-off-line");
+        icon.style.color = "#cbd5e1"; 
+      }
     }
 
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = "กำลังสมัคร...";
+    // --- Language Logic ---
+    const langIconBtn = $("langIconBtn");
+    const langMenu = $("langMenu");
+    let currentLang = localStorage.getItem("sw_lang") || "th";
+    
+    // Fallback Dictionary
+    const fallbackDict = {
+      th: { regHeader: "สมัครสมาชิก", regHint: "กรอกข้อมูลเพื่อเริ่มต้นใช้งาน", btnReg: "ยืนยันการสมัคร", haveAccount: "มีบัญชีอยู่แล้ว?", btnLogin: "เข้าสู่ระบบ", errUserExists: "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว", errEmailExists: "อีเมลนี้ถูกใช้งานแล้ว", errPassMatch: "รหัสผ่านไม่ตรงกัน", successReg: "สมัครสมาชิกสำเร็จ!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "สมัครสมาชิกเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที" },
+      en: { regHeader: "Sign Up", regHint: "Fill details to create account", btnReg: "Register", haveAccount: "Already have an account?", btnLogin: "Sign In", errUserExists: "Username already taken", errEmailExists: "Email already in use", errPassMatch: "Passwords do not match", successReg: "Registration Successful!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "Sign up to access smart waste management, track trucks, and view statistics instantly." },
+      ms: { regHeader: "Daftar", regHint: "Isi butiran untuk membuat akaun", btnReg: "Daftar", haveAccount: "Sudah mempunyai akaun?", btnLogin: "Log Masuk", errUserExists: "Nama pengguna telah diambil", errEmailExists: "E-mel sudah digunakan", errPassMatch: "Kata laluan tidak sepadan", successReg: "Pendaftaran Berjaya!", welcomeTitle: "Sertai Kami & Mula Menjejak", welcomeDesc: "Daftar untuk mengakses pengurusan sisa pintar, menjejak lori, dan melihat statistik dengan serta-merta." }
+    };
 
-    try {
-      const userRef = db.collection("users").doc(username);
-
-      console.log("FIRESTORE DOC ID SHOULD BE:", userRef.id);
-
-      const snap = await userRef.get();
-      if (snap.exists) {
-        throw new Error("ชื่อผู้ใช้นี้มีในระบบแล้ว");
-      }
-
-      const cred = await auth.createUserWithEmailAndPassword(email, password);
-      const uid = cred.user.uid;
-
-      console.log("AUTH UID:", uid);
-
-      await userRef.set({
-        uid,
-        username,
-        fullName,
-        email,
-        phone,
-        status: 2,
-        createdAt: FieldValue.serverTimestamp()
-      });
-
-      console.log("REGISTER SUCCESS - DOC:", userRef.id);
-
-      setStatus("สมัครสมาชิกสำเร็จ รอผู้ดูแลระบบอนุมัติ", "ok");
-      setTimeout(() => location.href = "home.html", 1500);
-
-    } catch (err) {
-      console.error("REGISTER ERROR:", err);
-
-      if (auth.currentUser) {
-        try { await auth.currentUser.delete(); } catch(e){}
-      }
-
-      setStatus(err.message || "เกิดข้อผิดพลาด", "err");
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = "ยืนยันการสมัคร";
+    function tr(key) { 
+      const dict = (window.SW_Translations && window.SW_Translations[currentLang]) || fallbackDict[currentLang] || fallbackDict.en; 
+      return dict[key] || fallbackDict.th[key] || key; 
     }
-  });
 
-  $("backBtn").addEventListener("click", () => {
-    location.href = "home.html";
-  });
-</script>
+    function applyLanguage() {
+      // Text Content
+      if($("txtRegHeader")) $("txtRegHeader").textContent = tr("regHeader");
+      if($("txtRegHint")) $("txtRegHint").textContent = tr("regHint");
+      if($("txtBtnReg")) $("txtBtnReg").textContent = tr("btnReg");
+      if($("txtHaveAccount")) $("txtHaveAccount").textContent = tr("haveAccount");
+      if($("backLoginBtn")) $("backLoginBtn").textContent = tr("btnLogin");
+      
+      // Welcome Text (Left Panel)
+      if($("txtJoinSubtitle")) $("txtJoinSubtitle").innerHTML = tr("welcomeTitle").replace("&", "<br>");
+      if($("txtJoinDesc")) $("txtJoinDesc").textContent = tr("welcomeDesc");
+      
+      // Placeholders
+      if($("fullName")) $("fullName").placeholder = currentLang === 'th' ? "ชื่อ-นามสกุล" : "Full Name";
+      if($("username")) $("username").placeholder = "Username";
+      if($("phone")) $("phone").placeholder = currentLang === 'th' ? "เบอร์โทรศัพท์" : "Phone";
+      if($("email")) $("email").placeholder = currentLang === 'th' ? "อีเมล (Email)" : "Email Address";
+      if($("password")) $("password").placeholder = currentLang === 'th' ? "รหัสผ่าน" : "Password";
+      if($("confirmPassword")) $("confirmPassword").placeholder = currentLang === 'th' ? "ยืนยันรหัสผ่าน" : "Confirm Password";
 
+      langMenu.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.lang === currentLang));
+    }
+    
+    langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
+    langMenu.addEventListener("click", (e) => { 
+      if(e.target.tagName === "BUTTON") { 
+        currentLang = e.target.dataset.lang; 
+        localStorage.setItem("sw_lang", currentLang); 
+        applyLanguage(); 
+        langMenu.classList.remove("show"); 
+      } 
+    });
+
+    // --- Navigation (Animation) ---
+    $("backLoginBtn").addEventListener("click", (e) => {
+      e.preventDefault();
+      const card = document.querySelector('.register-card');
+      card.style.transform = 'translateY(20px)';
+      card.style.opacity = '0';
+      setTimeout(() => window.location.href = "login.html", 300);
+    });
+
+    // --- Submit Logic ---
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = { fullName: $("fullName").value.trim(), username: $("username").value.trim(), phone: $("phone").value.replace(/\D/g, ""), email: $("email").value.trim(), pass: $("password").value, confirm: $("confirmPassword").value };
+      if(data.fullName.length < 3) return showErr("Name is too short");
+      if(data.pass.length < 6) return showErr("Password must be 6+ chars");
+      if(data.pass !== data.confirm) return showErr(tr("errPassMatch"));
+      
+      setLoading(true);
+      let newUser = null;
+      try {
+        const check = await db.collection("users").doc(data.username).get();
+        if(check.exists) throw new Error(tr("errUserExists"));
+        
+        const cred = await auth.createUserWithEmailAndPassword(data.email, data.pass);
+        newUser = cred.user;
+        
+        await db.collection("users").doc(data.username).set({ 
+          uid: newUser.uid, 
+          username: data.username, 
+          fullName: data.fullName, 
+          email: data.email, 
+          phone: data.phone, 
+          status: 2, 
+          createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+        });
+        
+        Swal.fire({ icon: 'success', title: tr("successReg"), timer: 1500, showConfirmButton: false }).then(() => location.href = "login.html");
+      } catch (err) {
+        console.error(err);
+        if(newUser) newUser.delete();
+        let msg = err.message;
+        if(err.code === "auth/email-already-in-use") msg = tr("errEmailExists");
+        showErr(msg);
+        setLoading(false);
+      }
+    });
+
+    function showErr(msg) { 
+      statusEl.innerHTML = `<span class="err"><i class="ri-error-warning-fill"></i> ${msg}</span>`; 
+      submitBtn.classList.add("shake"); 
+      setTimeout(() => submitBtn.classList.remove("shake"), 500); 
+    }
+    
+    function setLoading(state) { 
+      submitBtn.disabled = state; 
+      submitBtn.innerHTML = state ? '<i class="ri-loader-4-line ri-spin"></i> Processing...' : `<span id="txtBtnReg">${tr("btnReg")}</span> <i class="ri-arrow-right-line"></i>`; 
+    }
+    
+    // Init Lang
+    try { setTimeout(applyLanguage, 100); } catch(e) { console.warn("Lang init warning:", e); }
+    
+    // CSS Shake Animation
+    const st = document.createElement("style"); 
+    st.innerHTML = `@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} } .shake{animation:shake 0.4s ease}`; 
+    document.head.appendChild(st);
+  </script>
 </body>
 </html>

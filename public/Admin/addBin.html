@@ -1,24 +1,40 @@
 <!doctype html>
-<html lang="th">
+<html lang="">
 
 <head>
     <meta charset="utf-8" />
     <title>Smart Waste - รายการถัง</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="a_style.css">
     <link rel="stylesheet" href="addBin_style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- ================= Firebase / Libs ================= -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app-check.js"></script> -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- ================= Auth ================= -->
     <script src="../Login/auth.js"></script>
+
+    <!-- ================= i18n CORE ================= -->
+    <script src="../i18n/lang.js"></script>
+
+    <!-- ================= Language packs ================= -->
+    <script src="../i18n/th.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/ms.js"></script>
+
+    <!-- ================= Admin language bridge ================= -->
     <script src="admin-lang.js"></script>
-    <!-- <script src="translations.js"></script> -->
+
+    <!-- ================= Page logic ================= -->
     <script src="admin-user.js" defer></script>
     <script src="admin-nav.js" defer></script>
     <script src="admin-profile.js" defer></script>
-
+    <script src="admin-auth-bootstrap.js" defer></script>
 </head>
 
 <body>
@@ -37,13 +53,13 @@
             </div>
             <div class="topbar-right">
                 <div class="lang-switcher">
-                    <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+                    <button class="icon-btn" id="langIconBtn" type="button" aria-label="">
                         <img src="images/lang-icon.png" alt="Language" class="top-icon">
                     </button>
                     <div class="lang-menu" id="langMenu">
                         <button type="button" data-lang="th">ไทย</button>
-                        <button type="button" data-lang="en">English</option>
-                            <button type="button" data-lang="ms">Bahasa Melayu</option>
+                        <button type="button" data-lang="en">English</button>
+                        <button type="button" data-lang="ms">Bahasa Melayu</button>
                     </div>
                     <select id="langSelect" style="display:none;">
                         <option value="th">ไทย</option>
@@ -86,8 +102,7 @@
 
                     <label class="filter-field">
                         <span class="muted" id="filterBinLabel">BIN / เจ้าของ</span>
-                        <input id="filterBinText" type="text"
-                            placeholder="กรองตาม BIN หรือชื่อเจ้าของ เช่น BIN001 หรือคุณเอ">
+                        <input id="filterBinText" type="text">
                     </label>
                 </div>
                 <span id="binsStatus" class="muted"></span>
@@ -127,7 +142,7 @@
             <hr style="margin:10px 0">
 
             <div class="zone-row">
-                <input type="text" id="newZoneName" placeholder="ชื่อเขตใหม่ เช่น เมือง, เขต1">
+                <input type="text" id="newZoneName">
                 <button type="button" class="primary" id="btnAddZone">เพิ่มเขต</button>
             </div>
 
@@ -153,7 +168,7 @@
             <hr style="margin:10px 0">
 
             <div class="zone-row">
-                <input type="text" id="newAreaName" placeholder="ชื่อพื้นที่ย่อยใหม่ เช่น อาคารวิทย์, A1">
+                <input type="text" id="newAreaName">
                 <button type="button" class="primary" id="btnAddArea">เพิ่ม Area</button>
             </div>
 
@@ -173,91 +188,80 @@
             </div>
 
             <form id="binForm" autocomplete="off">
+
+                <!-- 1️⃣ MAC Address -->
                 <div class="row">
                     <div style="flex:1 1 100%">
-                        <label id="labelRfid" for="rfid">RFID Tag</label>
-                        <input id="rfid" type="text" placeholder="สแกน RFID Tag หรือป้อนเอง (เช่น 04A1B2C3D4)"
-                            autofocus />
-                    </div>
-                </div>
-
-                <div id="additionalFields" class="additional-fields">
-
-                    <div class="row">
-                        <div style="flex:1 1 260px">
-                            <label id="labelZone" for="zone">เขตพื้นที่</label>
-                            <select id="zone">
-                                <option value="">-- ยังไม่มีเขต --</option>
+                        <label id="labelMacAddress"></label>
+                        <div class="row" style="gap:8px">
+                            <select id="macAddress" style="flex: 2 1 180px;">
+                                <option value="" id="macLoadingOption"></option>
                             </select>
-                        </div>
-
-                        <div style="flex:1 1 260px">
-                            <label id="labelArea" for="area">พื้นที่ย่อย (Area)</label>
-                            <select id="area" disabled>
-                                <option value="">-- เลือกเขตก่อน --</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div>
-                            <label id="labelBinId" for="binId">ชื่อถัง</label>
-                            <input id="binId" type="text" readonly
-                                placeholder="เลือกเขต/Area ก่อน ระบบจะสร้าง A001 ให้" />
-                        </div>
-                        <div>
-                            <label id="labelOwner" for="owner">ผู้ใช้เจ้าของถัง</label>
-                            <select id="owner">
-                                <option value="">กำลังโหลดรายชื่อ...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div style="flex:1 1 100%">
-                            <label id="labelMacAddress" for="macAddress">อุปกรณ์บอร์ด (MAC
-                                Address)</label>
-                            <div class="row" style="gap:8px">
-                                <select id="macAddress" style="flex: 2 1 180px;">
-                                    <option value="">กำลังโหลด MAC Address
-                                        ที่ออนไลน์...</option>
-                                </select>
-                                <button type="button" class="ghost" id="btnConfirmMac" disabled
-                                    style="flex: 1 1 100px;">
-                                    ยืนยันอุปกรณ์
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <label id="labelPosition">ตำแหน่ง</label>
-                    <div class="row">
-                        <div>
-                            <input id="lng" type="number" step="any" placeholder="ลองจิจูด (longitude)" />
-                        </div>
-                        <div>
-                            <input id="lat" type="number" step="any" placeholder="ละติจูด (latitude)" />
-                        </div>
-                    </div>
-
-                    <div class="gps-actions">
-                        <button type="button" id="btnGetPos" class="primary">ดึงพิกัดจาก
-                            GPS</button>
-                    </div>
-
-                    <div class="row" style="margin-top:8px">
-                        <div style="flex:1 1 100%">
-                            <label id="labelDetails" for="details">รายละเอียดเพิ่มเติม</label>
-                            <textarea id="details" placeholder="เช่น หน้าอาคารวิทย์ คณะ..."></textarea>
+                            <button type="button" class="ghost" id="btnConfirmMac" disabled>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div style="margin-top:12px" class="row">
+                <!-- 2️⃣ RFID -->
+                <div class="row">
+                    <div style="flex:1 1 100%">
+                        <label id="labelRfid">RFID Tag</label>
+                        <input id="rfid" type="text" placeholder="สแกน RFID Tag หรือป้อนเอง" />
+                    </div>
+                </div>
+
+
+                <!-- 3️⃣ Zone / Area -->
+                <div class="row">
+                    <div style="flex:1 1 260px">
+                        <label id="labelZone">เขตพื้นที่</label>
+                        <select id="zone"></select>
+                    </div>
+
+                    <div style="flex:1 1 260px">
+                        <label id="labelArea">พื้นที่ย่อย (Area)</label>
+                        <select id="area" disabled></select>
+                    </div>
+                </div>
+
+                <!-- 4️⃣ BIN ID + Owner -->
+                <div class="row">
+                    <div>
+                        <label id="labelBinId">ชื่อถัง</label>
+                        <input id="binId" type="text" readonly />
+                    </div>
+                    <div>
+                        <label id="labelOwner">ผู้ใช้เจ้าของถัง</label>
+                        <select id="owner"></select>
+                    </div>
+                </div>
+
+                <!-- 5️⃣ พิกัด -->
+                <label id="labelPosition">ตำแหน่ง</label>
+                <div class="row">
+                    <div><input id="lng" type="number" step="any" placeholder="Longitude" /></div>
+                    <div><input id="lat" type="number" step="any" placeholder="Latitude" /></div>
+                </div>
+
+                <!-- 6️⃣ ปุ่ม GPS -->
+                <div class="gps-actions">
+                    <button type="button" id="btnGetPos" class="primary">ดึงพิกัดจาก GPS</button>
+                </div>
+
+                <!-- 7️⃣ รายละเอียด -->
+                <div class="row">
+                    <div style="flex:1 1 100%">
+                        <label id="labelDetails">รายละเอียดเพิ่มเติม</label>
+                        <textarea id="details"></textarea>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="actions">
                         <button type="submit" class="primary" id="btnSave">บันทึก</button>
                         <button type="button" class="ghost" id="btnReset">เคลียร์ฟอร์ม</button>
                     </div>
-                    <span id="msg" class="muted" style="margin-left:10px"></span>
+                    <span id="msg" class="muted"></span>
                 </div>
             </form>
         </div>
@@ -326,16 +330,21 @@
                         <button type="submit" class="primary" id="btnSaveChanges">บันทึกการแก้ไข</button>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="actions">
+                        <button type="submit" class="primary" id="btnSave">บันทึก</button>
+                        <button type="button" class="ghost" id="btnReset">เคลียร์ฟอร์ม</button>
+                    </div>
+                    <span id="msg" class="muted"></span>
+                </div>
+
             </form>
         </div>
     </div>
 
-
-
     <script>
         // ✅ App Check DEBUG MODE (ต้องอยู่บนสุด)
         // self.FIREBASE_APPCHECK_DEBUG_TOKEN = '69292E90-2881-49B1-8F56-968136924EB1';
-
         // ---------- Firebase Configuration (จากโค้ดเดิมของคุณ) ----------
         var firebaseConfig = {
             apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
@@ -348,33 +357,10 @@
             // 🚨 เพิ่มบรรทัดนี้ (ก๊อป URL มาจากหน้า Realtime Database ของคุณ)
             databaseURL: "https://smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
-
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
 
-        // 🔐 auth user (เช็คสิทธิ์ Admin)
-        const currentUser = window.SWAuth.requireAuth([0]);
-
-        // 👤 init profile หลัง Firebase Auth พร้อมจริง
-        firebase.auth().onAuthStateChanged(user => {
-            if (!user) return;
-
-            if (window.AdminProfile) {
-                AdminProfile.init(currentUser);
-            }
-        });
-
-        //    firebase.appCheck().activate(
-        //   /* siteKey = */ undefined,
-        //   /* isTokenAutoRefreshEnabled = */ true
-        //     );
-
-        // firebase.appCheck().activate(
-        //       firebase.appCheck.DebugAppCheckProvider(),
-        //     // '6LfMPzAsAAAAAP31yhBP7M9ZYW3_nd7mvINgLIP6',
-        //     true
-        // );
         const db = firebase.firestore();
         const rtdb = firebase.database();
 
@@ -402,14 +388,25 @@
         // 🔴 ยกเลิกการยืนยันอุปกรณ์ (ดับไฟ + รีเซ็ตปุ่ม)
         async function releaseConfirmedMac() {
             if (confirmedMacTemp) {
-                await setBoardLed(confirmedMacTemp, "OFF"); // ดับไฟ
+                await setBoardLed(confirmedMacTemp, "OFF");
+
+                await rtdb
+                    .ref(`esp32_devices/${confirmedMacTemp}/currentAdmin`)
+                    .remove();
+
+                // 🔥 เพิ่มบรรทัดนี้
+                await rtdb
+                    .ref(`admin_rfid_active/${window.ADMIN_AUTH.uid}`)
+                    .remove();
+
                 confirmedMacTemp = null;
             }
 
-            if (btnConfirmMac) {
-                btnConfirmMac.classList.remove("confirmed");
-                btnConfirmMac.disabled = true;
-            }
+            macAddressEl.disabled = false;
+            macAddressEl.value = "";
+
+            btnConfirmMac.classList.remove("confirmed");
+            btnConfirmMac.disabled = true;
         }
 
         const $ = id => document.getElementById(id);
@@ -546,10 +543,41 @@
             return (e && (e.code ? e.code + ": " + (e.message || "") : (e.message || String(e)))) || "unknown";
         }
 
+        // =======================
+        // 🚨 SweetAlert แจ้ง error ฟอร์ม
+        // =======================
+        function showFormErrorCard(errors) {
+
+            // 🔥 ปิด modal อื่นทั้งหมดก่อน
+            closeEditModal?.();
+            closeZoneModal?.();
+            closeAreaModal?.();
+            // ❗ ไม่ปิด addBinBackdrop เพื่อให้ user แก้ฟอร์มต่อได้
+
+            Swal.fire({
+                icon: "warning",
+                title: t('formErrorTitle'),
+                html: `
+    <div style="text-align:left; line-height:1.6">
+      <ul style="padding-left:18px">
+        ${errors.map(e => `<li>${e}</li>`).join("")}
+      </ul>
+    </div>
+  `,
+                confirmButtonText: t('btnOk'),
+                confirmButtonColor: "#2563eb",
+                allowOutsideClick: false,
+                allowEscapeKey: true
+            }).then(() => {
+                document.querySelector(".error")?.focus();
+            });
+        }
+
         // ---------- owners ----------
         let owners = [];
         let ownerMap = new Map();
         let ownerSelectState = "loading";
+        let rfidListenerRef = null;
 
         function renderOwnerSelect() {
             if (!ownerEl) return;
@@ -744,7 +772,7 @@
                 // เปลี่ยนจาก zonesCol.doc(id).delete(); เป็นการอัปเดต isHidden
                 btnDeleteZone.addEventListener("click", async () => {
                     const id = input.dataset.oldId;
-                    if (!confirm(`${getTranslation('zoneModalConfirmDelete')} "${id}"?`)) return;
+                    if (!confirm(`${t('areaModalConfirmDelete')} "${id}"?`)) return;
                     try {
                         // อัปเดต isHidden เป็น true แทนการลบจริง
                         await zonesCol.doc(id).update({
@@ -1252,16 +1280,6 @@
             await assignBinIdForZone(z, a);
         });
 
-        // ---------- RFID Input Handler (New Logic) ----------
-        rfidEl.addEventListener('input', (e) => {
-            const rfidValue = e.target.value.trim();
-            if (rfidValue.length > 0) {
-                binForm.classList.add('rfid-entered');
-            } else {
-                binForm.classList.remove('rfid-entered');
-            }
-        });
-
         rfidEl.addEventListener('blur', async () => {
             const rfidValue = rfidEl.value.trim().toUpperCase();
             if (!rfidValue) return;
@@ -1314,6 +1332,7 @@
 
         btnReset.addEventListener("click", async () => {
             await releaseConfirmedMac();
+            detachRfidListener();
             clearForm();
         });
 
@@ -1358,12 +1377,31 @@
                 const mac = macAddressEl.value;
                 if (!mac) return;
 
-                await setBoardLed(mac, "ON");
+                confirmedMacTemp = mac;
 
-                confirmedMacTemp = mac; // ✅ จำไว้
+                const ref = rtdb.ref(`esp32_devices/${mac}/currentAdmin`);
 
-                btnConfirmMac.classList.add("confirmed");
-                btnConfirmMac.disabled = true;
+                await ref.transaction(current => {
+                    if (current) return;
+                    return window.ADMIN_AUTH.uid;
+                }, async (error, committed) => {
+                    if (!committed) {
+                        alert(t('errorMacInUse'));
+                        return;
+                    }
+
+                    // 🔥🔥🔥 เพิ่มตรงนี้
+                    await rtdb
+                        .ref(`admin_rfid_active/${window.ADMIN_AUTH.uid}`)
+                        .set(true);
+
+                    macAddressEl.disabled = true;
+                    btnConfirmMac.classList.add("confirmed");
+                    btnConfirmMac.disabled = true;
+
+                    attachRfidListener();
+                    setBoardLed(mac, "ON");
+                });
             });
         }
         // END NEW
@@ -1371,11 +1409,70 @@
         // ---------- submit (เพิ่ม MAC Address ในการบันทึก) ----------
         binForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+            // =========================
+            // ✅ VALIDATION แบบการ์ดแจ้งเตือน
+            // =========================
+            const errors = [];
+
+            // ---------- MAC ----------
+            const macAddress = macAddressEl.value.trim();
+            if (!macAddress) {
+                errors.push(t('errorSelectMac'));
+                macAddressEl.classList.add("error");
+            } else if (confirmedMacTemp !== macAddress) {
+                errors.push(t('errorConfirmMac'));
+                macAddressEl.classList.add("error");
+            } else {
+                macAddressEl.classList.remove("error");
+            }
+
+            // ---------- RFID ----------
+            const rfid = rfidEl.value.trim().toUpperCase();
+            if (!rfid) {
+                errors.push(t('errorMissingRfid'));
+                rfidEl.classList.add("error");
+            } else {
+                rfidEl.classList.remove("error");
+            }
+
+            // ---------- Zone ----------
+            const zone = zoneEl.value;
+            if (!zone || zone === "_add_zone_") {
+                errors.push(t('errorSelectZone'));
+                zoneEl.classList.add("error");
+            } else {
+                zoneEl.classList.remove("error");
+            }
+
+            // ---------- Area ----------
+            const area = areaEl.value;
+            if (!area || area === "_add_area_") {
+                errors.push(t('errorSelectArea'));
+                areaEl.classList.add("error");
+            } else {
+                areaEl.classList.remove("error");
+            }
+
+            // ---------- Owner ----------
+            const ownerUsername = ownerEl.value;
+            if (!ownerUsername) {
+                errors.push(t('errorSelectOwner'));
+                ownerEl.classList.add("error");
+            } else {
+                ownerEl.classList.remove("error");
+            }
+
+            // ❌ ถ้ามี error → แสดงการ์ด แล้วหยุด
+            if (errors.length > 0) {
+                showFormErrorCard(errors);
+                return;
+            }
+
             try {
                 const rfid = rfidEl.value.trim().toUpperCase() || null;
                 if (!rfid) {
                     rfidEl.classList.add("error");
-                    setStatusForm("กรุณาสแกนหรือป้อน RFID Tag", "err");
+                    setStatusForm(t('errorMissingRfid'), "err");
                     return;
                 } else {
                     rfidEl.classList.remove("error");
@@ -1388,7 +1485,7 @@
                     return;
                 }
                 if (duplicatedRfidDetected) {
-                    setStatusForm("❌ RFID นี้ถูกใช้ไปแล้ว ไม่สามารถบันทึกได้", "err");
+                    setStatusForm(t('errorDuplicateRfid'), "err");
                     return;
                 }
 
@@ -1422,13 +1519,24 @@
 
                 // 🚨 NEW: MAC Address Validation
                 const macAddress = macAddressEl.value.trim() || null;
+
+                // ❌ ยังไม่ได้เลือก MAC
                 if (!macAddress) {
                     macAddressEl.classList.add("error");
-                    setStatusForm(t('statusSelectMac'), "err");
+                    setStatusForm(t('errorSelectMac'), "err");
                     return;
-                } else {
-                    macAddressEl.classList.remove("error");
                 }
+
+                // ❌ เลือกแล้ว แต่ยังไม่กดยืนยัน
+                if (confirmedMacTemp !== macAddress) {
+                    macAddressEl.classList.add("error");
+                    setStatusForm(t('errorConfirmMac'), "err");
+                    return;
+                }
+
+                // ✅ ผ่าน
+                macAddressEl.classList.remove("error");
+
                 // END NEW
 
                 let binId = binIdEl.value.trim();
@@ -1471,24 +1579,24 @@
                     .doc(binId) // จะได้ path: smartbins/{zone}/bin_data/Betong_Y001
                     .set(data, { merge: false });
 
-                // บันทึกลง bin_level เพื่อใช้แสดงค่าระดับขยะ
-                await zoneDocRef
-                    .collection("bin_level")
-                    .doc(binId)
-                    .set({
-                        binId: binId,
-                        zone: zone,
-                        area: area,
-                        fillLevel: 0,
-                        macAddress: macAddress,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-
                 setStatusForm(`${t('statusSaveSuccess')} (${binId})`, "ok");
                 // ✅ บอกบอร์ดว่าผูกถาวรแล้ว
                 await rtdb
                     .ref(`esp32_devices/${macAddress}/bound`)
                     .set(true);
+                // 🔓 ปล่อย admin lock ทันทีหลังผูกสำเร็จ
+                await rtdb
+                    .ref(`esp32_devices/${macAddress}/currentAdmin`)
+                    .remove();
+
+                // 🔥 ปิดโหมดสแกน RFID ของ admin (สำคัญมาก)
+                await rtdb
+                    .ref(`admin_rfid_active/${window.ADMIN_AUTH.uid}`)
+                    .remove();
+
+
+                confirmedMacTemp = null;
+
 
                 confirmedMacTemp = null;
                 btnConfirmMac.classList.remove("confirmed");
@@ -1797,20 +1905,21 @@
         <div style="padding: 15px 0;">
             <div style="border:1.5px solid #ef4444; background:#fef2f2; border-radius:12px; padding:16px;">
                 <p style="font-weight:bold; color:#991b1b; margin-bottom:10px; font-size:1.1rem;">
-                    RFID: ${rfid} ถูกใช้งานแล้ว
+${t('duplicateRfidTitle')}: ${rfid}
                 </p>
                 <div style="font-size:0.95rem; color:#451a03; line-height:1.6;">
-                    <p><b>ชื่อถัง:</b> ${info.binId}</p>
-                    <p><b>เขต/พื้นที่:</b> ${info.zone} (${info.area})</p>
-                    <p><b>เจ้าของ:</b> ${info.owner}</p>
+<p><b>${t('labelBin')}:</b> ${info.binId}</p>
+<p><b>${t('labelZoneArea')}:</b> ${info.zone} (${info.area})</p>
+<p><b>${t('labelOwner')}:</b> ${info.owner}
+    </p>
                 </div>
                 <p style="margin-top:12px; font-size:0.85rem; color:#b91c1c; font-style:italic;">
-                    * กรุณาเปลี่ยนแท็กใหม่ หรือตรวจสอบข้อมูลในรายการถังขยะ
+                    * ${t('duplicateRfidHint')}
                 </p>
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="primary" id="btnScanNew" style="width:100%">ตกลง และสแกนใหม่</button>
+            <button type="button" class="primary" id="btnScanNew" style="width:100%">${t('btnScanNew')}</button>
         </div>
     `;
 
@@ -1832,7 +1941,7 @@
             const modalHtml = `
         <div class="modal-header">
             <div class="modal-title" style="color:#dc2626">
-                🗑️ ยืนยันการลบถัง
+                🗑️ ${t('confirmDeleteTitle')}
             </div>
             <button type="button" class="modal-close" id="btnDelClose">✕</button>
         </div>
@@ -1840,21 +1949,21 @@
         <div style="padding:16px">
             <div style="border:1.5px solid #ef4444; background:#fef2f2; border-radius:12px; padding:16px">
                 <p style="font-weight:bold; margin-bottom:8px">
-                    คุณต้องการลบถังนี้หรือไม่?
+                    ${t('confirmDeleteBin')}
                 </p>
                 <p><b>BIN:</b> ${binId}</p>
-                <p><b>เขต:</b> ${zone}</p>
-                <p><b>พื้นที่:</b> ${area}</p>
+                <p><b>${t('labelZone')}</b> ${zone}</p>
+                <p><b>${t('labelArea')}:</b> ${area}</p>
 
                 <p style="margin-top:10px; font-size:0.85rem; color:#991b1b">
-                    * ถังจะถูกซ่อน (Soft delete) และไม่สามารถใช้งานได้
+                    * ${t('confirmDeleteHint')}
                 </p>
             </div>
         </div>
 
         <div class="modal-footer" style="display:flex; gap:8px">
-            <button class="ghost" id="btnDelCancel">ยกเลิก</button>
-            <button class="primary" id="btnDelConfirm">ลบถัง</button>
+            <button class="ghost" id="btnDelCancel">${t('btnCancel')}</button>
+            <button class="primary" id="btnDelConfirm">${t('btnDelete')}</button>
         </div>
     `;
 
@@ -1878,24 +1987,24 @@
 
             const modalHtml = `
         <div class="modal-header">
-            <div class="modal-title" style="color:#dc2626">❌ อุปกรณ์นี้ถูกใช้งานแล้ว</div>
+            <div class="modal-title" style="color:#dc2626">❌ ${t('duplicateMacTitle')}</div>
             <button type="button" class="modal-close" onclick="closeEditModal()">✕</button>
         </div>
         <div style="padding: 15px 0;">
             <div style="border:1.5px solid #ef4444; background:#fef2f2; border-radius:12px; padding:16px;">
                 <p style="font-weight:bold; color:#991b1b; margin-bottom:10px;">
-                    MAC Address นี้ผูกกับถังใบอื่นอยู่
+                    ${t('duplicateMacDesc')}
                 </p>
                 <div style="font-size:0.95rem; color:#451a03; line-height:1.6;">
                     <p><b>MAC:</b> ${info.mac}</p>
-                    <p><b>ถังที่ใช้อยู่:</b> ${info.binId}</p>
-                    <p><b>พื้นที่:</b> ${info.zone} (${info.area})</p>
-                    <p><b>เจ้าของ:</b> ${info.owner}</p>
+                    <p><b>${t('labelBin')}:</b> ${info.binId}</p>
+                    <p><b>${t('labelZoneArea')}:</b> ${info.zone} (${info.area})</p>
+                    <p><b>${t('labelOwner')}:</b> ${info.owner}</p>
                 </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="primary" onclick="closeEditModal()" style="width:100%">รับทราบ</button>
+            <button type="button" class="primary" onclick="closeEditModal()" style="width:100%">${t('btnOk')}</button>
         </div>
     `;
 
@@ -2004,7 +2113,7 @@
 
                 const snap = await docRef.get();
                 if (!snap.exists) {
-                    setBinsStatus("ไม่พบข้อมูลถัง " + binId, "err");
+                    setBinsStatus(`${t('errorBinNotFound')} ${binId}`, "err");
                     return;
                 }
                 const d = snap.data() || {};
@@ -2058,9 +2167,9 @@
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
 
-                        setBinsStatus(`🗑️ ลบถัง ${binId} เรียบร้อย`, "ok");
+                        setBinsStatus(`${t('deleteSuccess')} ${binId}`, "ok");
                     } catch (e) {
-                        setBinsStatus(`❌ ลบไม่สำเร็จ: ${errStr(e)}`, "err");
+                        setBinsStatus(`${t('deleteError')} ${errStr(e)}`, "err");
                     }
                 }
             );
@@ -2081,9 +2190,8 @@
             listenForOnlineMacAddresses();
             // END NEW
 
-            // Set focus to RFID field immediately
             setTimeout(() => {
-                rfidEl.focus();
+                macAddressEl.focus();
             }, 100);
 
             addBinBackdrop.classList.add("show");
@@ -2093,6 +2201,8 @@
         function closeAddModal(unlockScroll = true) {
             addBinBackdrop.classList.remove("show");
             clearForm();
+
+            detachRfidListener();
 
             // 🚨 NEW: Stop listening to MAC Addresses
             if (macAddressListenerUnsub) {
@@ -2125,6 +2235,8 @@
 
         // ---------- Language (No change needed, but include context for completeness) ----------
         function updateLangMenuActive() {
+            langIconBtn.setAttribute("aria-label", t('ariaChangeLanguage'));
+
             if (!langMenu) return;
             langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
                 btn.classList.toggle("active", btn.dataset.lang === currentLang);
@@ -2137,8 +2249,8 @@
 
             langSelect.value = currentLang;
 
-            document.title = getTranslation('pageTitle');
-            menuToggleBtn.textContent = getTranslation('menuBtn');
+            document.title = getTranslation('pageTitle_bins');
+            $("pageTitleHeading").textContent = getTranslation('mainTitle_bins');
 
             if (window.AdminNav) {
                 window.AdminNav.setLanguage(currentLang);
@@ -2146,8 +2258,6 @@
             if (window.AdminUser) {
                 window.AdminUser.setLanguage(currentLang);
             }
-
-            $("pageTitleHeading").textContent = getTranslation('mainTitle');
 
             if ($("labelZone")) $("labelZone").textContent = getTranslation('labelZone');
             $("labelArea").textContent = getTranslation('labelArea'); // New Area
@@ -2202,6 +2312,18 @@
             $("editCancel").textContent = t('btnCancel');
             $("btnSaveChanges").textContent = t('btnSaveChanges');
 
+            newZoneNameEl.placeholder = t('zoneModalNewPlaceholder');
+            newAreaNameEl.placeholder = t('areaModalNewPlaceholder');
+            // ---------- MAC Address ----------
+            $("labelMacAddress").textContent = t('labelMacAddress');
+            $("btnConfirmMac").textContent = t('btnConfirmMac');
+
+            // default option (loading / empty)
+            const macLoadingOpt = $("macLoadingOption");
+            if (macLoadingOpt) {
+                macLoadingOpt.textContent = t('macLoading');
+            }
+
             renderZoneFilterOptions();
             renderAreaFilterOptions(); // New Area
             updateLangMenuActive();
@@ -2226,7 +2348,7 @@
             const lang = btn.dataset.lang;
 
             if (window.AdminLang) {
-                window.AdminLang.setLang(lang); // 🔥 จุดเดียวพอ
+                window.AdminLang.setLang(lang);
             } else {
                 changeLanguage(lang);
             }
@@ -2294,7 +2416,10 @@
                 macAddressEl.appendChild(option);
             });
 
-            if (selected && macAddresses.some(m => m.mac === selected)) {
+            // ⭐ ถ้ามี MAC ที่เรายืนยันแล้ว ให้ใช้ค่านี้เสมอ
+            if (confirmedMacTemp) {
+                macAddressEl.value = confirmedMacTemp;
+            } else if (selected && macAddresses.some(m => m.mac === selected)) {
                 macAddressEl.value = selected;
             } else {
                 macAddressEl.value = "";
@@ -2310,12 +2435,16 @@
             for (const mac in lastDevicesSnapshot) {
                 const device = lastDevicesSnapshot[mac] || {};
                 const lastUpdate = Number(device.lastUpdate || 0);
-                const isBound = device.bound === true; // ⭐ จุดสำคัญ
 
-                // ✅ ออนไลน์ และ ยังไม่ถูกผูก
+                const isBound = device.bound === true;
+                const isInUse = !!device.currentAdmin;
+
+                const isMine = (mac === confirmedMacTemp); // ⭐ สำคัญมาก
+
                 if (
                     now - lastUpdate <= OFFLINE_TIMEOUT_MS &&
-                    !isBound
+                    !isBound &&
+                    (!isInUse || isMine)   // 🔥 อนุญาตของตัวเอง
                 ) {
                     online.push({ mac });
                 }
@@ -2324,7 +2453,6 @@
             macAddresses = online;
             renderMacAddressSelect();
         }
-
 
 
         // 🟢🟢🟢 ฟังก์ชันที่แก้ไขแล้ว (ตรวจสอบ status) 🟢🟢🟢
@@ -2349,64 +2477,36 @@
             updateOnlineMacs();
         }, 5000);
 
-
         // -----------------------------------------------------------
         // 🚨 NEW: ฟัง RFID จาก RTDB (รองรับ child_added + child_changed)
         // -----------------------------------------------------------
 
         function attachRfidListener() {
-            const ref = rtdb.ref('esp32_devices');
+            const uid = window.ADMIN_AUTH?.uid;
+            if (!uid || rfidListenerRef) return;
 
-            const handler = async snapshot => {
-                const mac = snapshot.key;
-                const device = snapshot.val();
+            const ref = rtdb.ref(`admin_rfid_input/${uid}`);
+            rfidListenerRef = ref;
 
-                if (!device?.rfid_input?.tagId) return;
+            ref.on("value", async snap => {
+                const data = snap.val();
+                if (!data?.tagId) return;
 
-                if (handlingMacs.has(mac)) return;
-                handlingMacs.add(mac);
+                const rfidValue = data.tagId.toUpperCase();
+                rfidEl.value = rfidValue;
+                rfidEl.dispatchEvent(new Event("input"));
+                rfidEl.focus();
 
-                try {
-                    const rfidValue = device.rfid_input.tagId.trim().toUpperCase();
-                    if (!rfidValue) return;
+                // เคลียร์หลังรับ
+                await ref.remove();
+            });
+        }
 
-                    console.log("📥 RFID from RTDB:", mac, rfidValue);
-
-                    // 🔍 ตรวจซ้ำทันที
-                    const duplicateInfo = await checkDuplicateRfidRealtime(rfidValue);
-                    if (duplicateInfo) {
-                        showDuplicateRfidModal(duplicateInfo, rfidValue);
-
-                        // ล้าง RFID จาก RTDB
-                        await rtdb.ref(`esp32_devices/${mac}/rfid_input`).remove();
-                        return;
-                    }
-
-                    // ✅ ไม่ซ้ำ → เปิดฟอร์ม
-                    if (!addBinBackdrop.classList.contains("show")) {
-                        openAddModal();
-                    } else {
-                        clearForm();
-                    }
-
-                    rfidEl.value = rfidValue;
-                    rfidEl.dispatchEvent(new Event("input"));
-                    rfidEl.focus();
-
-                    setStatusForm(`✅ รับค่า RFID: ${rfidValue}`, "ok");
-
-                    await rtdb.ref(`esp32_devices/${mac}/rfid_input`).remove();
-
-                } catch (e) {
-                    console.error("attachRfidListener error", e);
-                } finally {
-                    // ⭐ หน่วงปลดล็อก
-                    setTimeout(() => handlingMacs.delete(mac), 1500);
-                }
-            };
-
-            ref.on('child_added', handler);
-            ref.on('child_changed', handler);
+        function detachRfidListener() {
+            if (rfidListenerRef) {
+                rfidListenerRef.off();
+                rfidListenerRef = null;
+            }
         }
 
         // เรียกใช้ตอนโหลดหน้า
@@ -2414,12 +2514,17 @@
         loadOwners();
 
         // 🚨 เริ่มต้นฟัง RFID จาก RTDB
-        attachRfidListener();
+        // attachRfidListener();
 
         // 🧹 ปิด listener เมื่อออกจากหน้า (กัน memory leak)
         window.addEventListener("beforeunload", () => {
-            if (macAddressListenerUnsub) macAddressListenerUnsub();
+            if (confirmedMacTemp) {
+                rtdb
+                    .ref(`esp32_devices/${confirmedMacTemp}/currentAdmin`)
+                    .remove();
+            }
         });
+
     </script>
 </body>
 

@@ -675,21 +675,13 @@ textarea:focus {
     }
 }
 
-/* CSS สำหรับซ่อนฟิลด์ในฟอร์มเพิ่มถัง เมื่อยังไม่ได้ป้อน RFID */
-#binForm .additional-fields {
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    /* ปิดการใช้งานเมื่อซ่อน */
-}
-
-#binForm.rfid-entered .additional-fields {
-    opacity: 1;
-    pointer-events: all;
-}
-
 /* ทำให้ input RFID เด่นขึ้นเมื่อฟอร์มเปิด */
 #rfid:focus {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.5);
     /* สีน้ำเงินของ primary */
+}
+
+/* 🔥 บังคับ SweetAlert ให้อยู่หน้าสุด */
+.swal2-container {
+    z-index: 999999 !important;
 }

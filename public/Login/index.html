@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Smart Waste - ยินดีต้อนรับ</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* --- CSS Theme --- */
+    :root {
+      --primary: #10b981;
+      --primary-dark: #047857;
+      --accent: #0ea5e9;
+      --bg-color: #f0fdf4;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Prompt", sans-serif; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      width: 100%; 
+      min-height: 100vh;
+      background-color: var(--bg-color);
+      position: relative; 
+      overflow-x: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    /* --- Background Blobs --- */
+    .bg-shape {
+      position: fixed; border-radius: 50%; filter: blur(80px);
+      z-index: -1; opacity: 0.6; animation: blobFloat 10s infinite alternate; pointer-events: none;
+    }
+    .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #34d399; }
+    .blob-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #38bdf8; animation-delay: -2s; }
+    .blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: #2dd4bf; animation-delay: -5s; }
+    @keyframes blobFloat { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, 50px) scale(1.1); } }
+
+    /* --- Navbar (Desktop) --- */
+    .navbar {
+      width: 100%; padding: 20px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: relative; z-index: 100;
+    }
+    .brand-desktop {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.2rem; font-weight: 700; color: var(--primary-dark);
+      background: rgba(16, 185, 129, 0.1); padding: 8px 16px; border-radius: 50px;
+      border: 1px solid rgba(16, 185, 129, 0.25); backdrop-filter: blur(5px);
+    }
+    .brand-desktop i { font-size: 1.4rem; color: var(--primary); }
+
+    /* ✅ Mobile Logo Fixed (Style เดียวกับ Login เป๊ะๆ) */
+    .mobile-logo-fixed {
+      display: none; /* ซ่อนใน Desktop */
+      position: absolute; top: 20px; left: 20px; z-index: 100;
+      text-decoration: none;
+    }
+    .mobile-logo-fixed .brand-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
+      color: var(--primary-dark); padding: 8px 16px; border-radius: 50px; 
+      font-weight: 600; font-size: 14px; border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s;
+    }
+    .mobile-logo-fixed:active .brand-badge { transform: scale(0.95); }
+    .mobile-logo-fixed .brand-badge i { font-size: 1.2rem; color: var(--primary); }
+    
+    /* Language Switcher */
+    .lang-switcher-nav { position: relative; }
+    
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.8); backdrop-filter: blur(5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s;
+    }
+    .icon-btn:active { transform: scale(0.95); }
+    .icon-btn img { width: 22px; height: 22px; }
+
+    .lang-menu {
+      position: absolute; top: 50px; right: 0;
+      background: white; padding: 6px; border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      display: none; flex-direction: column; width: 140px;
+      z-index: 200;
+    }
+    .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
+    .lang-menu button {
+      background: transparent; border: none; padding: 10px;
+      text-align: left; border-radius: 8px; font-size: 14px; cursor: pointer;
+      color: var(--text-main); font-family: "Prompt", sans-serif;
+    }
+    .lang-menu button:hover { background: #f1f5f9; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent); font-weight: 600; }
+
+    /* --- Hero Section --- */
+    .hero-container {
+      flex: 1; display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 30px 40px 60px 40px; 
+      align-items: center; gap: 50px;
+      position: relative; z-index: 5;
+    }
+
+    .hero-text { animation: slideUp 0.8s ease-out; }
+    
+    .hero-text h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem); 
+      line-height: 1.1; font-weight: 800; color: var(--text-main);
+      margin-bottom: 20px;
+    }
+    .hero-text h1 span {
+      background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+      background-clip: text; -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-text p {
+      font-size: clamp(1rem, 1.2vw, 1.15rem);
+      color: var(--text-muted); line-height: 1.7;
+      margin-bottom: 30px; max-width: 500px;
+    }
+
+    .hero-graphic {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative; animation: fadeIn 1s ease-out; width: 100%;
+    }
+
+    .visual-wrapper {
+      position: relative; width: 100%; height: auto; min-height: 580px;
+      display: flex; justify-content: center; align-items: center;
+    }
+
+    /* Buttons */
+    .cta-group { display: flex; gap: 15px; flex-wrap: wrap; }
+    .btn-cta {
+      padding: 14px 32px; border-radius: 14px; font-size: 1.05rem; font-weight: 600;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #10b981, #059669); color: white;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4); }
+    .btn-secondary {
+      background: white; color: var(--text-main);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid rgba(16, 185, 129, 0.1);
+    }
+    .btn-secondary:hover { transform: translateY(-3px); color: var(--primary); border-color: rgba(16, 185, 129, 0.3); }
+
+    .desktop-cta { display: flex; }
+    .mobile-cta { display: none; }
+
+    /* --- 📱 Phone Mockup & Slider --- */
+    .phone-mockup {
+      width: 280px; height: 560px;
+      background: #ffffff;
+      border: 10px solid #ffffff; border-radius: 50px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.2), inset 0 0 20px rgba(0,0,0,0.05);
+      position: relative; overflow: hidden; z-index: 2;
+      max-width: 100%;
+    }
+    
+    .phone-screen {
+      width: 100%; height: 100%; background: #f8fafc;
+      display: flex; overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none; -ms-overflow-style: none;
+      cursor: grab; user-select: none;
+    }
+    .phone-screen:active { cursor: grabbing; scroll-snap-type: none; }
+    .phone-screen::-webkit-scrollbar { display: none; }
+
+    .slide {
+      flex: 0 0 100%; width: 100%; height: 100%;
+      scroll-snap-align: start;
+      display: flex; flex-direction: column; 
+      padding: 30px 20px; position: relative;
+    }
+
+    .mock-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;
+    }
+    .header-text { font-size: 1.2rem; font-weight: 800; color: var(--text-main); }
+    .header-icon { width: 35px; height: 35px; background: #e2e8f0; border-radius: 50%; }
+
+    /* Visuals */
+    .track-visual {
+      height: 200px; width: 100%; background: #e0f2fe; border-radius: 24px; 
+      position: relative; overflow: visible; margin-bottom: 20px;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.03);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .map-road {
+      position: absolute; top: 50%; width: 100%; height: 40px; background: white; transform: skewY(-10deg);
+    }
+    
+    .truck-container {
+      position: relative; z-index: 5;
+      animation: truckBounce 2s ease-in-out infinite;
+    }
+    .truck-icon {
+      font-size: 3.5rem; color: #bae6fd;
+      filter: drop-shadow(0 5px 10px rgba(186, 230, 253, 0.5));
+    }
+    
+    .truck-pulse {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 20px; height: 20px;
+      background: rgba(252, 165, 165, 0.5);
+      border-radius: 50%; z-index: -1;
+      animation: pulse 2s infinite;
+    }
+    .truck-pulse::before {
+      content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 100%; height: 100%; border-radius: 50%;
+      border: 2px solid rgba(252, 165, 165, 0.4);
+      animation: pulseRing 2s infinite 0.5s;
+    }
+
+    .bin-visual {
+      height: 200px; width: 100%; background: #f0fdf4; border-radius: 24px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+      position: relative; overflow: hidden;
+    }
+    .bin-body {
+      width: 100px; height: 140px; 
+      border: 4px solid #cbd5e1; border-radius: 20px;
+      position: relative; overflow: hidden; background: white; z-index: 2;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .bin-water {
+      position: absolute; bottom: 0; width: 100%; height: 10%;
+      background: rgba(52, 211, 153, 0.4);
+      animation: stepFill 8s steps(5) infinite;
+    }
+
+    .mock-list { display: flex; flex-direction: column; gap: 12px; }
+    .mock-item {
+      height: 60px; width: 100%; background: #ffffff; border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      display: flex; align-items: center; padding: 0 15px; gap: 15px;
+    }
+    .mock-img { width: 40px; height: 40px; border-radius: 10px; background: #f1f5f9; }
+    .mock-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .mock-line-1 { height: 10px; width: 60%; background: #e2e8f0; border-radius: 5px; }
+    .mock-line-2 { height: 8px; width: 40%; background: #f1f5f9; border-radius: 4px; }
+
+    /* Animations */
+    @keyframes truckBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes pulse { 0% { width: 0; height: 0; opacity: 0.8; } 100% { width: 120px; height: 120px; opacity: 0; } }
+    @keyframes pulseRing { 0% { width: 0; height: 0; opacity: 0; border-width: 5px; } 50% { opacity: 0.5; } 100% { width: 150px; height: 150px; opacity: 0; border-width: 0; } }
+    @keyframes stepFill { 0% { height: 10%; } 20% { height: 25%; } 40% { height: 40%; } 60% { height: 60%; } 80% { height: 75%; } 100% { height: 90%; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+    /* --- 📱 Media Queries --- */
+    @media (max-width: 1024px) {
+      .hero-container {
+        grid-template-columns: 1fr;
+        padding: 90px 20px 40px 20px; /* Space for fixed logo */
+        text-align: center;
+        gap: 15px; 
+        align-content: start;
+      }
+      .hero-text h1 { font-size: 2.5rem; margin-bottom: 10px; }
+      .hero-text p { 
+        font-size: 1rem; 
+        margin: 0 auto 15px auto; 
+      }
+      
+      .desktop-cta { display: none; }
+      .mobile-cta { 
+        display: flex; flex-direction: column; width: 100%; max-width: 300px; 
+        gap: 15px; margin: 20px auto 0 auto;
+      }
+      .btn-cta { justify-content: center; width: 100%; height: 54px; }
+
+      .hero-graphic { margin-top: 0; } 
+      .visual-wrapper { height: auto; min-height: auto; padding-bottom: 20px; }
+      .phone-mockup { width: 260px; height: 500px; border-width: 8px; }
+      
+      /* Mobile Navbar & Lang */
+      .navbar { padding: 0; height: 0; }
+      .brand-desktop { display: none; }
+      
+      /* ✅ Show Mobile Logo Fixed */
+      .mobile-logo-fixed { display: flex; }
+      
+      /* Adjust Lang Switcher Position */
+      .lang-switcher-nav { position: absolute; top: 20px; right: 20px; z-index: 150; }
+    }
+
+    @media (max-width: 480px) {
+      .phone-mockup { width: 220px; height: 440px; border-width: 6px; border-radius: 35px; }
+      .track-visual, .bin-visual { height: 160px; }
+      .truck-icon { font-size: 3rem; }
+      .bin-body { width: 80px; height: 110px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-shape blob-1"></div>
+  <div class="bg-shape blob-2"></div>
+  <div class="bg-shape blob-3"></div>
+
+  <div class="mobile-logo-fixed">
+    <div class="brand-badge">
+      <i class="ri-recycle-line"></i> Smart Waste
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <div class="brand-desktop">
+      <i class="ri-recycle-line"></i>
+      <span>Smart Waste</span>
+    </div>
+    
+    <div class="lang-switcher-nav">
+      <button class="icon-btn" id="langIconBtn" type="button">
+        <img src="../Admin/images/lang-icon.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/197/197374.png'" alt="Language">
+      </button>
+      <div class="lang-menu" id="langMenu">
+        <button type="button" data-lang="th">🇹🇭 ไทย</button>
+        <button type="button" data-lang="en">🇬🇧 English</button>
+        <button type="button" data-lang="ms">🇲🇾 Bahasa Melayu</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="hero-container">
+    <div class="hero-text">
+      <h1 id="heroTitle">ยินดีต้อนรับสู่<br><span>Smart Waste</span></h1>
+      <p id="heroDesc">แพลตฟอร์มจัดการขยะอัจฉริยะที่จะช่วยให้ชีวิตของคุณง่ายขึ้น ร่วมเป็นส่วนหนึ่งในการดูแลสิ่งแวดล้อมและสร้างชุมชนที่น่าอยู่ไปด้วยกัน</p>
+      
+      <div class="cta-group desktop-cta">
+        <a href="login.html" class="btn-cta btn-primary">
+          <span id="btnStart1">เริ่มต้นใช้งาน</span> <i class="ri-arrow-right-line"></i>
+        </a>
+        <a href="register.html" class="btn-cta btn-secondary">
+          <i class="ri-user-add-line"></i> <span id="btnReg1">สมัครสมาชิก</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-graphic">
+      <div class="visual-wrapper">
+        <div class="phone-mockup">
+          <div class="phone-screen js-scroll-container">
+            
+            <div class="slide">
+              <div class="mock-header">
+                <span class="header-text" id="txtTrack">Tracking</span>
+                <div class="header-icon"></div>
+              </div>
+              <div class="track-visual">
+                <div class="map-road"></div>
+                <div class="truck-container">
+                  <div class="truck-pulse"></div>
+                  <i class="ri-truck-line truck-icon"></i>
+                </div>
+              </div>
+              <div class="mock-list">
+                <div class="mock-item"><div class="mock-img"></div><div class="mock-lines"><div class="mock-line-1"></div><div class="mock-line-2"></div></div></div>
+                <div class="mock-item"><div class="mock-img"></div><div class="mock-lines"><div class="mock-line-1"></div><div class="mock-line-2"></div></div></div>
+              </div>
+            </div>
+
+            <div class="slide">
+              <div class="mock-header">
+                <span class="header-text" id="txtBin">Bin Status</span>
+                <div class="header-icon"></div>
+              </div>
+              <div class="bin-visual">
+                <div class="bin-body">
+                  <div class="bin-water"></div>
+                </div>
+              </div>
+              <div class="mock-list">
+                <div class="mock-item"><div class="mock-img" style="background: #d1fae5;"></div><div class="mock-lines"><div class="mock-line-1"></div><div class="mock-line-2"></div></div></div>
+                <div class="mock-item"><div class="mock-img" style="background: #d1fae5;"></div><div class="mock-lines"><div class="mock-line-1"></div><div class="mock-line-2"></div></div></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-group mobile-cta">
+        <a href="login.html" class="btn-cta btn-primary">
+          <span id="btnStart2">เริ่มต้นใช้งาน</span> <i class="ri-arrow-right-line"></i>
+        </a>
+        <a href="register.html" class="btn-cta btn-secondary">
+          <i class="ri-user-add-line"></i> <span id="btnReg2">สมัครสมาชิก</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- Slider Logic ---
+      const slider = document.querySelector('.js-scroll-container');
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+      let autoScrollInterval;
+
+      function smoothScrollTo(element, target, duration) {
+        const start = element.scrollLeft;
+        const change = target - start;
+        let currentTime = 0;
+        const increment = 20;
+        const animateScroll = function() {
+          currentTime += increment;
+          let val = currentTime / (duration / 2);
+          if (val < 1) val = (change / 2) * val * val + start;
+          else { val--; val = (-change / 2) * (val * (val - 2) - 1) + start; }
+          element.scrollLeft = val;
+          if (currentTime < duration) requestAnimationFrame(animateScroll);
+          else element.style.scrollSnapType = 'x mandatory';
+        };
+        element.style.scrollSnapType = 'none';
+        animateScroll();
+      }
+
+      slider.addEventListener('mousedown', (e) => {
+        isDown = true; slider.style.cursor = 'grabbing'; slider.style.scrollSnapType = 'none';
+        startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft;
+        clearInterval(autoScrollInterval);
+      });
+      const stopDrag = () => { if(!isDown) return; isDown = false; slider.style.cursor = 'grab'; slider.style.scrollSnapType = 'x mandatory'; startAutoScroll(); };
+      slider.addEventListener('mouseleave', stopDrag);
+      slider.addEventListener('mouseup', stopDrag);
+      slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return; e.preventDefault();
+        const x = e.pageX - slider.offsetLeft; const walk = (x - startX) * 2;
+        slider.scrollLeft = scrollLeft - walk;
+      });
+
+      function startAutoScroll() {
+        clearInterval(autoScrollInterval);
+        autoScrollInterval = setInterval(() => {
+          if (!isDown) {
+            const w = slider.clientWidth; const curr = slider.scrollLeft; const max = slider.scrollWidth - w;
+            if (curr < max - 10) smoothScrollTo(slider, curr + w, 2500);
+            else smoothScrollTo(slider, 0, 2500);
+          }
+        }, 6000);
+      }
+      startAutoScroll();
+
+      // --- Language Logic ---
+      const langIconBtn = document.getElementById("langIconBtn");
+      const langMenu = document.getElementById("langMenu");
+      let currentLang = localStorage.getItem("sw_lang") || "th";
+
+      const dict = {
+        th: { 
+          title: "ยินดีต้อนรับสู่<br><span>Smart Waste</span>",
+          desc: "แพลตฟอร์มจัดการขยะอัจฉริยะที่จะช่วยให้ชีวิตของคุณง่ายขึ้น ร่วมเป็นส่วนหนึ่งในการดูแลสิ่งแวดล้อมและสร้างชุมชนที่น่าอยู่ไปด้วยกัน",
+          btnStart: "เริ่มต้นใช้งาน", btnReg: "สมัครสมาชิก",
+          track: "ติดตามรถ", bin: "ระดับขยะ"
+        },
+        en: { 
+          title: "Welcome to<br><span>Smart Waste</span>",
+          desc: "An intelligent waste management platform to make your life easier. Join us in caring for the environment and creating a better community together.",
+          btnStart: "Get Started", btnReg: "Sign Up",
+          track: "Tracking", bin: "Bin Status"
+        },
+        ms: { 
+          title: "Selamat Datang ke<br><span>Smart Waste</span>",
+          desc: "Platform pengurusan sisa pintar untuk memudahkan hidup anda. Sertai kami dalam menjaga alam sekitar dan membina komuniti yang lebih baik.",
+          btnStart: "Mula Sekarang", btnReg: "Daftar",
+          track: "Penjejakan", bin: "Status Tong"
+        }
+      };
+
+      function applyLanguage() {
+        const d = dict[currentLang] || dict.th;
+        document.getElementById("heroTitle").innerHTML = d.title;
+        document.getElementById("heroDesc").textContent = d.desc;
+        document.getElementById("btnStart1").textContent = d.btnStart;
+        document.getElementById("btnReg1").textContent = d.btnReg;
+        document.getElementById("btnStart2").textContent = d.btnStart;
+        document.getElementById("btnReg2").textContent = d.btnReg;
+        document.getElementById("txtTrack").textContent = d.track;
+        document.getElementById("txtBin").textContent = d.bin;
+        langMenu.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.lang === currentLang));
+      }
+
+      langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
+      langMenu.addEventListener("click", (e) => {
+        if(e.target.tagName === "BUTTON") {
+          currentLang = e.target.dataset.lang;
+          localStorage.setItem("sw_lang", currentLang);
+          applyLanguage();
+          langMenu.classList.remove("show");
+        }
+      });
+      applyLanguage();
+    });
+  </script>
+
+</body>
+</html>

@@ -6,709 +6,137 @@
   <title>Smart Waste - แผนที่ถังของฉัน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-  <script src="../Login/auth.js"></script>
-  <script>
-    const currentUser = window.SWAuth.requireAuth([2]);
-  </script>
-
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <script src="../Login/auth.js"></script>
+
   <style>
-    /* --- 1. Global Theme --- */
-    :root {
-      --primary: #059669;
-      --primary-dark: #064e3b;
-      --accent: #34d399;
-      --bg-body: #f0fdf4;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --sidebar-width: 260px;
-      --radius: 20px;
-      --shadow: 0 10px 30px -10px rgba(5, 150, 105, 0.15);
+    /* --- Styles --- */
+    :root { --primary: #059669; --primary-dark: #064e3b; --accent: #34d399; --bg-body: #f0fdf4; --text-main: #1e293b; --text-muted: #64748b; --sidebar-width: 260px; --radius: 20px; --shadow: 0 10px 30px -10px rgba(5, 150, 105, 0.15); }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Prompt", sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { min-height: 100vh; display: flex; background-color: var(--bg-body); color: var(--text-main); overflow: hidden; }
+    
+    #globalLoader { position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+    .loader-spin { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, #064e3b 0%, #047857 100%); color: #fff; padding: 30px 20px; display: flex; flex-direction: column; justify-content: space-between; position: sticky; top: 0; height: 100vh; z-index: 1000; box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1); }
+    .brand { margin-bottom: 40px; display: flex; align-items: center; gap: 12px; } .brand i { font-size: 32px; color: var(--accent); } .brand h2 { font-size: 24px; font-weight: 700; }
+    .menu { display: flex; flex-direction: column; gap: 10px; flex: 1; } .menu a { display: flex; align-items: center; gap: 12px; color: #d1fae5; text-decoration: none; padding: 14px 16px; border-radius: 16px; transition: 0.3s; font-weight: 500; } .menu a:hover { background: rgba(255, 255, 255, 0.1); color: #fff; } .menu a.active { background: #fff; color: var(--primary-dark); font-weight: 700; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+    .logout-btn { background: rgba(0, 0, 0, 0.2); color: #fca5a5; border: 1px solid rgba(252, 165, 165, 0.2); padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; width: 100%; display: flex; justify-content: center; gap: 8px; } .logout-btn:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    
+    main { flex: 1; padding: 30px 40px; display: flex; flex-direction: column; gap: 20px; height: 100vh; overflow: hidden; position: relative; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; flex-wrap: wrap; gap: 20px; }
+    .titles h1 { font-size: 28px; font-weight: 800; color: var(--primary-dark); margin: 0; } .titles p { font-size: 14px; color: var(--text-muted); margin-top: 5px; }
+    
+    .mobile-brand { display: none; }
+
+    .user-chip { display: flex; align-items: center; gap: 12px; background: #fff; padding: 8px 20px 8px 8px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; } .avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 18px; }
+    
+    .layout { flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 20px; min-height: 0; }
+    #map { width: 100%; height: 100%; border-radius: var(--radius); box-shadow: var(--shadow); border: 2px solid #fff; z-index: 1; }
+    
+    /* --- Pins --- */
+    .truck-pin { --pin-color: #f43f5e; position: relative; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 8px 15px rgba(244, 63, 94, 0.4)); }
+    .truck-pin__bubble { width: 48px; height: 48px; border-radius: 50%; background: #fff; border: 3px solid var(--pin-color); display: flex; align-items: center; justify-content: center; font-size: 24px; animation: bounce 2s infinite; }
+    
+    /* 🔥 ปรับความเร็วตรงนี้ (จาก 2s เป็น 4s) 🔥 */
+    .truck-pulse { 
+        position: absolute; 
+        width: 48px; 
+        height: 48px; 
+        background: var(--pin-color); 
+        border-radius: 50%; 
+        opacity: 0.5; 
+        animation: pulse-ring 4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; 
+        z-index: -1; 
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: "Prompt", sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
+    @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2); opacity: 0; } }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    
+    .bin-pin { --pin-color: #94a3b8; position: relative; display: flex; flex-direction: column; align-items: center; transition: all 0.3s; }
+    .bin-pin__bubble { width: 40px; height: 40px; border-radius: 50%; background: var(--pin-color); border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; transition: background 0.3s; }
+    .bin-pin__label { margin-top: 4px; font-size: 11px; font-weight: 700; color: var(--text-main); background: rgba(255, 255, 255, 0.9); padding: 2px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+    
+    .leaflet-popup-content-wrapper { border-radius: 16px; overflow: hidden; padding: 0; } .leaflet-popup-content { margin: 0; width: 220px !important; }
+    .custom-popup-header { background: var(--primary); color: #fff; padding: 10px 15px; font-weight: 600; font-size: 14px; } .custom-popup-body { padding: 15px; font-size: 13px; color: var(--text-main); }
+    
+    .panel { background: #fff; border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow); overflow: hidden; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; } .section-header h2 { font-size: 16px; color: var(--text-main); font-weight: 700; margin: 0; }
+    .badge { background: #dcfce7; color: var(--primary); font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .list-container { flex: 1; overflow-y: auto; padding-right: 5px; }
+    
+    .list-card { background: #fff; border: 1px solid #f1f5f9; border-radius: 14px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; gap: 12px; } .list-card:hover { border-color: var(--accent); transform: translateX(3px); } 
+    .list-card.active { border-color: var(--primary); background: #f0fdf4; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1); }
+    .truck-card.active { border-color: #f43f5e; background: #fff1f2; }
 
-    body {
-      min-height: 100vh;
-      display: flex;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      overflow: hidden;
-      /* Desktop Lock */
-    }
+    .card-icon { width: 40px; height: 40px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text-muted); } .list-card.active .card-icon { background: var(--primary); color: #fff; }
+    .card-info h4 { margin: 0; font-size: 14px; color: var(--text-main); } .card-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
+    
+    .status-container { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .fill-percent { font-size: 16px; font-weight: 700; color: var(--text-main); }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; transition: all 0.3s; }
 
-    /* Loading Screen */
-    #globalLoader {
-      position: fixed;
-      inset: 0;
-      background: #fff;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.5s ease;
-    }
-
-    .loader-spin {
-      width: 50px;
-      height: 50px;
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 15px;
-    }
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    /* --- 2. Sidebar (Desktop) --- */
-    .sidebar {
-      width: var(--sidebar-width);
-      background: linear-gradient(180deg, #064e3b 0%, #047857 100%);
-      color: #fff;
-      padding: 30px 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      z-index: 1000;
-      box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1);
-    }
-
-    .brand {
-      margin-bottom: 40px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand i {
-      font-size: 32px;
-      color: var(--accent);
-    }
-
-    .brand h2 {
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex: 1;
-    }
-
-    .menu a {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #d1fae5;
-      text-decoration: none;
-      padding: 14px 16px;
-      border-radius: 16px;
-      transition: 0.3s;
-      font-weight: 500;
-    }
-
-    .menu a:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-    }
-
-    .menu a.active {
-      background: #fff;
-      color: var(--primary-dark);
-      font-weight: 700;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .logout-btn {
-      background: rgba(0, 0, 0, 0.2);
-      color: #fca5a5;
-      border: 1px solid rgba(252, 165, 165, 0.2);
-      padding: 12px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: 0.2s;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .logout-btn:hover {
-      background: rgba(239, 68, 68, 0.1);
-      color: #ef4444;
-    }
-
-    /* --- 3. Main Layout --- */
-    main {
-      flex: 1;
-      padding: 30px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      height: 100vh;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Topbar (Desktop) */
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-
-    .titles h1 {
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--primary-dark);
-      margin: 0;
-    }
-
-    .titles p {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-top: 5px;
-    }
-
-    /* Mobile Brand (Hidden on Desktop) */
-    .mobile-brand {
-      display: none;
-    }
-
-    /* User Chip */
-    .user-chip {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: #fff;
-      padding: 8px 20px 8px 8px;
-      border-radius: 50px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e2e8f0;
-    }
-
-    .avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--primary));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 700;
-      font-size: 18px;
-    }
-
-    .layout {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 20px;
-      min-height: 0;
-    }
-
-    /* --- 4. Map Styling --- */
-    #map {
-      width: 100%;
-      height: 100%;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 2px solid #fff;
-      z-index: 1;
-    }
-
-    .truck-icon,
-    .bin-icon {
-      background: transparent;
-      border: none;
-    }
-
-    /* Markers */
-    .truck-pin {
-      --pin-color: #f43f5e;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      filter: drop-shadow(0 8px 15px rgba(244, 63, 94, 0.4));
-    }
-
-    .truck-pin__bubble {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: #fff;
-      border: 3px solid var(--pin-color);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      animation: bounce 2s infinite;
-    }
-
-    .truck-pulse {
-      position: absolute;
-      width: 48px;
-      height: 48px;
-      background: var(--pin-color);
-      border-radius: 50%;
-      opacity: 0.5;
-      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-      z-index: -1;
-    }
-
-    @keyframes pulse-ring {
-      0% {
-        transform: scale(0.8);
-        opacity: 0.8;
-      }
-
-      100% {
-        transform: scale(2);
-        opacity: 0;
-      }
-    }
-
-    @keyframes bounce {
-
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-
-      50% {
-        transform: translateY(-5px);
-      }
-    }
-
-    .bin-pin {
-      --pin-color: #16a34a;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .bin-pin__bubble {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--pin-color);
-      border: 2px solid #fff;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #fff;
-    }
-
-    .bin-pin__label {
-      margin-top: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.9);
-      padding: 2px 8px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .leaflet-popup-content-wrapper {
-      border-radius: 16px;
-      overflow: hidden;
-      padding: 0;
-    }
-
-    .leaflet-popup-content {
-      margin: 0;
-      width: 220px !important;
-    }
-
-    .custom-popup-header {
-      background: var(--primary);
-      color: #fff;
-      padding: 10px 15px;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    .custom-popup-body {
-      padding: 15px;
-      font-size: 13px;
-      color: var(--text-main);
-    }
-
-    /* --- 5. Side Panel --- */
-    .panel {
-      background: #fff;
-      border-radius: var(--radius);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .section-header h2 {
-      font-size: 16px;
-      color: var(--text-main);
-      font-weight: 700;
-      margin: 0;
-    }
-
-    .badge {
-      background: #dcfce7;
-      color: var(--primary);
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: 600;
-    }
-
-    .list-container {
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 5px;
-    }
-
-    .list-card {
-      background: #fff;
-      border: 1px solid #f1f5f9;
-      border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .list-card:hover {
-      border-color: var(--accent);
-      transform: translateX(3px);
-    }
-
-    .list-card.active {
-      border-color: var(--primary);
-      background: #f0fdf4;
-      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1);
-    }
-
-    .card-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: #f1f5f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: var(--text-muted);
-    }
-
-    .list-card.active .card-icon {
-      background: var(--primary);
-      color: #fff;
-    }
-
-    .card-info h4 {
-      margin: 0;
-      font-size: 14px;
-      color: var(--text-main);
-    }
-
-    .card-info p {
-      margin: 0;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      position: absolute;
-      top: 12px;
-      right: 12px;
-    }
-
-    /* --- Mobile Responsive (UPDATED HEADER) --- */
     @media (max-width: 850px) {
-      body {
-        flex-direction: column;
-        overflow: auto;
-      }
-
-      /* Sidebar Bottom Nav */
-      .sidebar {
-        position: fixed;
-        bottom: 0;
-        top: auto;
-        width: 100%;
-        height: auto;
-        flex-direction: row;
-        padding: 10px 20px;
-        background: rgba(255, 255, 255, 0.98);
-        border-top: 1px solid #e2e8f0;
-        backdrop-filter: blur(10px);
-        z-index: 9999;
-      }
-
-      .sidebar .brand,
-      .sw-logout-slot {
-        display: none;
-      }
-
-      .menu {
-        flex-direction: row;
-        justify-content: space-around;
-        width: 100%;
-        gap: 0;
-      }
-
-      .menu a {
-        flex-direction: column;
-        gap: 4px;
-        padding: 8px;
-        font-size: 10px;
-        color: var(--text-muted);
-        background: none;
-      }
-
-      .menu a i {
-        font-size: 28px;
-        margin-bottom: 2px;
-      }
-
-      .menu a.active {
-        color: var(--primary);
-        background: transparent;
-      }
-
-      /* Main Content - No Padding at top for header to fit */
-      main {
-        padding: 0;
-        height: auto;
-        display: block;
-        min-height: 100vh;
-        padding-bottom: 90px;
-      }
-
-      /* NEW TOPBAR STYLE (Green Header) */
-      .topbar {
-        padding: 0;
-        margin: 0;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        /* Stack Brand Bar and Title */
-        gap: 0;
-      }
-
-      /* 1. Mobile Brand (Full Width Green Header) */
-      .mobile-brand {
-        display: flex;
-        justify-content: space-between;
-        /* Brand Left, Profile Right */
-        align-items: center;
-        width: 100%;
-        padding: 15px 25px;
-
-        /* Dark Green Gradient Background */
-        background: linear-gradient(180deg, #064e3b 0%, #047857 100%);
-        color: #fff;
-        /* White Text */
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      }
-
-      .brand-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 20px;
-        font-weight: 700;
-      }
-
-      .brand-left i {
-        font-size: 24px;
-        color: var(--accent);
-      }
-
-      /* 2. User Profile inside Mobile Brand */
-      .user-chip-mobile {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 4px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-      }
-
-      .user-chip-desktop {
-        display: none;
-      }
-
-      /* Hide the desktop profile */
-      .avatar-mobile {
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: #fff;
-        color: var(--primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 14px;
-      }
-
-      /* 3. Titles (Below Green Header) */
-      .titles {
-        padding: 20px 25px 0 25px;
-        /* Add padding here instead of main */
-        width: 100%;
-      }
-
-      .titles h1 {
-        font-size: 22px;
-        color: var(--primary-dark);
-        margin: 0;
-      }
-
-      .titles p {
-        display: none;
-      }
-
-      /* Hide description on mobile to save space */
-
-      /* Layout: Stack Map and Panel */
-      .layout {
-        grid-template-columns: 1fr;
-        display: flex;
-        flex-direction: column;
-        padding: 20px 25px;
-        /* Content padding */
-        gap: 20px;
-      }
-
-      #map {
-        height: 400px;
-        min-height: 400px;
-        border-radius: 20px;
-      }
-
-      .panel {
-        height: auto;
-        max-height: 500px;
-      }
+      body { flex-direction: column; overflow: auto; }
+      .sidebar { position: fixed; bottom: 0; top: auto; width: 100%; height: auto; flex-direction: row; padding: 10px 20px; background: rgba(255, 255, 255, 0.98); border-top: 1px solid #e2e8f0; backdrop-filter: blur(10px); z-index: 9999; }
+      .sidebar .brand, .sw-logout-slot { display: none; }
+      .menu { flex-direction: row; justify-content: space-around; width: 100%; gap: 0; } .menu a { flex-direction: column; gap: 4px; padding: 8px; font-size: 10px; color: var(--text-muted); background: none; } .menu a i { font-size: 28px; margin-bottom: 2px; } .menu a.active { color: var(--primary); background: transparent; }
+      main { padding: 0; height: auto; display: block; min-height: 100vh; padding-bottom: 90px; }
+      .topbar { padding: 0; margin: 0; width: 100%; display: flex; flex-direction: column; gap: 0; }
+      .mobile-brand { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 15px 25px; background: linear-gradient(180deg, #064e3b 0%, #047857 100%); color: #fff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+      .brand-left { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; } .brand-left i { font-size: 24px; color: var(--accent); }
+      .user-chip-mobile { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); } .user-chip-desktop { display: none; }
+      .avatar-mobile { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+      .titles { padding: 20px 25px 0 25px; width: 100%; } .titles h1 { font-size: 22px; } .titles p { display: none; }
+      .layout { grid-template-columns: 1fr; display: flex; flex-direction: column; padding: 20px 25px; gap: 20px; }
+      #map { height: 400px; min-height: 400px; border-radius: 20px; } .panel { height: auto; max-height: 500px; }
     }
   </style>
 </head>
 
 <body>
-
-  <div id="globalLoader">
-    <div class="loader-spin"></div>
-    <p class="muted" style="font-size:14px;">กำลังโหลดแผนที่...</p>
-  </div>
+  <div id="globalLoader"><div class="loader-spin"></div><p class="muted" style="font-size:14px;">กำลังโหลดแผนที่...</p></div>
 
   <aside class="sidebar">
-    <div class="brand">
-      <i class="ri-recycle-line"></i>
-      <h2>Smart Waste</h2>
-    </div>
+    <div class="brand"><i class="ri-recycle-line"></i><h2>Smart Waste</h2></div>
     <nav class="menu">
       <a href="home.html"><i class="ri-delete-bin-2-line"></i> <span>ถังของฉัน</span></a>
       <a href="map.html" class="active"><i class="ri-map-pin-2-line"></i> <span>แผนที่</span></a>
-      <div class="sw-logout-slot">
-        <button onclick="logout()" class="logout-btn"><i class="ri-logout-box-line"></i> ออกจากระบบ</button>
-      </div>
+      <div class="sw-logout-slot"><button onclick="SWAuth.logout()" class="logout-btn"><i class="ri-logout-box-line"></i> ออกจากระบบ</button></div>
     </nav>
   </aside>
 
   <main>
     <div class="topbar">
       <div class="mobile-brand">
-        <div class="brand-left">
-          <i class="ri-recycle-line"></i> Smart Waste
-        </div>
-        <div class="user-chip-mobile">
-          <div class="avatar-mobile" id="userAvatarMobile">?</div>
-        </div>
+        <div class="brand-left"><i class="ri-recycle-line"></i> Smart Waste</div>
+        <div class="user-chip-mobile"><div class="avatar-mobile" id="userAvatarMobile">?</div></div>
       </div>
-
-      <div class="titles">
-        <h1>แผนที่จุดติดตั้ง</h1>
-        <p>ติดตามตำแหน่งถังขยะและรถเก็บขยะในเขต</p>
-      </div>
-
-      <div class="user-chip user-chip-desktop">
-        <div class="avatar" id="userAvatar">?</div>
-        <div><strong id="userLabel">Loading...</strong></div>
-      </div>
+      <div class="titles"><h1>แผนที่จุดติดตั้ง</h1><p>ติดตามตำแหน่งถังขยะและรถเก็บขยะในเขต</p></div>
+      <div class="user-chip user-chip-desktop"><div class="avatar" id="userAvatar">?</div><div><strong id="userLabel">Loading...</strong></div></div>
     </div>
 
     <div class="layout">
       <div id="map" aria-label="แผนที่"></div>
       <div class="panel">
         <div>
-          <div class="section-header">
-            <h2><i class="ri-delete-bin-line"></i> ถังขยะของฉัน</h2>
-            <span class="badge" id="binCount">0</span>
-          </div>
+          <div class="section-header"><h2><i class="ri-delete-bin-line"></i> ถังขยะของฉัน</h2><span class="badge" id="binCount">0</span></div>
           <div id="binList" class="list-container" style="max-height: 250px;"></div>
         </div>
         <hr style="border:0; border-top:1px solid #f1f5f9; margin: 5px 0;">
         <div>
-          <div class="section-header">
-            <h2><i class="ri-truck-line"></i> รถเก็บขยะ (Online)</h2>
-            <span class="badge" id="truckCount" style="background:#fee2e2; color:#ef4444;">0</span>
-          </div>
+          <div class="section-header"><h2><i class="ri-truck-line"></i> รถเก็บขยะ (Online)</h2><span class="badge" id="truckCount" style="background:#fee2e2; color:#ef4444;">0</span></div>
           <div id="truckList" class="list-container" style="max-height: 200px;"></div>
           <p id="truckStatus" style="font-size:12px; text-align:center; margin-top:10px; color:#64748b;"></p>
         </div>
@@ -717,68 +145,98 @@
   </main>
 
   <script>
+    // --- Setup ---
     const $ = id => document.getElementById(id);
     const userLabelEl = $("userLabel");
     const userAvatarEl = $("userAvatar");
-    const userAvatarMobile = $("userAvatarMobile"); // New
+    const userAvatarMobile = $("userAvatarMobile");
     const loader = $("globalLoader");
 
-    const displayName = currentUser.fullName || currentUser.username;
-    const initial = displayName ? displayName.charAt(0).toUpperCase() : "?";
-
-    userLabelEl.textContent = displayName;
-    userAvatarEl.textContent = initial;
-    if (userAvatarMobile) userAvatarMobile.textContent = initial;
-
-    // Hide Loader
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.style.display = 'none', 500);
-      }, 800);
-    });
-
-    // Firebase Init
     const firebaseConfig = {
-      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
-      authDomain: "smart-waste-a2bf4.firebaseapp.com",
-      projectId: "smart-waste-a2bf4",
-      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
-      messagingSenderId: "522733244689",
-      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
+      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+      authDomain: "smart-waste2568.firebaseapp.com",
+      databaseURL: "https://smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-waste2568",
+      storageBucket: "smart-waste2568.firebasestorage.app",
+      messagingSenderId: "122699752010",
+      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
+      measurementId: "G-H82914YP66"
     };
+
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const firestore = firebase.firestore();
+    const database = firebase.database();
 
-    // Map Setup
     const map = L.map("map").setView([13.7563, 100.5018], 10);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
     setTimeout(() => map.invalidateSize(), 200);
 
-    // --- FULL VARIABLES STATE ---
+    // --- Variables ---
     const binMarkers = new Map();
     const truckMarkers = new Map();
-    const truckStore = new Map();
-    const binsCache = new Map();
     const binDocCache = new Map();
-    let trucksUnsub = null;
-    let truckRunUnsubs = new Map();
-    let selectedBinId = null;
-    let selectedBinInfo = null;
-    let selectedTruckId = null;
+    let rtdbListeners = new Map(); 
+    let deviceLastSeen = new Map(); 
+    let prevTruckTimestamps = new Map(); 
+    
+    let selectedTruckId = null; 
+    let selectedBinId = null; 
+    let truckRTDBRef = null;
     let userZones = new Set();
-    let binRealtimeTimer = null;
-    let binRefreshInFlight = false;
-    const BIN_REFRESH_INTERVAL = 2000;
     const BIN_FOCUS_ZOOM = 16;
+    let zoomed = false;
 
-    // --- Marker Functions ---
-    function getFillColor(val) {
-      if (val === null) return "#94a3b8"; if (val >= 80) return "#ef4444"; if (val >= 50) return "#f59e0b"; return "#10b981";
+    // 🔥 ตั้งเวลา 10 วินาที 🔥
+    const OFFLINE_TIMEOUT = 10000; 
+    const MAX_DATA_AGE = 60000; 
+
+    // --- MAIN ---
+    async function initApp() {
+        try {
+            const currentUser = await window.SWAuth.requireAuth([2]); 
+            if (!currentUser || !currentUser.username) throw new Error("User data incomplete");
+
+            const displayName = currentUser.fullName || currentUser.username || "User";
+            const initial = displayName.charAt(0).toUpperCase();
+            userLabelEl.textContent = displayName;
+            userAvatarEl.textContent = initial;
+            if (userAvatarMobile) userAvatarMobile.textContent = initial;
+
+            loader.style.opacity = '0';
+            setTimeout(() => loader.style.display = 'none', 500);
+
+            startFetchingData(currentUser);
+
+            setInterval(() => {
+                const now = Date.now();
+                deviceLastSeen.forEach((info, id) => {
+                    const isOnline = (now - info.lastSeenClientTime) < OFFLINE_TIMEOUT;
+                    updateVisuals(id, isOnline, info);
+                });
+            }, 1000);
+
+        } catch (error) {
+            console.error("Auth Error:", error);
+            Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบผิดพลาด', confirmButtonText: 'ตกลง' });
+        }
+    }
+    initApp();
+
+    // --- VISUALS ---
+    function clearAllSelections() {
+        document.querySelectorAll('.list-card').forEach(el => el.classList.remove('active'));
     }
 
-    function buildBinIcon(entry) {
-      const val = entry.fillLevel; const color = getFillColor(val); const label = val !== null ? `${val}%` : "?";
+    function getFillColor(val) {
+      if (val === null || val === undefined) return "#94a3b8"; 
+      if (val >= 80) return "#ef4444"; 
+      if (val >= 50) return "#f59e0b"; 
+      return "#10b981"; 
+    }
+
+    function buildBinIcon(fillLevel) {
+      const color = getFillColor(fillLevel);
+      const label = (fillLevel !== null && fillLevel !== undefined) ? `${fillLevel}%` : "?";
       return L.divIcon({
         className: "bin-icon",
         html: `<div class="bin-pin" style="--pin-color:${color};"><div class="bin-pin__bubble"><i class="ri-delete-bin-fill"></i></div><div class="bin-pin__label">${label}</div></div>`,
@@ -786,7 +244,14 @@
       });
     }
 
-    function buildTruckIcon() {
+    function buildTruckIcon(isOnline) {
+      if (!isOnline) {
+          return L.divIcon({
+            className: "truck-icon",
+            html: `<div class="truck-pin" style="--pin-color:#94a3b8;"><div class="truck-pin__bubble">🚛</div></div>`,
+            iconSize: [50, 50], iconAnchor: [25, 25], popupAnchor: [0, -30]
+          });
+      }
       return L.divIcon({
         className: "truck-icon",
         html: `<div class="truck-pin"><div class="truck-pulse"></div><div class="truck-pin__bubble">🚛</div></div>`,
@@ -794,185 +259,321 @@
       });
     }
 
-    // --- Logic Helpers ---
-    function normalizeTimestamp(value) {
-      if (!value) return null;
-      if (value instanceof Date) return value;
-      if (typeof value.toDate === "function") return value.toDate();
-      if (typeof value === "number") return new Date(value < 1e12 ? value * 1000 : value);
-      return null;
+    // --- CENTRAL UPDATER ---
+    function updateVisuals(id, isOnline, info) {
+        const statusColor = isOnline ? "#22c55e" : "#94a3b8"; 
+
+        if (info.type === 'bin') {
+            const badgeEl = document.getElementById(`fill-text-${id}`);
+            const dotEl = document.getElementById(`fill-dot-${id}`);
+            
+            if (badgeEl) {
+                badgeEl.innerText = (info.fillLevel !== null) ? `${info.fillLevel}%` : "N/A";
+                badgeEl.style.color = isOnline ? "var(--text-main)" : "#94a3b8";
+            }
+            if (dotEl) {
+                dotEl.style.background = statusColor;
+                dotEl.style.boxShadow = isOnline ? "0 0 0 2px rgba(34, 197, 94, 0.2)" : "none";
+                dotEl.title = isOnline ? "Online" : "Offline";
+            }
+
+            if (binMarkers.has(id)) {
+                const marker = binMarkers.get(id);
+                // สีไอคอนตามระดับขยะเสมอ (ไม่เปลี่ยนเป็นเทา)
+                const newIcon = buildBinIcon(info.fillLevel);
+                marker.setIcon(newIcon);
+
+                if (marker.isPopupOpen()) {
+                     const popupContent = `
+                        <div class="custom-popup-header" style="background:${isOnline ? 'var(--primary)' : '#64748b'}">
+                            <i class="ri-map-pin-line"></i> ${info.binId} 
+                            <span style="font-size:10px; float:right; margin-top:2px;">${isOnline ? '● Online' : '○ Offline'}</span>
+                        </div>
+                        <div class="custom-popup-body">
+                            <b>เขต:</b> ${info.zone}<br>
+                            <b>ระดับขยะ:</b> ${info.fillLevel !== null ? info.fillLevel + "%" : "N/A"}<br>
+                            <span style="color:#64748b; font-size:11px">MAC: ${info.macAddress}</span>
+                        </div>`;
+                     if (marker.getPopup().getContent() !== popupContent) marker.setPopupContent(popupContent);
+                }
+            }
+        }
+
+        if (info.type === 'truck') {
+            const dotEl = document.getElementById(`truck-dot-${id}`);
+            if (dotEl) {
+                dotEl.style.background = statusColor;
+                dotEl.style.boxShadow = isOnline ? "0 0 0 2px rgba(34, 197, 94, 0.2)" : "none";
+            }
+            if (truckMarkers.has(id)) {
+                const marker = truckMarkers.get(id);
+                const newIcon = buildTruckIcon(isOnline);
+                marker.setIcon(newIcon); 
+            }
+        }
     }
 
-    function isTruckOnline(entry) {
-      if (entry.hasActiveRun !== true) return false;
-      const d = normalizeTimestamp(entry.updatedAt);
-      if (!d) return false;
-      return (Date.now() - d.getTime()) <= 120000;
-    }
-
-    function fetchLinkedBinDoc(path) {
+    async function fetchLinkedBinDoc(path) {
       if (!path) return null;
       if (!binDocCache.has(path)) {
-        binDocCache.set(path, firestore.doc(path).get().then(s => s.exists ? { id: s.id, ...s.data() } : null));
+        try {
+          const snap = await firestore.doc(path).get();
+          if (snap.exists) binDocCache.set(path, { id: snap.id, ...snap.data() });
+          else binDocCache.set(path, null);
+        } catch (e) { return null; }
       }
       return binDocCache.get(path);
     }
 
-    function deriveZone(docId, data) {
-      return (data.zone || String(docId).split("_")[0] || "").trim();
-    }
-
-    // --- Map Interaction ---
-    function focusMap(lat, lng, id) {
+    function focusBin(lat, lng, binId) {
+      if (selectedBinId === binId) {
+        selectedBinId = null;
+        map.closePopup();
+        clearAllSelections();
+        return;
+      }
       if (lat && lng) {
+        selectedTruckId = null; selectedBinId = binId; 
+        map.invalidateSize();
         map.setView([lat, lng], BIN_FOCUS_ZOOM, { animate: true });
-        if (id && binMarkers.has(id)) binMarkers.get(id).openPopup();
-        document.querySelectorAll('.list-card').forEach(el => el.classList.remove('active'));
+        if (binMarkers.has(binId)) binMarkers.get(binId).openPopup();
+        clearAllSelections();
+        const card = document.getElementById(`bin-card-${binId}`);
+        if(card) card.classList.add('active');
       }
     }
 
-    // --- Truck Logic (FULL) ---
-    function ensureTruckRunListener(truckId) {
-      if (truckRunUnsubs.has(truckId)) return;
-      const unsub = firestore.collection("trucks").doc(truckId).collection("runs")
-        .orderBy("startAt", "desc").limit(1).onSnapshot(snap => {
-          const base = truckStore.get(truckId);
-          if (!base) return;
-          let active = null;
-          snap.forEach(d => { if (d.data().isActive) active = { id: d.id, ...d.data() }; });
+    function selectTruck(driverId, lat, lng) {
+        if (selectedTruckId === driverId) {
+            selectedTruckId = null;
+            map.closePopup();
+            clearAllSelections();
+            return;
+        }
+        selectedTruckId = driverId; selectedBinId = null;
+        if (lat && lng) {
+            map.invalidateSize();
+            map.setView([lat, lng], 16, { animate: true });
+        }
+        if (truckMarkers.has(driverId)) truckMarkers.get(driverId).openPopup();
+        clearAllSelections();
+        const card = document.getElementById(`truck-card-${driverId}`);
+        if (card) card.classList.add('active');
+    }
 
-          truckStore.set(truckId, { ...base, hasActiveRun: !!active, currentRunId: active?.id });
-          renderTrucks();
+    // --- DATA ---
+    function startFetchingData(currentUser) {
+        const targetOwner = currentUser.username;
+        firestore.collectionGroup("bin_data").where("ownerUsername", "==", targetOwner)
+        .onSnapshot(async snapshot => {
+            rtdbListeners.forEach((val) => val.ref.off('value', val.listener));
+            rtdbListeners.clear();
+            
+            if (snapshot.empty) {
+                $("binList").innerHTML = `<p style="text-align:center; color:#999; margin-top:20px; font-size:12px;">ไม่พบรายการถังขยะของคุณ</p>`;
+                $("binCount").innerText = "0";
+                return;
+            }
+
+            $("binList").innerHTML = "";
+            let count = 0;
+            const bounds = [];
+            userZones.clear(); 
+
+            const docs = await Promise.all(snapshot.docs.map(async doc => {
+                const d = doc.data();
+                let lat = parseFloat(d.lat), lng = parseFloat(d.lng);
+                let zone = d.zone, binId = d.binId || doc.id, macAddress = d.macAddress; 
+
+                if ((isNaN(lat) || isNaN(lng)) && d.binDocPath) {
+                    const linked = await fetchLinkedBinDoc(d.binDocPath);
+                    if (linked) {
+                        lat = parseFloat(linked.lat); lng = parseFloat(linked.lng);
+                        zone = zone || linked.zone; binId = binId !== doc.id ? binId : (linked.binId || binId);
+                        macAddress = macAddress || linked.macAddress; 
+                    }
+                }
+                return { id: doc.ref.path, lat, lng, zone: zone || "ไม่ระบุเขต", binId, details: d.details, macAddress };
+            }));
+
+            docs.forEach(data => {
+                if (isNaN(data.lat) || isNaN(data.lng)) return;
+                if (data.zone) userZones.add(data.zone);
+
+                deviceLastSeen.set(data.id, { 
+                    type: 'bin', 
+                    lastSeenClientTime: 0, 
+                    fillLevel: null,
+                    binId: data.binId,
+                    zone: data.zone,
+                    macAddress: data.macAddress
+                });
+
+                const item = document.createElement("div");
+                item.className = "list-card";
+                item.id = `bin-card-${data.id}`;
+                item.onclick = () => focusBin(data.lat, data.lng, data.id);
+                item.innerHTML = `
+                <div class="card-icon"><i class="ri-delete-bin-6-line"></i></div>
+                <div class="card-info">
+                    <h4>${data.binId} <span style="font-size:10px; color:#888;">(${data.zone})</span></h4>
+                    <p style="font-size:11px; color:#64748b;">MAC: ${data.macAddress || "-"}</p>
+                </div>
+                <div class="status-container">
+                    <span id="fill-text-${data.id}" class="fill-percent">N/A</span>
+                    <div id="fill-dot-${data.id}" class="status-dot" style="background:#94a3b8;"></div>
+                </div>`;
+                $("binList").appendChild(item);
+                count++;
+                bounds.push([data.lat, data.lng]);
+                
+                const popupContent = `<div class="custom-popup-header"><i class="ri-map-pin-line"></i> ${data.binId}</div><div class="custom-popup-body">Loading...</div>`;
+
+                if (binMarkers.has(data.id)) {
+                    binMarkers.get(data.id).setLatLng([data.lat, data.lng]);
+                } else {
+                    const m = L.marker([data.lat, data.lng], { icon: buildBinIcon(null) }).addTo(map).bindPopup(popupContent, { autoPan: false });
+                    m.on("click", () => focusBin(data.lat, data.lng, data.id));
+                    binMarkers.set(data.id, m);
+                }
+
+                if (data.macAddress) subscribeToSensor(data.id, data.macAddress, data);
+            });
+
+            $("binCount").innerText = count;
+            if (bounds.length > 0 && !zoomed) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+                zoomed = true;
+            }
+            restartTruckListener();
         });
-      truckRunUnsubs.set(truckId, unsub);
+    }
+
+    function subscribeToSensor(binId, macAddress, binData) {
+        if (!macAddress) return;
+        const sensorRef = database.ref(`esp32_devices/${macAddress}`);
+        const listener = sensorRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            const liveLevel = data ? data.fillLevel : null;
+            
+            let clientTime = 0; 
+            if (data && data.lastUpdate) {
+                const dataAge = Date.now() - data.lastUpdate;
+                if (dataAge < MAX_DATA_AGE) {
+                    clientTime = Date.now(); 
+                }
+            }
+
+            const info = { 
+                type: 'bin', 
+                lastSeenClientTime: clientTime, 
+                fillLevel: liveLevel,
+                binId: binData.binId,
+                zone: binData.zone,
+                macAddress: macAddress
+            };
+            deviceLastSeen.set(binId, info);
+
+            const isOnline = (Date.now() - clientTime) < OFFLINE_TIMEOUT;
+            updateVisuals(binId, isOnline, info);
+        });
+        rtdbListeners.set(binId, { ref: sensorRef, listener: listener });
     }
 
     function restartTruckListener() {
-      if (trucksUnsub) trucksUnsub();
-      truckRunUnsubs.forEach(u => u()); truckRunUnsubs.clear();
+        if (truckRTDBRef) truckRTDBRef.off();
+        if (userZones.size === 0) {
+            $("truckList").innerHTML = "<p class='muted' style='text-align:center; font-size:12px; margin-top:10px;'>ไม่พบรถในเขตของคุณ</p>";
+            return;
+        }
 
-      if (userZones.size === 0) { $("truckList").innerHTML = "<p class='muted' style='text-align:center; font-size:12px;'>ไม่พบรถในเขต</p>"; return; }
+        truckRTDBRef = database.ref('driver_live');
+        truckRTDBRef.on('value', (snapshot) => {
+            const drivers = snapshot.val();
+            const list = $("truckList");
+            list.innerHTML = ""; 
+            let count = 0;
+            const activeDriverIds = new Set();
 
-      trucksUnsub = firestore.collection("trucks").onSnapshot(snap => {
-        const seen = new Set();
-        snap.forEach(doc => {
-          const d = doc.data();
-          const zone = deriveZone(doc.id, d);
-          if (!userZones.has(zone)) return;
+            if (!drivers) {
+                $("truckCount").innerText = "0";
+                $("truckStatus").innerText = "ไม่มีรถออนไลน์ในขณะนี้";
+                return;
+            }
 
-          const prev = truckStore.get(doc.id) || {};
-          truckStore.set(doc.id, {
-            ...prev, id: doc.id, name: d.truckId || doc.id, zones: [zone],
-            lat: d.lat, lng: d.lng, updatedAt: d.updatedAt,
-            hasActiveRun: prev.hasActiveRun || false
-          });
-          ensureTruckRunListener(doc.id);
-          seen.add(doc.id);
+            Object.keys(drivers).forEach(driverId => {
+                const d = drivers[driverId];
+                if (!userZones.has(d.zoneId)) return;
+                if (d.isWorking !== true) return;
+
+                activeDriverIds.add(driverId);
+                
+                const prevTs = prevTruckTimestamps.get(driverId);
+                let clientTime = 0;
+                
+                // ถ้ารอบนี้มีข้อมูลเข้ามา แล้ว timestamp ไม่ซ้ำเดิม แสดงว่าบอร์ดทำงานอยู่
+                if (d.lastUpdate !== prevTs) {
+                    // อัปเดต timestamp ล่าสุด
+                    prevTruckTimestamps.set(driverId, d.lastUpdate);
+                    
+                    // เช็คอายุข้อมูล (ป้องกันเคสข้อมูลค้างใน DB เก่ามากๆ)
+                    if ((Date.now() - d.lastUpdate) < MAX_DATA_AGE) {
+                        clientTime = Date.now();
+                    }
+                } else {
+                    // ถ้า timestamp ซ้ำเดิม = ข้อมูลไม่ขยับ = อาจจะค้าง
+                    // ให้ใช้เวลา lastSeenClientTime เดิมที่มีอยู่ (ถ้ามี) หรือ 0
+                    const oldInfo = deviceLastSeen.get(driverId);
+                    if (oldInfo) clientTime = oldInfo.lastSeenClientTime;
+                }
+
+                const info = { type: 'truck', lastSeenClientTime: clientTime };
+                deviceLastSeen.set(driverId, info);
+                
+                const isOnline = (Date.now() - clientTime) < OFFLINE_TIMEOUT;
+                updateVisuals(driverId, isOnline, info);
+
+                if (d.lat && d.lng) {
+                    if (truckMarkers.has(driverId)) {
+                        const marker = truckMarkers.get(driverId);
+                        marker.setLatLng([d.lat, d.lng]);
+                        marker.setPopupContent(`
+                            <div class="custom-popup-body">
+                                <b>รถ:</b> ${d.truckId}<br><b>คนขับ:</b> ${d.driverName}<br>
+                                <span style="font-size:10px; color:#64748b;">Zone: ${d.zoneId}</span>
+                            </div>`);
+                    } else {
+                        const m = L.marker([d.lat, d.lng], { icon: buildTruckIcon(isOnline) }).addTo(map)
+                            .bindPopup(`<div class="custom-popup-body"><b>รถ:</b> ${d.truckId}<br><b>คนขับ:</b> ${d.driverName}<br><span style="font-size:10px; color:#64748b;">Zone: ${d.zoneId}</span></div>`, { autoPan: false });
+                        m.on("click", () => selectTruck(driverId, d.lat, d.lng));
+                        truckMarkers.set(driverId, m);
+                    }
+                    if (selectedTruckId === driverId) map.panTo([d.lat, d.lng], { animate: true, duration: 1.0 });
+                }
+
+                const item = document.createElement("div");
+                item.className = `list-card truck-card ${selectedTruckId === driverId ? 'active' : ''}`;
+                item.id = `truck-card-${driverId}`;
+                item.onclick = () => selectTruck(driverId, d.lat, d.lng);
+                
+                item.innerHTML = `
+                   <div class="card-icon" style="color:#f43f5e; background:#fff1f2;"><i class="ri-truck-fill"></i></div>
+                   <div class="card-info"><h4>${d.driverName} (${d.truckId})</h4><p>กำลังทำงาน • ${d.zoneId}</p></div>
+                   <div id="truck-dot-${driverId}" class="status-dot" style="position:static; background:${isOnline?'#22c55e':'#94a3b8'}; box-shadow: ${isOnline?'0 0 0 2px rgba(34, 197, 94, 0.2)':'none'};"></div>`;
+                list.appendChild(item);
+                count++;
+            });
+
+            for (const [id, marker] of truckMarkers) {
+                if (!activeDriverIds.has(id)) {
+                    map.removeLayer(marker);
+                    truckMarkers.delete(id);
+                }
+            }
+            $("truckCount").innerText = count;
+            $("truckStatus").innerText = count === 0 ? "ไม่มีรถออนไลน์ในขณะนี้" : "";
         });
-
-        // Cleanup missing
-        for (const [id] of truckStore) if (!seen.has(id)) { truckStore.delete(id); if (truckMarkers.has(id)) map.removeLayer(truckMarkers.get(id)); }
-        renderTrucks();
-      });
-    }
-
-    function renderTrucks() {
-      const list = $("truckList"); list.innerHTML = "";
-      let count = 0;
-      truckStore.forEach(t => {
-        if (!isTruckOnline(t)) {
-          if (truckMarkers.has(t.id)) { map.removeLayer(truckMarkers.get(t.id)); truckMarkers.delete(t.id); }
-          return;
-        }
-
-        // Update Marker
-        if (t.lat && t.lng) {
-          if (truckMarkers.has(t.id)) truckMarkers.get(t.id).setLatLng([t.lat, t.lng]);
-          else {
-            const m = L.marker([t.lat, t.lng], { icon: buildTruckIcon() }).addTo(map)
-              .bindPopup(`<div class="custom-popup-body"><b>รถ:</b> ${t.name}</div>`);
-            m.on("click", () => focusMap(t.lat, t.lng));
-            truckMarkers.set(t.id, m);
-          }
-        }
-
-        // List Item
-        const item = document.createElement("div"); item.className = "list-card";
-        item.onclick = () => focusMap(t.lat, t.lng);
-        item.innerHTML = `
-                    <div class="card-icon" style="color:#f43f5e; background:#fff1f2;"><i class="ri-truck-fill"></i></div>
-                    <div class="card-info"><h4>${t.name}</h4><p>กำลังปฏิบัติงาน</p></div>
-                `;
-        list.appendChild(item); count++;
-      });
-      $("truckCount").innerText = count;
-      $("truckStatus").innerText = count === 0 ? "ไม่มีรถออนไลน์ในขณะนี้" : "";
-    }
-
-    // --- Bins Logic (FULL) ---
-    firestore.collectionGroup("bin_data").where("ownerUsername", "==", currentUser.username).onSnapshot(async snapshot => {
-      const bounds = []; $("binList").innerHTML = ""; let count = 0;
-
-      const docs = await Promise.all(snapshot.docs.map(async doc => {
-        const d = doc.data();
-        let { lat, lng, zone, binId, details, fillLevel } = d;
-
-        // Resolve Linked Doc
-        if ((!lat || !lng) && d.binDocPath) {
-          const linked = await fetchLinkedBinDoc(d.binDocPath);
-          if (linked) {
-            lat = linked.lat; lng = linked.lng;
-            zone = zone || linked.zone; binId = binId || linked.binId;
-            fillLevel = fillLevel ?? linked.fillLevel;
-          }
-        }
-        return { id: doc.ref.path, lat: parseFloat(lat), lng: parseFloat(lng), zone, binId, details, fillLevel };
-      }));
-
-      docs.forEach(data => {
-        if (data.zone) userZones.add(data.zone);
-        if (isNaN(data.lat) || isNaN(data.lng)) return;
-
-        // List Item
-        const item = document.createElement("div"); item.className = "list-card";
-        item.onclick = () => focusMap(data.lat, data.lng, data.id);
-        item.innerHTML = `
-                    <div class="card-icon"><i class="ri-delete-bin-6-line"></i></div>
-                    <div class="card-info"><h4>${data.binId} (${data.zone})</h4><p>${data.details || "ไม่มีรายละเอียด"}</p></div>
-                    <div class="status-dot" style="background:${getFillColor(data.fillLevel)}"></div>
-                `;
-        $("binList").appendChild(item); count++;
-
-        // Map Marker
-        bounds.push([data.lat, data.lng]);
-        const popup = `
-                    <div class="custom-popup-header"><i class="ri-map-pin-line"></i> ${data.binId}</div>
-                    <div class="custom-popup-body">
-                        <b>เขต:</b> ${data.zone}<br>
-                        <b>ระดับ:</b> ${data.fillLevel !== undefined && data.fillLevel !== null ? data.fillLevel + "%" : "?"}<br>
-                        <span style="color:#64748b; font-size:11px">${data.details || ""}</span>
-                    </div>
-                `;
-        if (binMarkers.has(data.id)) {
-          binMarkers.get(data.id).setLatLng([data.lat, data.lng]).setIcon(buildBinIcon(data)).setPopupContent(popup);
-        } else {
-          const m = L.marker([data.lat, data.lng], { icon: buildBinIcon(data) }).addTo(map).bindPopup(popup);
-          binMarkers.set(data.id, m);
-        }
-      });
-
-      $("binCount").innerText = count;
-      if (bounds.length > 0 && !window.zoomed) { map.fitBounds(bounds, { padding: [50, 50] }); window.zoomed = true; }
-      restartTruckListener();
-    });
-
-    function logout() {
-      if (confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-        localStorage.removeItem("sw_user");
-        window.location.href = "../index.html";
-      }
     }
   </script>
 </body>
-
 </html>

@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Smart Waste - เข้าสู่ระบบ</title>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="../i18n/lang.js" defer></script>
+  <script src="../i18n/th.js" defer></script>
+  <script src="../i18n/en.js" defer></script>
+  <script src="../i18n/ms.js" defer></script>
+
+  <style>
+    /* --- CSS Core Theme --- */
+    :root {
+      --primary: #10b981;
+      --primary-dark: #047857;
+      --accent: #0ea5e9;
+      --bg-color: #f0fdf4;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --glass-bg: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.8);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Prompt", sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    input { user-select: text; }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+      /* Background Fixed แก้ปัญหาพื้นหลังหลุดในมือถือ */
+      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+      background-attachment: fixed;
+      background-color: var(--bg-color);
+      position: relative;
+    }
+
+    /* Fixed Background Blobs */
+    .bg-shape {
+      position: absolute; border-radius: 50%; filter: blur(80px);
+      z-index: 0; opacity: 0.6; animation: blobFloat 10s infinite alternate; pointer-events: none;
+    }
+    .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #34d399; }
+    .blob-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #38bdf8; animation-delay: -2s; }
+    .blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: #2dd4bf; animation-delay: -5s; }
+    @keyframes blobFloat { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, 50px) scale(1.1); } }
+
+    /* Scroll Container */
+    .scroll-container {
+      width: 100%; min-height: 100vh;
+      position: relative; z-index: 10; 
+      display: flex; justify-content: center; align-items: center;
+      padding: 40px 20px;
+    }
+    .content-wrapper {
+      width: 100%; max-width: 1100px; display: grid; grid-template-columns: 1.1fr 1fr;
+      gap: 3rem; align-items: center; margin: auto 0;
+    }
+
+    /* --- Fixed UI Elements --- */
+    
+    /* Mobile Logo (Fixed Top Left) */
+    .mobile-logo-fixed {
+      display: none; position: absolute; top: 20px; left: 20px; z-index: 50;
+      text-decoration: none;
+    }
+    .mobile-logo-fixed .brand-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
+      color: var(--primary-dark); padding: 8px 16px; border-radius: 50px; 
+      font-weight: 600; font-size: 14px; border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s;
+    }
+    .mobile-logo-fixed:active .brand-badge { transform: scale(0.95); }
+    .mobile-logo-fixed .brand-badge i { font-size: 1.2rem; color: var(--primary); }
+
+    /* Desktop Back Button (Circle Icon Only) - Top Left */
+    .btn-back-desktop {
+      position: absolute; top: 20px; left: 20px; z-index: 50;
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+    }
+    .btn-back-desktop:hover {
+      background: white; color: var(--primary);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15); transform: translateY(-2px);
+    }
+
+    /* Lang Switcher (Right Top) */
+    .lang-switcher { position: absolute; top: 20px; right: 20px; z-index: 50; }
+    .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+    .icon-btn img { width: 22px; height: 22px; }
+    .lang-menu { position: absolute; top: 50px; right: 0; background: white; padding: 6px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 140px; }
+    .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
+    .lang-menu button { background: transparent; border: none; padding: 10px; text-align: left; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .lang-menu button:hover { background: #f1f5f9; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent); font-weight: 600; }
+
+    /* --- Content Styles --- */
+    .left-panel { padding: 10px; animation: slideInLeft 0.8s ease-out; }
+    .left-brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(16, 185, 129, 0.15); color: var(--primary-dark);
+      padding: 6px 14px; border-radius: 50px; font-weight: 600; font-size: 13px;
+      margin-bottom: 15px; border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .left-panel h1 { 
+      font-size: 3.2rem; line-height: 1.1; font-weight: 800;
+      background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+      background-clip: text; -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; margin-bottom: 1rem;
+    }
+    .left-panel p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; opacity: 0.9; }
+
+    .login-card {
+      width: 100%; max-width: 420px;
+      background: var(--glass-bg); backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border); border-radius: 28px; padding: 2.5rem;
+      box-shadow: var(--shadow-lg); animation: slideInUp 0.8s ease-out;
+    }
+    .login-header { text-align: center; margin-bottom: 1.8rem; }
+    .login-header h2 { font-size: 1.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem; }
+    .login-header p { color: var(--text-muted); font-size: 0.9rem; }
+
+    /* Inputs & Icons */
+    .form-group { margin-bottom: 1rem; position: relative; }
+    .input-wrapper { position: relative; margin-bottom: 5px; }
+    .input-icon {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      color: #94a3b8; font-size: 1.2rem; z-index: 5; pointer-events: none;
+    }
+    .show-pass {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      color: #cbd5e1; font-size: 1.2rem; z-index: 5; cursor: pointer; transition: color 0.2s;
+    }
+    .show-pass:hover { color: var(--primary); }
+
+    input[type="text"], input[type="password"] {
+      width: 100%; height: 50px; 
+      padding: 0 48px 0 48px; 
+      border: 2px solid transparent; background: #f8fafc; border-radius: 14px;
+      font-size: 1rem; color: var(--text-main); transition: 0.2s;
+      position: relative; z-index: 1;
+    }
+    input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+    input:focus + .input-icon { color: var(--primary); }
+
+    .form-options {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;
+    }
+    .checkbox-container { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .checkbox-container input { accent-color: var(--primary); width: 18px; height: 18px; }
+    .forgot-link { color: var(--text-muted); text-decoration: none; cursor: pointer; }
+    .forgot-link:hover { color: var(--primary); text-decoration: underline; }
+
+    .btn-submit {
+      width: 100%; height: 54px; 
+      background: linear-gradient(90deg, #10b981, #059669); color: white;
+      border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 600;
+      cursor: pointer; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.25);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.1s;
+    }
+    .btn-submit:active { transform: scale(0.97); }
+    .btn-submit:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+    .btn-locked { background: #64748b !important; }
+
+    .form-footer { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted); }
+    .link-signup { color: var(--primary-dark); font-weight: 700; cursor: pointer; margin-left: 5px; text-decoration: none; }
+    
+    #status { margin-top: 1rem; text-align: center; font-size: 0.9rem; border-radius: 12px; padding: 5px; }
+    .err { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 10px !important; }
+    .ok { color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 10px !important; }
+
+    /* SweetAlert Custom Close Button */
+    div:where(.swal2-popup) { overflow: visible !important; padding: 30px 20px !important; }
+    div:where(.swal2-close) {
+      background: white !important; color: #ef4444 !important; border: 2px solid #ef4444 !important; border-radius: 50% !important;
+      width: 35px !important; height: 35px !important; font-size: 24px !important;
+      position: absolute !important; top: -15px !important; right: -10px !important;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+      display: flex !important; align-items: center !important; justify-content: center !important;
+      outline: none !important; z-index: 999;
+    }
+    div:where(.swal2-close):hover { background: #ef4444 !important; color: white !important; transform: scale(1.1); }
+
+    /* --- 📱 MOBILE OPTIMIZATIONS --- */
+    @media (max-width: 900px) {
+      .scroll-container { display: flex; padding: 80px 20px 40px 20px; align-items: flex-start; }
+      .mobile-logo-fixed { display: flex; } /* Show Mobile Logo */
+      .btn-back-desktop { display: none; } /* Hide Desktop Back Btn */
+      .content-wrapper { display: block; width: 100%; }
+      .left-panel { display: none; } 
+
+      .login-card {
+        width: 100%; max-width: 100%;
+        padding: 30px 25px;
+        background: #ffffff;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+      }
+      
+      input[type="text"], input[type="password"] { font-size: 16px !important; height: 52px; background: #f1f5f9; }
+      .btn-submit { height: 56px; font-size: 1.15rem; }
+    }
+
+    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+
+<body>
+  <div class="bg-shape blob-1"></div>
+  <div class="bg-shape blob-2"></div>
+  <div class="bg-shape blob-3"></div>
+
+  <a href="index.html" class="mobile-logo-fixed">
+    <div class="brand-badge"><i class="ri-recycle-line"></i> Smart Waste</div>
+  </a>
+
+  <a href="index.html" class="btn-back-desktop" title="กลับหน้าหลัก">
+    <i class="ri-arrow-left-line"></i>
+  </a>
+
+  <div class="lang-switcher">
+    <button class="icon-btn" id="langIconBtn" type="button">
+      <img src="../Admin/images/lang-icon.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/197/197374.png'" alt="Language">
+    </button>
+    <div class="lang-menu" id="langMenu">
+      <button type="button" data-lang="th">🇹🇭 ไทย</button>
+      <button type="button" data-lang="en">🇬🇧 English</button>
+      <button type="button" data-lang="ms">🇲🇾 Bahasa Melayu</button>
+    </div>
+  </div>
+
+  <div class="scroll-container">
+    <div class="content-wrapper">
+      
+      <div class="left-panel">
+        <div class="left-brand"><i class="ri-recycle-line"></i> Smart Waste</div>
+        <h1 id="txtWelcomeSubtitle">Waste Tracking<br>Revolution</h1>
+        <p id="txtWelcomeDescription">ระบบติดตามและบริหารจัดการขยะอัจฉริยะ ช่วยให้เมืองสะอาดขึ้นด้วยเทคโนโลยี IoT</p>
+      </div>
+
+      <div class="login-card">
+        <div class="login-header">
+          <h2 id="txtLoginTitle">เข้าสู่ระบบ</h2>
+          <p id="txtLoginHint">เข้าสู่ระบบเพื่อจัดการข้อมูลของคุณ</p>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <div class="input-wrapper">
+              <i class="ri-user-smile-line input-icon"></i>
+              <input id="username" name="username" type="text" placeholder="ชื่อผู้ใช้งาน" autocomplete="username" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="input-wrapper">
+              <i class="ri-lock-2-line input-icon"></i>
+              <input id="password" name="password" type="password" placeholder="รหัสผ่าน" autocomplete="current-password" required />
+              <i class="ri-eye-off-line show-pass" id="togglePassIcon"></i>
+            </div>
+          </div>
+
+          <div class="form-options">
+            <label class="checkbox-container">
+              <input type="checkbox" id="rememberMe">
+              <span id="txtRememberMe">จดจำฉันไว้</span>
+            </label>
+            <span class="forgot-link" id="forgotPassBtn">ลืมรหัสผ่าน?</span>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">
+            เข้าสู่ระบบ <i class="ri-arrow-right-line"></i>
+          </button>
+
+          <div class="form-footer">
+            <span id="txtNoAccount">ยังไม่มีบัญชี?</span>
+            <span class="link-signup" id="registerBtn">ลงทะเบียน</span>
+          </div>
+        </form>
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const loginForm = $("loginForm");
+    const statusEl = $("status");
+    const togglePassIcon = $("togglePassIcon");
+    const passwordInput = $("password");
+    const usernameInput = $("username");
+    const submitBtn = $("submitBtn");
+    const forgotPassBtn = $("forgotPassBtn");
+    const rememberMeCheckbox = $("rememberMe"); // Checkbox Variable
+    let countdownInterval;
+
+    const routes = { 0: "../Admin/addBin.html", 1: "../Driver/Driver.html", 2: "../User/home.html" };
+
+    // --- Firebase Config ---
+    var firebaseConfig = {
+      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+      authDomain: "smart-waste2568.firebaseapp.com",
+      projectId: "smart-waste2568",
+      storageBucket: "smart-waste2568.firebasestorage.app",
+      messagingSenderId: "122699752010",
+      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // --- ✅ Auto Fill (Remember Me) ---
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedUsername = localStorage.getItem("sw_remember_username");
+        if (savedUsername) {
+            usernameInput.value = savedUsername;
+            rememberMeCheckbox.checked = true;
+        }
+        try { setTimeout(applyLanguage, 100); } catch(e) {}
+    });
+
+    // --- Helpers ---
+    togglePassIcon.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      if(type === "text") {
+        togglePassIcon.classList.replace("ri-eye-off-line", "ri-eye-line");
+        togglePassIcon.style.color = "#10b981";
+      } else {
+        togglePassIcon.classList.replace("ri-eye-line", "ri-eye-off-line");
+        togglePassIcon.style.color = "#cbd5e1";
+      }
+    });
+
+    function setStatus(text, type) {
+      statusEl.innerHTML = text || "";
+      statusEl.className = type || "";
+    }
+
+    async function hashPassword(password) {
+      const msgUint8 = new TextEncoder().encode(password);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function resetLockState() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = null;
+      usernameInput.disabled = false;
+      passwordInput.disabled = false;
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("btn-locked");
+      submitBtn.innerHTML = typeof tr === 'function' ? tr("btnLogin") : 'Login';
+      setStatus("", "");
+    }
+
+    function startCountdown(lockDate) {
+      if (countdownInterval) clearInterval(countdownInterval);
+      passwordInput.disabled = true;
+      submitBtn.disabled = true;
+      submitBtn.classList.add("btn-locked");
+      submitBtn.innerHTML = typeof tr === 'function' ? tr("statusTempLocked") : 'Locked';
+
+      const updateTimer = () => {
+        if (!submitBtn.classList.contains("btn-locked")) { clearInterval(countdownInterval); return; }
+        const now = new Date().getTime();
+        const distance = lockDate.toDate().getTime() - now;
+        if (distance < 0) {
+          resetLockState();
+          setStatus(typeof tr === 'function' ? tr("statusUnlocked") : 'Unlocked', "ok");
+          const currentUsername = usernameInput.value.trim();
+          if (currentUsername) {
+            db.collection("users").doc(currentUsername).update({ lockUntil: firebase.firestore.FieldValue.delete(), failedAttempts: 0 }).catch(e => console.log("Auto unlock failed", e));
+          }
+          return;
+        }
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setStatus(`<i class="ri-time-line"></i> Locked. Wait: <b>${hours}h ${minutes}m ${seconds}s</b>`, "err");
+      };
+      updateTimer();
+      countdownInterval = setInterval(updateTimer, 1000);
+    }
+
+    usernameInput.addEventListener("input", () => resetLockState());
+    usernameInput.addEventListener("blur", async () => {
+      const username = usernameInput.value.trim();
+      if (!username) return;
+      try {
+        const qSnap = await db.collection("users").where("username", "==", username).limit(1).get();
+        if (qSnap.empty) { resetLockState(); return; }
+        const userData = qSnap.docs[0].data();
+        if (userData.lockUntil && new Date().getTime() < userData.lockUntil.toDate().getTime()) {
+          startCountdown(userData.lockUntil);
+        } else { resetLockState(); }
+      } catch (e) { console.warn("Check lock error", e); resetLockState(); }
+    });
+
+    // --- Forgot Password ---
+    forgotPassBtn.addEventListener("click", async () => {
+      const username = usernameInput.value.trim();
+      if (username) {
+        const snap = await db.collection("users").doc(username).get();
+        if (snap.exists && snap.data().status === 1) {
+          return Swal.fire({ icon: "info", title: tr("forgotDriverTitle"), text: tr("forgotDriverHint"), confirmButtonText: tr("btnOk") });
+        }
+      }
+      const { value: uname } = await Swal.fire({
+        title: `<span style="font-size: 20px; color: #047857;">${tr("forgotTitle")}</span>`,
+        html: `<div class="swal-custom-content"><p style="color:#64748b;font-size:14px;margin-bottom:15px;">${tr("forgotInputHint")}</p><input id="swal-input-username" class="swal2-input" placeholder="Username" style="margin: 0 auto; width: 80%;"></div>`,
+        confirmButtonText: tr("forgotSendLink"),
+        showCloseButton: true,
+        customClass: { popup: 'swal-glass' },
+        preConfirm: () => {
+          const v = document.getElementById('swal-input-username').value;
+          if (!v) Swal.showValidationMessage(tr("forgotInputRequired"));
+          return v;
+        }
+      });
+      if (!uname) return;
+      try {
+        const doc = await db.collection("users").doc(uname.trim()).get();
+        if (!doc.exists) throw new Error("ไม่พบชื่อผู้ใช้นี้");
+        const email = doc.data().email;
+        if (!email) throw new Error("บัญชีนี้ไม่ได้ผูกอีเมล");
+        await auth.sendPasswordResetEmail(email);
+        Swal.fire(tr("success"), `${tr("forgotSendSuccess")} ${email}`, "success");
+      } catch (err) {
+        let msg = err.message;
+        if(err.message.includes("ไม่พบ")) msg = tr("errUserNotFound");
+        if(err.message.includes("ไม่ได้ผูก")) msg = tr("errNoEmail");
+        Swal.fire(tr("error"), msg, "error");
+      }
+    });
+
+    // --- Main Login ---
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+      if (!username || !password) return setStatus(tr("errFillAll"), "err");
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Checking...';
+      setStatus("", "");
+
+      try {
+        const qSnap = await db.collection("users").where("username", "==", username).limit(1).get();
+        if (qSnap.empty) throw new Error(tr("errUserNotFound"));
+
+        const doc = qSnap.docs[0];
+        const userRef = doc.ref;
+        const userData = doc.data();
+
+        if (userData.lockUntil && new Date().getTime() < userData.lockUntil.toDate().getTime()) {
+          startCountdown(userData.lockUntil); throw new Error("ล็อกบัญชีชั่วคราว");
+        }
+
+        if (userData.status === 1) {
+          const inputHash = await hashPassword(password);
+          if (inputHash !== userData.passwordHash) throw new Error(tr("errWrongPassword"));
+          
+          // Save Remember Me
+          if (rememberMeCheckbox.checked) localStorage.setItem("sw_remember_username", username);
+          else localStorage.removeItem("sw_remember_username");
+
+          localStorage.setItem("sw_user", JSON.stringify({ username, status: 1, fullName: userData.fullName, driverId: userData.driverId, zoneId: userData.zoneId }));
+          setStatus(tr("loginSuccessDriver"), "ok");
+          return setTimeout(() => { location.href = "../Driver/Driver.html"; }, 800);
+        }
+
+        try {
+          const cred = await auth.signInWithEmailAndPassword(userData.email, password);
+          if (userData.failedAttempts > 0 || userData.lockUntil) {
+            await userRef.update({ failedAttempts: 0, lockUntil: firebase.firestore.FieldValue.delete() });
+          }
+          
+          // Save Remember Me
+          if (rememberMeCheckbox.checked) localStorage.setItem("sw_remember_username", username);
+          else localStorage.removeItem("sw_remember_username");
+
+          const statusValue = typeof userData.status === "number" ? userData.status : 2;
+          localStorage.setItem("sw_user", JSON.stringify({ uid: cred.user.uid, username, status: statusValue, fullName: userData.fullName || username }));
+          setStatus(tr("loginSuccess"), "ok");
+          setTimeout(() => { location.href = routes[statusValue] || routes[2]; }, 1000);
+        } catch (authErr) {
+          if (authErr.code === 'auth/wrong-password' || authErr.message.includes('INVALID_LOGIN_CREDENTIALS')) {
+            let currentFail = (userData.failedAttempts || 0) + 1;
+            if (currentFail >= 5) {
+              const lockDate = new Date(); lockDate.setMinutes(lockDate.getMinutes() + 15);
+              await userRef.update({ failedAttempts: currentFail, lockUntil: lockDate });
+              startCountdown(firebase.firestore.Timestamp.fromDate(lockDate));
+              throw new Error(tr("errTempLocked"));
+            } else {
+              await userRef.update({ failedAttempts: currentFail });
+              throw new Error(`${tr("errWrongPassword")} (${currentFail}/5)`);
+            }
+          }
+          throw authErr;
+        }
+      } catch (err) {
+        if (err.message === "ล็อกบัญชีชั่วคราว") return;
+        let msg = err.message;
+        if (msg.includes('INVALID_LOGIN_CREDENTIALS')) msg = tr("errWrongPassword");
+        if (err.code === 'auth/user-not-found') msg = tr("errUserNotFound");
+        setStatus(msg || tr("errorGeneric"), "err");
+        if (!submitBtn.classList.contains("btn-locked")) { submitBtn.disabled = false; submitBtn.innerHTML = tr("btnLogin"); }
+      }
+    });
+
+    $("registerBtn").addEventListener("click", (e) => {
+      e.preventDefault(); 
+      const card = document.querySelector('.login-card');
+      card.style.transform = 'translateY(20px)';
+      card.style.opacity = '0';
+      setTimeout(() => location.href = "register.html", 300);
+    });
+
+    // --- Language Logic ---
+    const langIconBtn = document.getElementById("langIconBtn");
+    const langMenu = document.getElementById("langMenu");
+    let currentLang = localStorage.getItem("sw_lang") || "th";
+    
+    const fallbackDict = {
+      th: { pageTitle_login: "เข้าสู่ระบบ", welcomeTitle: "Smart Waste System", welcomeSubtitle: "Waste Tracking Revolution", welcomeDescription: "ระบบติดตามและบริหารจัดการขยะอัจฉริยะ...", loginTitle: "เข้าสู่ระบบ", loginHint: "เข้าสู่ระบบเพื่อจัดการข้อมูลของคุณ", loginUsernamePh: "ชื่อผู้ใช้งาน", loginPasswordPh: "รหัสผ่าน", rememberMe: "จดจำฉันไว้", forgotPassword: "ลืมรหัสผ่าน?", btnLogin: "เข้าสู่ระบบ", noAccount: "ยังไม่มีบัญชี?", signup: "ลงทะเบียน", errFillAll: "กรุณากรอกข้อมูลให้ครบ", errUserNotFound: "ไม่พบชื่อผู้ใช้นี้", errWrongPassword: "รหัสผ่านไม่ถูกต้อง", loginSuccess: "เข้าสู่ระบบสำเร็จ!", btnBack: "กลับหน้าหลัก" },
+      en: { pageTitle_login: "Login", welcomeTitle: "Smart Waste System", welcomeSubtitle: "Waste Tracking Revolution", welcomeDescription: "IoT based waste management system.", loginTitle: "Login", loginHint: "Login to manage your data", loginUsernamePh: "Username", loginPasswordPh: "Password", rememberMe: "Remember Me", forgotPassword: "Forgot Password?", btnLogin: "Sign In", noAccount: "No account yet?", signup: "Sign Up", errFillAll: "Please fill all fields", errUserNotFound: "User not found", errWrongPassword: "Wrong password", loginSuccess: "Login Successful!", btnBack: "Back Home" },
+      ms: { pageTitle_login: "Log Masuk", welcomeTitle: "Sistem Smart Waste", welcomeSubtitle: "Revolusi Penjejakan Sisa", welcomeDescription: "Sistem pengurusan sisa berasaskan IoT.", loginTitle: "Log Masuk", loginHint: "Log masuk untuk mengurus data anda", loginUsernamePh: "Nama Pengguna", loginPasswordPh: "Kata Laluan", rememberMe: "Ingat Saya", forgotPassword: "Lupa Kata Laluan?", btnLogin: "Log Masuk", noAccount: "Tiada akaun lagi?", signup: "Daftar", errFillAll: "Sila isi semua ruangan", errUserNotFound: "Pengguna tidak ditemui", errWrongPassword: "Kata laluan salah", loginSuccess: "Log Masuk Berjaya!", btnBack: "Kembali" }
+    };
+
+    function tr(key) { 
+      const dict = (window.SW_Translations && window.SW_Translations[currentLang]) || fallbackDict[currentLang] || fallbackDict.en; 
+      return dict[key] || fallbackDict.th[key] || key; 
+    }
+
+    function applyLanguage() {
+      document.title = tr("pageTitle_login");
+      setText("txtWelcomeSubtitle", tr("welcomeSubtitle") || "Waste Tracking Revolution");
+      setText("txtWelcomeDescription", tr("welcomeDescription"));
+      setText("txtLoginTitle", tr("loginTitle"));
+      setText("txtLoginHint", tr("loginHint"));
+      setPlaceholder("username", tr("loginUsernamePh"));
+      setPlaceholder("password", tr("loginPasswordPh"));
+      setText("txtRememberMe", tr("rememberMe"));
+      setText("forgotPassBtn", tr("forgotPassword"));
+      if(!submitBtn.disabled) setText("submitBtn", tr("btnLogin"));
+      setText("txtNoAccount", tr("noAccount"));
+      setText("registerBtn", tr("signup"));
+      
+      langMenu.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.lang === currentLang));
+    }
+
+    function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+    function setPlaceholder(id, value) { const el = document.getElementById(id); if (el) el.placeholder = value; }
+
+    langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
+    langMenu.addEventListener("click", (e) => { 
+      if(e.target.tagName === "BUTTON") { 
+        currentLang = e.target.dataset.lang; 
+        localStorage.setItem("sw_lang", currentLang); 
+        applyLanguage(); 
+        langMenu.classList.remove("show"); 
+      } 
+    });
+
+    try { setTimeout(applyLanguage, 100); } catch(e) {}
+  </script>
+</body>
+</html>

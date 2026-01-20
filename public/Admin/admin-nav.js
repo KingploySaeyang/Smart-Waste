@@ -1,20 +1,26 @@
-(()=>{
+(() => {
   const MENU_ITEMS = [
     { id: "register", href: "addBin.html" },
     { id: "addDriver", href: "addDriver.html" },
     { id: "schedule", href: "schedule.html" },
     { id: "truck", href: "truck.html" },
-    { id: "report", href: "reports.html" }
+    { id: "report", href: "report.html" }
   ];
 
   const NAV_LABELS = {
     th: {
       register: "ลงทะเบียนถังขยะ",
       addDriver: "พนักงานขับรถ",
-      schedule: "ตารางเก็บขยะ",
-      truck: "ตำแหน่งรถเก็บขยะ",
+      schedule: "ตารางขับรถขยะ",
+      truck: "ตำแหน่งรถขยะ",
       report: "รายงานย้อนหลัง",
-      logout: "ออกจากระบบ"
+      logout: "ออกจากระบบ",
+
+      // 🔽 SweetAlert Logout
+      logoutTitle: "ออกจากระบบ?",
+      logoutText: "คุณต้องการออกจากระบบใช่หรือไม่",
+      logoutConfirm: "ออกจากระบบ",
+      logoutCancel: "ยกเลิก"
     },
     en: {
       register: "Register Bin",
@@ -22,7 +28,13 @@
       schedule: "Collection Schedule",
       truck: "Truck Tracking",
       report: "Reports",
-      logout: "Logout"
+      logout: "Logout",
+
+      // 🔽 SweetAlert Logout
+      logoutTitle: "Sign out?",
+      logoutText: "Do you want to sign out?",
+      logoutConfirm: "Logout",
+      logoutCancel: "Cancel"
     },
     ms: {
       register: "Daftar Tong",
@@ -30,7 +42,13 @@
       schedule: "Jadual Kutipan",
       truck: "Lokasi Lori",
       report: "Laporan",
-      logout: "Keluar"
+      logout: "Keluar",
+
+      // 🔽 SweetAlert Logout
+      logoutTitle: "Log keluar?",
+      logoutText: "Adakah anda mahu log keluar?",
+      logoutConfirm: "Log keluar",
+      logoutCancel: "Batal"
     }
   };
 
@@ -45,14 +63,32 @@
     btn.className = "sw-logout-btn";
     btn.textContent = labels.logout || "Logout";
     btn.onclick = () => {
-      if (window.SWAuth && typeof window.SWAuth.logout === "function") {
-        window.SWAuth.logout();
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          title: labels.logoutTitle,
+          text: labels.logoutText,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: labels.logoutConfirm,
+          cancelButtonText: labels.logoutCancel,
+          confirmButtonColor: "#dc2626",
+          cancelButtonColor: "#94a3b8",
+          reverseButtons: true
+        }).then(r => {
+          if (r.isConfirmed) {
+            localStorage.removeItem("sw_user");
+            location.href = "../Login/login.html";
+          }
+        });
+      } else {
+        localStorage.removeItem("sw_user");
+        location.href = "../Login/login.html";
       }
     };
     return btn;
   }
 
-  function buildMenus(){
+  function buildMenus() {
     document.querySelectorAll("[data-admin-menu]").forEach(nav => {
       const active = nav.dataset.active || "home";
       const links = MENU_ITEMS.map(item => {
@@ -64,7 +100,7 @@
     applyLabels(currentLang);
   }
 
-  function applyLabels(lang){
+  function applyLabels(lang) {
     currentLang = lang || "th";
     const labels = NAV_LABELS[currentLang] || NAV_LABELS.th;
     document.querySelectorAll("[data-admin-menu] a[data-nav]").forEach(link => {
@@ -81,17 +117,17 @@
   document.addEventListener("DOMContentLoaded", buildMenus);
 
   window.AdminNav = {
-    setLanguage(lang){
+    setLanguage(lang) {
       if (LangState && typeof LangState.setLang === "function") {
         LangState.setLang(lang);
         currentLang = LangState.getLang();
       } else {
         currentLang = lang || currentLang;
-        try { localStorage.setItem("sw_lang", currentLang); } catch (_) {}
+        try { localStorage.setItem("sw_lang", currentLang); } catch (_) { }
       }
       applyLabels(currentLang);
     },
-    getLanguage(){
+    getLanguage() {
       return currentLang;
     }
   };

@@ -1,1097 +1,926 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Smart Waste - รายงานย้อนหลัง</title>
-
-  <!-- Firebase v8 -->
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
   <script src="../Login/auth.js"></script>
   <script src="admin-lang.js"></script>
   <script src="admin-user.js" defer></script>
   <script src="admin-nav.js" defer></script>
-  <script>
-    const currentUser = window.SWAuth.requireAuth([0]);
-  </script>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="admin-auth-bootstrap.js" defer></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+    /* ===== Theme Variables ===== */
+    :root {
+      --primary: #059669; --primary-dark: #064e3b; --primary-light: #34d399;
+      --bg-body: #f0fdf4; --bg-sidebar-start: #064e3b; --bg-sidebar-end: #047857;
+      --surface: #ffffff; --text-main: #1e293b; --text-muted: #64748b; --border: #e2e8f0;
+      --shadow-sm: 0 1px 3px rgba(5, 150, 105, 0.1); --shadow-md: 0 10px 30px -10px rgba(5, 150, 105, 0.15);
+      --radius: 20px;
     }
 
-    body {
-      display: flex;
-      min-height: 100vh;
-      background: #f5f6fa;
-      flex-direction: row;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Prompt", sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { display: flex; min-height: 100vh; background-color: var(--bg-body); color: var(--text-main); overflow-x: hidden; }
+    
     /* Sidebar */
-    .sidebar {
-      width: 250px;
-      background: #2f3640;
-      color: #f5f6fa;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      padding-top: 20px;
-      transition: .3s;
+    .sidebar { width: 260px; background: linear-gradient(180deg, var(--bg-sidebar-start) 0%, var(--bg-sidebar-end) 100%); color: #fff; display: flex; flex-direction: column; padding: 30px 20px; position: fixed; height: 100vh; z-index: 1000; transition: transform 0.3s; left:0; top:0; }
+    .sidebar h2 { text-align: center; color: #fff; margin-bottom: 40px; font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sidebar h2 i { color: var(--primary-light); font-size: 32px; }
+    .menu { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
+    .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none; backdrop-filter: blur(2px); }
+    .sidebar-overlay.show { display: block; }
+    .toggle-btn { display: none; position: fixed; top: 20px; left: 20px; background: var(--surface); color: var(--primary); border: none; width: 45px; height: 45px; border-radius: 12px; z-index: 900; box-shadow: var(--shadow-md); font-size: 24px; }
+
+    /* Main Content */
+    main { flex: 1; padding: 30px 40px; margin-left: 260px; width: calc(100% - 260px); transition: margin-left 0.3s ease, width 0.3s ease; }
+    
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .topbar h1 { font-size: 28px; font-weight: 800; color: var(--primary-dark); margin: 0; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    .lang-switcher select { padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; }
+    .user-chip { display: flex; align-items: center; gap: 12px; background: var(--surface); padding: 6px 16px 6px 6px; border-radius: 50px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .user-chip .avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-light), var(--primary)); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    
+    .content-wrapper { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Header & Filters */
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px; }
+    .header-left { display: flex; align-items: center; gap: 15px; }
+    .header-title { font-size: 18px; font-weight: 600; color: var(--text-muted); margin: 0; }
+    
+    .filter-group { display: flex; gap: 10px; }
+    .filter-group select { padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); cursor: pointer; box-shadow: var(--shadow-sm); font-size: 14px; outline: none; }
+    .btn-back { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 12px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; color: var(--text-main); font-weight: 500; box-shadow: var(--shadow-sm); }
+
+    /* Cards */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .summary-card { background: var(--surface); border-radius: var(--radius); padding: 25px; cursor: pointer; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 20px; transition: all 0.2s; position: relative; overflow: hidden; }
+    .summary-card::after { content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+    .summary-card:active { transform: scale(0.98); }
+    .card-icon-box { width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+    .icon-bin { background: #d1fae5; color: #059669; }
+    .icon-truck { background: #ffedd5; color: #ea580c; }
+    .card-content h4 { margin: 0 0 4px; font-size: 14px; color: var(--text-muted); }
+    .card-content .big-stat { font-size: 32px; font-weight: 800; color: var(--primary-dark); line-height: 1.2; }
+    .card-content .sub-stat { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+    /* Chart */
+    .chart-wrapper { background: var(--surface); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow-md); margin-bottom: 24px; }
+    .chart-container { height: 350px; width: 100%; position: relative; }
+
+    /* Table & Search Toolbar */
+    .table-card { background: var(--surface); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow-md); overflow: hidden; }
+    
+    /* Toolbar Layout */
+    .table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    .table-title { margin: 0; color: var(--primary-dark); font-size: 18px; font-weight: 700; }
+    
+    /* Search Box Style */
+    .search-box input {
+      padding: 8px 16px; border-radius: 12px; border: 1px solid var(--border);
+      background: #f8fafc; color: var(--text-main); width: 250px; outline: none; transition: 0.3s;
     }
+    .search-box input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
 
-    .sidebar h2 {
-      text-align: center;
-      color: #00a8ff;
-      margin-bottom: 25px
-    }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 600px; }
+    th { background: #f8fafc; color: var(--text-muted); padding: 14px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: 14px; border-bottom: 1px solid var(--border); color: var(--text-main); font-size: 14px; }
+    .badge-zone { background: #ecfdf5; color: var(--primary-dark); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; border: 1px solid #a7f3d0; white-space: nowrap; }
+    .badge-area { background: #fff7ed; color: #c2410c; padding: 2px 8px; border-radius: 12px; border: 1px solid #ffedd5; font-size: 12px; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
 
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 4px;
-    }
+    #loading { margin-top: 40px; color: var(--primary); text-align: center; display: none; }
+    .spinner { display: inline-block; animation: spin 1s linear infinite; font-size: 24px; color: var(--primary); }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
 
-    .sidebar .sw-logout-slot {
-      margin-top: 0 !important;
-      margin-left: 18px;
-      margin-right: 18px;
-      margin-bottom: 24px;
-      padding: 0;
-    }
-
-    .menu a {
-      display: block;
-      color: #f5f6fa;
-      padding: 14px 20px;
-      text-decoration: none;
-      border-left: 4px solid transparent;
-      transition: .3s;
-    }
-
-    .menu a:hover,
-    .menu a.active {
-      background: #353b48;
-      border-left: 4px solid #00a8ff
-    }
-
-    .sidebar .sw-logout-slot .sw-logout-btn {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 14px 20px;
-      margin-top: 6px;
-      border: none;
-      border-radius: 10px;
-      background: #dc2626;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      box-shadow: none !important;
-      transform: none !important;
-    }
-
-    .sidebar .sw-logout-slot .sw-logout-btn:hover,
-    .sidebar .sw-logout-slot .sw-logout-btn:focus {
-      background: #b91c1c;
-      border-left: 0;
-    }
-
-    /* Mobile toggle */
-    .toggle-btn {
-      display: none;
-      position: fixed;
-      top: 14px;
-      left: 14px;
-      background: #00a8ff;
-      color: #fff;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 1000;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-    }
-
-    /* Main */
-    main {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto
-    }
-
-    h1 {
-      color: #2f3640;
-      margin: 0 0 16px;
-      line-height: 1.25;
-      font-size: 22px;
-    }
-
-    .content {
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .08)
-    }
-
-    .muted {
-      color: #6b7280;
-      font-size: 13px;
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin: 8px 0 4px
-    }
-
-    button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      padding: 10px 16px;
-      border-radius: 12px;
-      font-size: 16px;
-      line-height: 1.2;
-      border: 0;
-      cursor: pointer;
-    }
-
-    .ghost {
-      background: #f4f4f5;
-      color: #111827
-    }
-
-    /* chart layout */
-    .charts-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-top: 4px;
-      margin-bottom: 8px;
-    }
-
-    .chart-box {
-      flex: 1 1 280px;
-      min-width: 0;
-    }
-
-    canvas {
-      width: 100% !important;
-      max-width: 100%;
-      height: 320px;
-      border: 1px solid #eee;
-      border-radius: 10px;
-      background: #fff;
-    }
-
-    /* Filters */
-    .time-filter {
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 140px;
-    }
-
-    .filter-label {
-      font-size: 12px;
-      color: #6b7280;
-    }
-
-    .time-filter select {
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      font-size: 14px;
-      min-height: 40px;
-    }
-
-    /* Responsive */
-    @media(max-width:900px) {
-      body {
-        flex-direction: column
-      }
-
-      .sidebar {
-        position: fixed;
-        left: -250px;
-        top: 0;
-        height: 100%;
-        z-index: 999;
-      }
-
-      .sidebar.show {
-        left: 0
-      }
-
-      .toggle-btn {
-        display: block
-      }
-
-      main {
-        padding: 70px 16px 20px
-      }
-
-      h1 {
-        text-align: left;
-        font-size: 20px;
-      }
-
-      .charts-row {
-        flex-direction: column;
-      }
-
-      .content {
-        padding: 16px;
-        border-radius: 10px;
-      }
-
-      .time-filter {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
-      }
-
-      .filter-group {
-        width: 100%;
-      }
-
-      .time-filter select {
-        width: 100%;
-      }
-
-      canvas {
-        height: 260px;
-      }
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .lang-switcher {
-      position: static;
-    }
-
-    .lang-switcher select {
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      font-size: 14px;
-      min-height: 36px;
-    }
-
-    .user-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #fff;
-      border-radius: 999px;
-      border: 1px solid #e5e7eb;
-      padding: 8px 12px;
-      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
-    }
-
-    .user-chip .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
-      color: #0f172a;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .user-chip__label {
-      margin: 0;
-      font-size: 12px;
-    }
-
-    @media(max-width:900px) {
-      .topbar {
-        align-items: stretch;
-      }
-
-      .topbar-right {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .user-chip {
-        margin-left: auto;
-      }
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      main { margin-left: 0; width: 100%; padding: 80px 20px 40px 20px; }
+      .toggle-btn { display: flex; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 15px; }
+      .topbar-right { width: 100%; justify-content: space-between; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .header-row { flex-direction: column; align-items: stretch; }
+      .filter-group { flex-direction: column; }
+      .filter-group select { width: 100%; }
+      .search-box input { width: 100%; }
+      .chart-container { height: 250px; }
+      .table-card { padding: 15px; }
     }
   </style>
 </head>
 
 <body>
-  <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ เมนู</button>
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <button class="toggle-btn" onclick="toggleSidebar()"><i class="ri-menu-line"></i></button>
 
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
-    <h2>Smart Waste</h2>
+    <h2><i class="ri-recycle-line"></i> Smart Waste</h2>
     <nav class="menu" data-admin-menu data-active="report"></nav>
     <div class="sw-logout-slot" data-sw-logout-slot></div>
   </aside>
 
-  <!-- Main -->
   <main>
     <div class="topbar">
-      <div>
-        <h1 id="pageTitleHeading">รายงานย้อนหลัง</h1>
-      </div>
+      <div><h1 id="pageTitleHeading">รายงานย้อนหลัง</h1></div>
       <div class="topbar-right">
         <div class="lang-switcher">
           <select id="langSelect">
-            <option value="th">ไทย</option>
-            <option value="en">English</option>
-            <option value="ms">Bahasa Melayu</option>
+            <option value="th">🇹🇭 ไทย</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="ms">🇲🇾 Bahasa Melayu</option>
           </select>
         </div>
         <div class="user-chip">
           <span class="avatar" id="adminAvatar">A</span>
-          <div>
-            <p class="muted user-chip__label" id="adminRole">ผู้ดูแลระบบ</p>
-            <strong id="adminName">-</strong>
-          </div>
+          <div><strong id="adminName">-</strong><p id="adminRole">ผู้ดูแลระบบ</p></div>
         </div>
       </div>
     </div>
 
-    <div class="content">
-      <div class="row">
-        <h3 id="chartTitle" style="margin-right:auto">
-          สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต
-        </h3>
+    <div class="content-wrapper">
+      <div class="header-row">
+        <div class="header-left">
+           <button id="btnBack" class="btn-back" style="display:none" onclick="goBackToOverview()">
+             <i class="ri-arrow-left-line"></i> <span id="backText">ย้อนกลับ</span>
+           </button>
+           <h3 id="sectionTitle" class="header-title">ภาพรวมทั้งหมด</h3>
+        </div>
 
-        <!-- Filters (ช่วงเวลา + เขต) -->
-        <div class="time-filter">
-          <div class="filter-group">
-            <span class="filter-label">ช่วงเวลา</span>
+        <div class="filter-group">
+            <select id="zoneFilter" style="display:none;">
+                <option value="all">📍 ทุกเขตพื้นที่</option>
+            </select>
             <select id="timeFilter">
-              <option value="all">ทั้งหมด</option>
-              <option value="day">วันนี้</option>
-              <option value="week">7 วันล่าสุด</option>
-              <option value="month">30 วันล่าสุด</option>
-              <option value="year">365 วันล่าสุด</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <span class="filter-label">เขต</span>
-            <select id="zoneFilter">
-              <option value="all">ทุกเขต</option>
-            </select>
-          </div>
+             <option value="all">📅 ทั้งหมด (All Time)</option>
+             <option value="week">📅 7 วันล่าสุด (7 Days)</option>
+             <option value="month">🗓️ 30 วันล่าสุด (30 Days)</option>
+             <option value="year">📆 1 ปีล่าสุด (Year)</option>
+           </select>
         </div>
       </div>
 
-      <!-- 2 กราฟ: จำนวนการเท / เวลาการเดินรถ -->
-      <div class="charts-row">
-        <div class="chart-box">
-          <canvas id="zoneChart"></canvas>
-        </div>
-        <div class="chart-box">
-          <canvas id="timeChart"></canvas>
-        </div>
+      <div id="loading" class="muted">
+        <span class="spinner"><i class="ri-loader-4-line"></i></span>
+        <p style="margin-top:10px;">กำลังคำนวณข้อมูล...</p>
       </div>
 
-      <div id="loading" class="muted" style="margin-top:10px;display:none">
-        กำลังคำนวณข้อมูล…
+      <div id="overviewSection">
+        <div class="cards-grid" id="summaryCardsGrid"></div>
+      </div>
+
+      <div id="detailSection" style="display:none;">
+        
+        <div class="chart-wrapper">
+          <div class="chart-container">
+            <canvas id="detailChart"></canvas>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-toolbar">
+            <h4 id="tableTitle" class="table-title">รายการข้อมูล</h4>
+            <div class="search-box">
+              <input type="text" id="searchInput" placeholder="🔍 ค้นหา ทะเบียนรถ, ชื่อถัง...">
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                </thead>
+              <tbody id="historyTableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
 
   <script>
-    /* ===== Profile ===== */
-    const adminNameEl = document.getElementById("adminName");
-    const adminAvatarEl = document.getElementById("adminAvatar");
-    const adminRoleEl = document.getElementById("adminRole");
+    console.log("Loaded: Summary Card Clean (No Time Duration)");
 
-    /* ===== Firebase ===== */
-    var firebaseConfig = {
-      apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
-      authDomain: "smart-waste-a2bf4.firebaseapp.com",
-      projectId: "smart-waste-a2bf4",
-      storageBucket: "smart-waste-a2bf4.firebasestorage.app",
-      messagingSenderId: "522733244689",
-      appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0"
-    };
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('sidebarOverlay').classList.toggle('show');
     }
+
+    /* Firebase Init */
+    const firebaseConfig = {
+      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+      authDomain: "smart-waste2568.firebaseapp.com",
+      databaseURL: "https://smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-waste2568",
+      storageBucket: "smart-waste2568.firebasestorage.app",
+      messagingSenderId: "122699752010",
+      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
+      measurementId: "G-H82914YP66"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const LOG_COLLECTION = "logs";
-
-    const chartTitle = document.getElementById("chartTitle");
+    /* UI References */
     const loadingEl = document.getElementById("loading");
     const langSelect = document.getElementById("langSelect");
     const timeFilterSelect = document.getElementById("timeFilter");
     const zoneFilterSelect = document.getElementById("zoneFilter");
+    const searchInput = document.getElementById("searchInput");
+    
+    const overviewSection = document.getElementById("overviewSection");
+    const detailSection = document.getElementById("detailSection");
+    const summaryCardsGrid = document.getElementById("summaryCardsGrid");
+    const btnBack = document.getElementById("btnBack");
+    const sectionTitle = document.getElementById("sectionTitle");
 
-    const ctxCount = document.getElementById("zoneChart").getContext("2d");
-    const ctxTime = document.getElementById("timeChart").getContext("2d");
-    let chartCount = null;
-    let chartTime = null;
+    Chart.defaults.font.family = "'Prompt', sans-serif";
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.maintainAspectRatio = false;
+    
+    const ctxDetail = document.getElementById("detailChart").getContext("2d");
+    let detailChartInstance = null;
 
-    // cache โครงสร้างเขต/ถัง
-    // [{zoneId, displayName, bins:[{binId, name}]}]
     let cachedZones = [];
+    let globalLastData = {};
+    let currentTableRows = [];
+    let originalTableRows = []; 
 
-    // cache เวลาการวิ่งรถต่อเขต + ช่วงเวลา: "zoneId|filterKey" -> { totalMinutes, runs: [...] }
-    const driveTimeCache = new Map();
-
-    // ฟิลเตอร์ช่วงเวลา: all / day / week / month / year
     let currentTimeFilter = localStorage.getItem("sw_report_time_filter") || "all";
-    timeFilterSelect.value = currentTimeFilter;
-
-    // ฟิลเตอร์เขต: 'all' หรือ zoneId
-    let selectedZoneId = localStorage.getItem("sw_report_zone_filter") || "all";
-    zoneFilterSelect.value = selectedZoneId;
-
-    /* helper: หา zoneId ของ truck จาก field zoneId หรือจากชื่อ doc */
-    function getZoneIdFromTruckDoc(doc) {
-      const d = doc.data() || {};
-      if (d.zoneId) return d.zoneId;
-      const id = doc.id || "";
-      const parts = id.split("_");
-      return parts[0] || "unknown";
+    if(currentTimeFilter === 'day') {
+        currentTimeFilter = 'all';
+        localStorage.setItem("sw_report_time_filter", 'all');
     }
+    if(timeFilterSelect) timeFilterSelect.value = currentTimeFilter;
+    
+    let currentView = "overview";
+    let currentDetailType = null;
+    let latestRenderId = 0;
 
-    /* helper: แปลง startAt/endAt เป็นนาที */
-    function diffMinutes(startAt, endAt) {
-      if (!startAt || !endAt || typeof startAt.toDate !== "function" || typeof endAt.toDate !== "function") return 0;
-      const s = startAt.toDate();
-      const e = endAt.toDate();
-      const diffMs = e - s;
-      if (isNaN(diffMs) || diffMs <= 0) return 0;
-      return diffMs / 60000; // ms -> นาที
-    }
-
-    /* ===== Time range helpers ===== */
-    function getCurrentDateRange() {
-      const key = currentTimeFilter || "all";
-      if (key === "all") {
-        return { start: null, end: null };
-      }
-
-      const now = new Date();
-      let start, end;
-
-      if (key === "day") {
-        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        end = new Date(start);
-        end.setDate(end.getDate() + 1);
-      } else if (key === "week") {
-        end = now;
-        start = new Date(end);
-        start.setDate(start.getDate() - 7);
-      } else if (key === "month") {
-        end = now;
-        start = new Date(end);
-        start.setDate(start.getDate() - 30);
-      } else if (key === "year") {
-        end = now;
-        start = new Date(end);
-        start.setDate(start.getDate() - 365);
-      } else {
-        start = null;
-        end = null;
-      }
-
-      return { start, end };
-    }
-
-    function isInRange(date, range) {
-      if (!range || (!range.start && !range.end)) return true;
-      if (!date) return false;
-      if (range.start && date < range.start) return false;
-      if (range.end && date >= range.end) return false;
-      return true;
-    }
-
-    // ดึงเวลาใน log ของการเทถัง
-    // NOTE: ปรับ field ตามที่ใช้จริงใน Firestore เช่น emptiedAt / createdAt
-    function getLogDate(data) {
-      if (!data) return null;
-      const cand = data.timestamp || data.emptiedAt || data.createdAt || data.time;
-      if (cand && typeof cand.toDate === "function") {
-        return cand.toDate();
-      }
-      return null;
-    }
-
-    /* ดึงเวลาการวิ่งรถทั้งหมดของ zone หนึ่ง จาก trucks/{}/runs (ตามช่วงเวลาปัจจุบัน) */
-    async function getDriveTimeForZone(zoneId) {
-      const cacheKey = `${zoneId}|${currentTimeFilter || "all"}`;
-      if (driveTimeCache.has(cacheKey)) {
-        return driveTimeCache.get(cacheKey);
-      }
-
-      const range = getCurrentDateRange();
-
-      let trucksSnap;
-      try {
-        trucksSnap = await db.collection("trucks").where("zoneId", "==", zoneId).get();
-        if (trucksSnap.empty) {
-          trucksSnap = null;
-        }
-      } catch (e) {
-        trucksSnap = null;
-      }
-
-      if (!trucksSnap) {
-        const allTrucksSnap = await db.collection("trucks").get();
-        const filtered = [];
-        allTrucksSnap.forEach(doc => {
-          if (getZoneIdFromTruckDoc(doc) === zoneId) filtered.push(doc);
-        });
-        trucksSnap = { docs: filtered };
-      }
-
-      let totalMinutes = 0;
-      const runs = [];
-
-      for (const truckDoc of trucksSnap.docs) {
-        const runsSnap = await truckDoc.ref.collection("runs").get();
-        runsSnap.forEach(runDoc => {
-          const d = runDoc.data() || {};
-          const startDate = d.startAt && typeof d.startAt.toDate === "function"
-            ? d.startAt.toDate()
-            : null;
-          if (!isInRange(startDate, range)) return;
-
-          const m = diffMinutes(d.startAt, d.endAt);
-          if (m > 0) {
-            totalMinutes += m;
-            runs.push({
-              id: runDoc.id,
-              minutes: m,
-              start: startDate
-            });
-          }
-        });
-      }
-
-      runs.sort((a, b) => {
-        if (!a.start || !b.start) return 0;
-        return a.start - b.start;
-      });
-
-      const result = { totalMinutes, runs };
-      driveTimeCache.set(cacheKey, result);
-      return result;
-    }
-
-    /* chart helpers */
-    function renderCountChart(labels, data) {
-      if (chartCount) chartCount.destroy();
-      chartCount = new Chart(ctxCount, {
-        type: "bar",
-        data: {
-          labels,
-          datasets: [{
-            label: getTranslation("chartLabel"),
-            data,
-            borderRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: { display: true, text: getTranslation("chartYAxis") },
-              ticks: {
-                stepSize: 1,
-                callback: (value) => Number.isInteger(value) ? value : ''
-              }
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => `${ctx.parsed.y} ${getTranslation("times")}`
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function renderTimeChart(labels, data) {
-      if (chartTime) chartTime.destroy();
-      chartTime = new Chart(ctxTime, {
-        type: "bar",
-        data: {
-          labels,
-          datasets: [{
-            label: getTranslation("chartTimeLabel"),
-            data,
-            borderRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: { display: true, text: getTranslation("chartTimeYAxis") },
-              ticks: {
-                stepSize: 1,
-                callback: (value) => Number.isInteger(value) ? value : ''
-              }
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => {
-                  const totalMinutes = ctx.parsed.y || 0;
-                  const totalSeconds = Math.round(totalMinutes * 60);
-                  const m = Math.floor(totalSeconds / 60);
-                  const s = totalSeconds % 60;
-
-                  if (currentLang === "en") {
-                    const mLabel = m === 1 ? "minute" : "minutes";
-                    const sLabel = s === 1 ? "second" : "seconds";
-                    if (m > 0 && s > 0) return `${m} ${mLabel} ${s} ${sLabel}`;
-                    if (m > 0) return `${m} ${mLabel}`;
-                    return `${s} ${sLabel}`;
-                  }
-
-                  const minWord = getTranslation("minutes");
-                  const secWord = getTranslation("seconds");
-
-                  if (m > 0 && s > 0) return `${m} ${minWord} ${s} ${secWord}`;
-                  if (m > 0) return `${m} ${minWord}`;
-                  return `${s} ${secWord}`;
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    /* ===== Internationalization (i18n) ===== */
     const translations = {
       th: {
         pageTitle: "Smart Waste - รายงานย้อนหลัง",
-        menuBtn: "☰ เมนู",
-        navHome: "หน้าหลัก",
-        navRegister: "ลงทะเบียน",
-        navCapacity: "ความจุถังขยะ",
-        navTruck: "ตำแหน่งรถเก็บขยะ",
-        navReport: "รายงานย้อนหลัง",
-        mainTitle: "รายงานย้อนหลัง",
-        summaryTitle: "สรุปจำนวน “การเทถัง” และเวลาการเดินรถแต่ละเขต",
-        chartYAxis: "จำนวนครั้ง",
-        times: "ครั้ง",
-        chartTimeYAxis: "เวลาการเดินรถ (นาที)",
-        chartTimeLabel: "เวลาการเดินรถรวม",
-        minutes: "นาที",
-        seconds: "วินาที",
-        loading: "กำลังคำนวณข้อมูล…",
-        noData: "ยังไม่มีข้อมูลเขต/การเทในระบบ",
-        detailTitle: "รายละเอียดย่อย — เขต: ",
-        unspecifiedZone: "ไม่ระบุเขต",
-        chartLabel: "จำนวนการเท",
-        allEmptyCard: "📊 รายการเทถังขยะทั้งหมด",
-        roleAdmin: "ผู้ดูแลระบบ",
-        roleUser: "ผู้ใช้ทั่วไป",
-        logout: "ออกจากระบบ",
-        timeFilterAll: "ทั้งหมด",
-        timeFilterDay: "วันนี้",
-        timeFilterWeek: "7 วันล่าสุด",
-        timeFilterMonth: "30 วันล่าสุด",
-        timeFilterYear: "365 วันล่าสุด",
-        zoneFilterAll: "ทุกเขต"
+        overviewTitle: "ภาพรวมทั้งหมด",
+        backBtn: "ย้อนกลับ",
+        cardBinTitle: "จำนวนการเทขยะ",
+        cardTruckTitle: "จำนวนรอบรถเก็บขยะ",
+        unitTimes: "ครั้ง",
+        unitMinutes: "นาที (เวลาปฏิบัติงาน)",
+        detailBinTitle: "สถิติการเทขยะ",
+        detailTruckTitle: "สถิติเวลาการเดินรถ",
+        tableTitle: "รายการข้อมูลละเอียด",
+        thDate: "วัน/เวลา", thZone: "เขตพื้นที่", thArea: "พื้นที่รับผิดชอบ (Areas)",
+        zoneAll: "📍 ทุกเขตพื้นที่",
+        searchPlaceholder: "🔍 ค้นหา ทะเบียนรถ, พื้นที่...",
+        tableNoData: "ไม่มีข้อมูลในช่วงเวลานี้",
+        unknownArea: "ไม่ระบุพื้นที่",
+        yAxisHours: "ชั่วโมง",
+        trucksList: "รถที่ทำงาน: "
       },
       en: {
-        pageTitle: "Smart Waste - Historical Report",
-        menuBtn: "☰ Menu",
-        navHome: "Home",
-        navRegister: "Register",
-        navCapacity: "Bin Capacity",
-        navTruck: "Truck Location",
-        navReport: "Historical Report",
-        mainTitle: "Historical Report",
-        summaryTitle: 'Summary of "Bin Empties" and Driving Time per Zone',
-        chartYAxis: "Count",
-        times: "times",
-        chartTimeYAxis: "Driving time (minutes)",
-        chartTimeLabel: "Total driving time",
-        minutes: "minutes",
-        seconds: "seconds",
-        loading: "Calculating data...",
-        noData: "No zone/emptying data in the system yet",
-        detailTitle: 'Details — Zone: ',
-        unspecifiedZone: "Unspecified Zone",
-        chartLabel: "Empty Count",
-        allEmptyCard: "📊 All bin emptying records",
-        roleAdmin: "Administrator",
-        roleUser: "User",
-        logout: "Logout",
-        timeFilterAll: "All",
-        timeFilterDay: "Today",
-        timeFilterWeek: "Last 7 days",
-        timeFilterMonth: "Last 30 days",
-        timeFilterYear: "Last 365 days",
-        zoneFilterAll: "All zones"
+        pageTitle: "Smart Waste - Reports",
+        overviewTitle: "Dashboard Overview",
+        backBtn: "Back",
+        cardBinTitle: "Total Bin Empties",
+        cardTruckTitle: "Total Truck Runs",
+        unitTimes: "times",
+        unitMinutes: "total mins",
+        detailBinTitle: "Bin Empties Stats",
+        detailTruckTitle: "Operating Time Stats",
+        tableTitle: "Data Records",
+        thDate: "Date/Time", thZone: "Zone", thArea: "Assigned Areas",
+        zoneAll: "📍 All Zones",
+        searchPlaceholder: "🔍 Search Truck ID, Area...",
+        tableNoData: "No data available",
+        unknownArea: "Unspecified",
+        yAxisHours: "Hours",
+        trucksList: "Trucks: "
       },
       ms: {
-        pageTitle: "Smart Waste - Laporan Sejarah",
-        menuBtn: "☰ Menu",
-        navHome: "Halaman Utama",
-        navRegister: "Daftar",
-        navCapacity: "Kapasiti Tong",
-        navTruck: "Lokasi Lori",
-        navReport: "Laporan Sejarah",
-        mainTitle: "Laporan Sejarah",
-        summaryTitle: 'Ringkasan "Pengosongan Tong" dan Masa Pemanduan setiap Zon',
-        chartYAxis: "Bilangan",
-        times: "kali",
-        chartTimeYAxis: "Masa pemanduan (minit)",
-        chartTimeLabel: "Jumlah masa pemanduan",
-        minutes: "minit",
-        seconds: "saat",
-        loading: "Mengira data...",
-        noData: "Belum ada data zon/pengosongan dalam sistem",
-        detailTitle: 'Butiran — Zon: ',
-        unspecifiedZone: "Zon Tidak Dinyatakan",
-        chartLabel: "Bilangan Pengosongan",
-        allEmptyCard: "📊 Senarai pengosongan tong keseluruhan",
-        roleAdmin: "Pentadbir",
-        roleUser: "Pengguna",
-        logout: "Keluar",
-        timeFilterAll: "Semua",
-        timeFilterDay: "Hari ini",
-        timeFilterWeek: "7 hari terakhir",
-        timeFilterMonth: "30 hari terakhir",
-        timeFilterYear: "365 hari terakhir",
-        zoneFilterAll: "Semua zon"
+        pageTitle: "Smart Waste - Laporan",
+        overviewTitle: "Gambaran Keseluruhan",
+        backBtn: "Kembali",
+        cardBinTitle: "Jumlah Pengosongan",
+        cardTruckTitle: "Jumlah Larian Lori",
+        unitTimes: "kali",
+        unitMinutes: "jumlah minit",
+        detailBinTitle: "Statistik Pengosongan",
+        detailTruckTitle: "Statistik Masa Pemanduan",
+        tableTitle: "Rekod Data",
+        thDate: "Tarikh/Masa", thZone: "Zon", thArea: "Kawasan",
+        zoneAll: "📍 Semua Zon",
+        searchPlaceholder: "🔍 Cari ID Lori, Kawasan...",
+        tableNoData: "Tiada data",
+        unknownArea: "Tidak dinyatakan",
+        yAxisHours: "Jam",
+        trucksList: "Lori: "
       }
     };
 
     const LangState = window.AdminLang;
-    let currentLang = (LangState && typeof LangState.getLang === "function")
-      ? LangState.getLang()
-      : (localStorage.getItem("sw_lang") || "th");
+    let currentLang = (LangState && typeof LangState.getLang === "function") ? LangState.getLang() : (localStorage.getItem("sw_lang") || "th");
+    function t(key) { return translations[currentLang][key] || key; }
 
-    function getTranslation(key) {
-      return translations[currentLang][key] || key;
+    function formatDurationLabel(minutes) {
+      const totalSeconds = Math.round(minutes * 60);
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      if (currentLang === 'en') return (h>0?`${h}h `:'') + (m>0?`${m}m `:'') + `${s}s`;
+      return (h>0?`${h} ชม. `:'') + (m>0?`${m} นาที `:'') + `${s} วิ`;
     }
 
-    function updateFilterTexts() {
-      if (timeFilterSelect) {
-        const optAll = timeFilterSelect.querySelector('option[value="all"]');
-        const optDay = timeFilterSelect.querySelector('option[value="day"]');
-        const optWeek = timeFilterSelect.querySelector('option[value="week"]');
-        const optMonth = timeFilterSelect.querySelector('option[value="month"]');
-        const optYear = timeFilterSelect.querySelector('option[value="year"]');
-
-        if (optAll) optAll.textContent = getTranslation("timeFilterAll");
-        if (optDay) optDay.textContent = getTranslation("timeFilterDay");
-        if (optWeek) optWeek.textContent = getTranslation("timeFilterWeek");
-        if (optMonth) optMonth.textContent = getTranslation("timeFilterMonth");
-        if (optYear) optYear.textContent = getTranslation("timeFilterYear");
-      }
-
-      if (zoneFilterSelect) {
-        const optAllZone = zoneFilterSelect.querySelector('option[value="all"]');
-        if (optAllZone) optAllZone.textContent = getTranslation("zoneFilterAll");
-      }
+    function formatDateYMD(date) {
+        if(!date) return null;
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
-    function populateZoneFilter() {
-      if (!zoneFilterSelect) return;
-      const current = selectedZoneId || "all";
-      zoneFilterSelect.innerHTML = "";
+    function getDateFilterConfig() {
+      const key = currentTimeFilter;
+      const now = new Date();
+      
+      if (key === "all") return { type: "all" };
+      
+      let start = new Date();
+      if (key === "week") start.setDate(now.getDate() - 7);
+      else if (key === "month") start.setDate(now.getDate() - 30);
+      else if (key === "year") start.setDate(now.getDate() - 365);
+      
+      start.setHours(0,0,0,0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      return { type: "range", start: start, end: end };
+    }
 
-      const optAll = document.createElement("option");
-      optAll.value = "all";
-      optAll.textContent = getTranslation("zoneFilterAll");
-      zoneFilterSelect.appendChild(optAll);
+    function isDocDateInRange(docIdDateStr, filterConfig) {
+       if (filterConfig.type === "all") return true;
+       const d = new Date(docIdDateStr);
+       if (isNaN(d)) return false; 
+       return d >= filterConfig.start && d <= filterConfig.end;
+    }
 
+    function isInRange(date, filterConfig) {
+      if (filterConfig.type === "all") return true;
+      if (!date) return false;
+      return date >= filterConfig.start && date <= filterConfig.end;
+    }
+
+    function getLogDate(data) {
+      const cand = data.createdAt || data.timestamp || data.emptiedAt || data.time;
+      return (cand && typeof cand.toDate === "function") ? cand.toDate() : (cand ? new Date(cand) : null);
+    }
+
+    async function loadAllData() {
+      const filterConfig = getDateFilterConfig();
+      
+      if (cachedZones.length === 0) {
+        const zonesSnap = await db.collection("zones").orderBy("name").get();
+        zonesSnap.forEach(d => {
+          const data = d.data();
+          cachedZones.push({
+              zoneId: d.id,
+              displayName: data.name || d.id,
+              area: data.area || ""
+          });
+        });
+        zoneFilterSelect.innerHTML = `<option value="all">${t('zoneAll')}</option>`;
+        cachedZones.forEach(z => {
+            const opt = document.createElement("option");
+            opt.value = z.zoneId;
+            opt.textContent = z.area ? `${z.displayName} (${z.area})` : z.displayName;
+            zoneFilterSelect.appendChild(opt);
+        });
+      }
+
+      const localData = {};
       cachedZones.forEach(z => {
-        const opt = document.createElement("option");
-        opt.value = z.zoneId;
-        opt.textContent = z.displayName;
-        zoneFilterSelect.appendChild(opt);
+        localData[z.zoneId] = { zoneName: z.displayName, binLogs: [], truckRuns: [] };
       });
 
-      if (zoneFilterSelect.querySelector(`option[value="${current}"]`)) {
-        zoneFilterSelect.value = current;
-      } else {
-        zoneFilterSelect.value = "all";
-        selectedZoneId = "all";
+      // BIN DATA
+      for (const zone of cachedZones) {
+        try {
+            const binsSnap = await db.collection("smartbins").doc(zone.zoneId).collection("bin_data").get();
+            for (const bDoc of binsSnap.docs) {
+               const binId = bDoc.id;
+               const binName = bDoc.data().binId || binId;
+               const logsSnap = await bDoc.ref.collection("emptying_trash").get();
+               logsSnap.forEach(lDoc => {
+                 const d = lDoc.data();
+                 const date = getLogDate(d);
+                 if (isInRange(date, filterConfig)) {
+                   localData[zone.zoneId].binLogs.push({ date: date, detail: binName, val: 'เทขยะแล้ว', rawData: d });
+                 }
+               });
+            }
+        } catch (err) { console.error("Error bins:", err); }
       }
+
+      // TRUCK DATA
+      try {
+        const truckOpSnap = await db.collectionGroup("truck_operating_time").get();
+        const scheduleRequests = new Set();
+        const tempTruckRuns = [];
+
+        truckOpSnap.forEach(doc => {
+            const pathSegments = doc.ref.path.split('/');
+            if (pathSegments.length < 6) return;
+            const zoneId = pathSegments[1];
+            const truckId = pathSegments[3];
+            const dateStr = doc.id; 
+
+            if (!isDocDateInRange(dateStr, filterConfig)) return;
+
+            if (localData[zoneId]) {
+                const data = doc.data();
+                let updatedDate = null;
+                if(data.updatedAt && typeof data.updatedAt.toDate === 'function') {
+                    updatedDate = data.updatedAt.toDate();
+                }
+
+                // 1. Calculate Duration from startAt / finishedAt
+                let startTime = null;
+                let durationMinutes = 0;
+
+                // Priority: New Schema
+                if (data.startAt && typeof data.startAt.toDate === 'function') {
+                    startTime = data.startAt.toDate();
+                    let endTime = new Date(); // Default if running
+
+                    if (data.finishedAt && typeof data.finishedAt.toDate === 'function') {
+                        endTime = data.finishedAt.toDate();
+                    } else if (data.endAt && typeof data.endAt.toDate === 'function') {
+                        endTime = data.endAt.toDate();
+                    }
+                    
+                    durationMinutes = Math.max(0, (endTime - startTime) / 60000);
+                } 
+                // Fallback: Old Schema (Segments)
+                else if (data.segments) {
+                    const keys = Object.keys(data.segments).sort((a, b) => Number(a) - Number(b));
+                    if (keys.length > 0) {
+                        const firstSeg = data.segments[keys[0]];
+                        const lastSeg = data.segments[keys[keys.length - 1]];
+                        if (firstSeg && firstSeg.startAt) {
+                            startTime = firstSeg.startAt.toDate();
+                            const end = (lastSeg && lastSeg.endAt) ? lastSeg.endAt.toDate() : new Date();
+                            durationMinutes = Math.max(0, (end - startTime) / 60000);
+                        }
+                    }
+                }
+
+                if (durationMinutes > 0 && startTime) {
+                    scheduleRequests.add(`${zoneId}|${dateStr}`);
+                    
+                    let displayDate = null;
+                    if(updatedDate) displayDate = updatedDate;
+                    else displayDate = startTime;
+
+                    tempTruckRuns.push({
+                        zoneId,
+                        dateStr,
+                        recordDate: displayDate, // for table row
+                        startAt: startTime,      // for graph sorting
+                        truckId,
+                        minutes: durationMinutes,
+                        val: formatDurationLabel(durationMinutes),
+                        rawData: data
+                    });
+                }
+            }
+        });
+
+        const scheduleMap = {};
+        const reqArray = Array.from(scheduleRequests);
+        const schedulePromises = reqArray.map(async (key) => {
+            const [zId, dStr] = key.split('|');
+            try {
+                const docSnap = await db.collection('truck_schedule').doc(zId).collection('days').doc(dStr).get();
+                if (docSnap.exists) scheduleMap[key] = docSnap.data();
+            } catch(e) {}
+        });
+        await Promise.all(schedulePromises);
+
+        tempTruckRuns.forEach(run => {
+             const key = `${run.zoneId}|${run.dateStr}`;
+             const scheduleData = scheduleMap[key];
+             let areaList = [];
+             if (scheduleData) {
+                 if (scheduleData.truckId === run.truckId && Array.isArray(scheduleData.areas)) {
+                      areaList = scheduleData.areas.map(a => a.areaName || a.areaId);
+                 } else if (Array.isArray(scheduleData.routes)) {
+                     const foundRoute = scheduleData.routes.find(r => r.truckId === run.truckId);
+                     if (foundRoute && Array.isArray(foundRoute.areas)) {
+                         areaList = foundRoute.areas.map(a => a.areaName || a.areaId);
+                     }
+                 } else if (scheduleData[run.truckId] && Array.isArray(scheduleData[run.truckId].areas)) {
+                     areaList = scheduleData[run.truckId].areas.map(a => a.areaName || a.areaId);
+                 }
+             }
+             if (!Array.isArray(areaList)) areaList = [];
+             
+             localData[run.zoneId].truckRuns.push({
+                 date: run.recordDate,
+                 startAt: run.startAt,
+                 detail: run.truckId,
+                 minutes: run.minutes,
+                 val: run.val,
+                 rawData: run.rawData,
+                 areaNames: areaList, 
+                 areaStr: areaList.length > 0 ? areaList.join(", ") : t('unknownArea')
+             });
+        });
+
+      } catch (err) { console.error("Error truck op:", err); }
+
+      return localData;
+    }
+
+    async function renderOverview() {
+      const myRenderId = ++latestRenderId;
+      loadingEl.style.display = "block";
+      const fetchedData = await loadAllData();
+      if (myRenderId !== latestRenderId) return;
+
+      globalLastData = fetchedData;
+      summaryCardsGrid.innerHTML = "";
+
+      let totalBinEmpties = 0, totalTruckRuns = 0, totalTruckMinutes = 0;
+      Object.values(globalLastData).forEach(zData => {
+        totalBinEmpties += zData.binLogs.length;
+        totalTruckRuns += zData.truckRuns.length;
+        zData.truckRuns.forEach(r => totalTruckMinutes += r.minutes);
+      });
+
+      const createCard = (iconClass, title, stat, subStat, type) => {
+          const div = document.createElement("div");
+          div.className = "summary-card";
+          div.onclick = () => showDetail(type);
+          div.innerHTML = `
+            <div class="card-icon-box ${iconClass}"></div>
+            <div class="card-content"><h4>${title}</h4><div class="big-stat">${stat}</div><div class="sub-stat">${subStat}</div></div>
+            <div style="position:absolute; right:20px; opacity:0.1;"><i class="ri-arrow-right-s-line" style="font-size:32px;"></i></div>`;
+          return div;
+      };
+
+      // ✅ REMOVED TIME DURATION FROM TRUCK CARD
+      summaryCardsGrid.appendChild(createCard("icon-bin", t('cardBinTitle'), totalBinEmpties.toLocaleString(), `<i class="ri-bar-chart-fill"></i> ${t('unitTimes')}`, 'bin'));
+      summaryCardsGrid.appendChild(createCard("icon-truck", t('cardTruckTitle'), totalTruckRuns.toLocaleString(), "", 'truck'));
+
+      loadingEl.style.display = "none";
+    }
+
+    function showDetail(type) {
+      currentView = "detail";
+      currentDetailType = type;
+      overviewSection.style.display = "none";
+      detailSection.style.display = "block";
+      btnBack.style.display = "inline-flex";
+      zoneFilterSelect.style.display = "block";
+      searchInput.value = "";
+      updateDetailView(type);
+    }
+
+    function updateDetailView(type) {
+      if(currentView !== 'detail') return;
+
+      const selectedZoneId = zoneFilterSelect.value;
+      const isSingleZone = selectedZoneId !== 'all';
+      
+      const chartLabels = [];
+      const chartData = [];
+      const chartMeta = []; 
+
+      let allRows = [];
+      let chartLabelText = "";
+      let chartColor = "";
+      
+      const colorBin = "#059669";
+      const colorTruck = "#ea580c";
+
+      const tableHead = document.querySelector("#historyTableBody").previousElementSibling;
+      if (tableHead) {
+          if (type === 'bin') {
+              tableHead.innerHTML = `<tr><th>${t('thDate')}</th><th>${t('thZone')}</th><th>จุดติดตั้ง (Bin ID)</th><th>ทะเบียนรถ (Truck ID)</th><th>ปริมาณ (Fill)</th><th>น้ำหนัก (Kg)</th></tr>`;
+          } else {
+              tableHead.innerHTML = `<tr><th>${t('thDate')}</th><th>${t('thZone')}</th><th>ทะเบียนรถ (Truck ID)</th><th>${t('thArea')}</th><th>เวลาปฏิบัติงาน</th></tr>`;
+          }
+      }
+
+      // Graph Aggregation Logic
+      const graphMap = new Map(); 
+
+      if (type === 'bin') {
+          chartLabelText = t('cardBinTitle');
+          chartColor = colorBin;
+          sectionTitle.textContent = isSingleZone ? `${t('detailBinTitle')} - ${cachedZones.find(z=>z.zoneId===selectedZoneId)?.displayName}` : t('detailBinTitle');
+
+          cachedZones.forEach(zone => {
+            if (isSingleZone && zone.zoneId !== selectedZoneId) return;
+            const zData = globalLastData[zone.zoneId];
+            if (!zData) return;
+
+            zData.binLogs.forEach(log => {
+                 const raw = log.rawData || {};
+                 const truckId = raw.truckId || '-';
+                 allRows.push({
+                    date: log.date,
+                    zoneName: zone.displayName,
+                    col_bin: log.detail,
+                    col_truck: truckId,
+                    col_fill: raw.levelBefore ?? 0,
+                    col_weight: Number(raw.weightBefore ?? 0).toFixed(2),
+                    type: 'bin'
+                 });
+
+                 let key, label;
+                 if (isSingleZone) {
+                     key = log.detail || "Unknown";
+                     label = key;
+                 } else {
+                     key = zone.displayName;
+                     label = key;
+                 }
+                 
+                 if(!graphMap.has(key)) graphMap.set(key, { label: label, val: 0, sortVal: key, items: new Set() });
+                 graphMap.get(key).val += 1;
+                 graphMap.get(key).items.add(truckId);
+            });
+          });
+      }
+      else if (type === 'truck') {
+          chartLabelText = t('yAxisHours');
+          chartColor = colorTruck;
+          sectionTitle.textContent = isSingleZone ? `${t('detailTruckTitle')} - ${cachedZones.find(z=>z.zoneId===selectedZoneId)?.displayName}` : t('detailTruckTitle');
+
+          cachedZones.forEach(zone => {
+            if (isSingleZone && zone.zoneId !== selectedZoneId) return;
+            const zData = globalLastData[zone.zoneId];
+            if (!zData) return;
+
+            zData.truckRuns.forEach(run => {
+                allRows.push({ ...run, zoneName: zone.displayName, type: 'truck' });
+
+                let key, label, sortVal;
+                
+                if (isSingleZone) {
+                    // Always Date based now
+                    const d = new Date(run.date);
+                    d.setHours(0,0,0,0);
+                    sortVal = d.getTime();
+                    key = sortVal;
+                    label = run.date.toLocaleDateString(currentLang === 'th' ? 'th-TH' : 'en-GB', { day: 'numeric', month: 'short' });
+                } else {
+                    key = zone.displayName;
+                    label = key;
+                    sortVal = key; 
+                }
+
+                if(!graphMap.has(key)) graphMap.set(key, { label: label, val: 0, sortVal: sortVal, items: new Set() });
+                graphMap.get(key).val += (run.minutes / 60);
+                graphMap.get(key).items.add(run.detail); 
+            });
+          });
+      }
+
+      const mapEntries = Array.from(graphMap.values());
+      // Sort: If truck+single zone -> sort by date. Otherwise default
+      if (type === 'truck' && isSingleZone) {
+          mapEntries.sort((a,b) => a.sortVal - b.sortVal);
+      }
+      
+      mapEntries.forEach(item => {
+          chartLabels.push(item.label);
+          chartData.push(item.val);
+          chartMeta.push(Array.from(item.items)); 
+      });
+
+      if (detailChartInstance) detailChartInstance.destroy();
+
+      // ALWAYS Bar Chart now
+      const chartType = 'bar';
+      const fillOption = false;
+      const tension = 0;
+
+      const bg = type==='bin'?'rgba(5, 150, 105, 0.5)':'rgba(234, 88, 12, 0.5)';
+      const border = type==='bin'?'#059669':'#ea580c';
+
+      detailChartInstance = new Chart(ctxDetail, {
+        type: chartType,
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: chartLabelText,
+                data: chartData,
+                backgroundColor: bg,
+                borderColor: border,
+                borderWidth: 1,
+                fill: fillOption,
+                tension: tension,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label + ': ';
+                            if (type === 'truck') {
+                                const val = context.raw; 
+                                const hrs = Math.floor(val);
+                                const mins = Math.round((val - hrs) * 60);
+                                label += hrs + ' ชม. ' + (mins > 0 ? mins + ' นาที' : '');
+                            } else {
+                                label += context.raw + ' ครั้ง';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            onClick: (e, activePoints) => {
+                if (activePoints.length > 0) {
+                    const index = activePoints[0].index;
+                    const label = chartLabels[index]; 
+                    filterTableByChart(label, type, isSingleZone);
+                } else {
+                    renderTable(allRows);
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { borderDash: [4, 4], color: '#e2e8f0' },
+                    ticks: { 
+                        precision: 0, 
+                        stepSize: 1,  
+                        callback: function(value) { return value; }
+                    },
+                    title: {
+                        display: (type === 'truck'),
+                        text: (type === 'truck') ? t('yAxisHours') : ''
+                    }
+                },
+                x: { 
+                    grid: { display: false },
+                    ticks: { maxRotation: 45, minRotation: 0 }
+                }
+            }
+        }
+      });
+
+      originalTableRows = allRows;
+      currentTableRows = allRows;
+      renderTableOnly();
+    }
+
+    function filterTableByChart(label, type, isSingleZone) {
+        const filtered = originalTableRows.filter(row => {
+            if (isSingleZone) {
+                // Since "Day" view is gone, this is always Date matching
+                const rowD = row.date.toLocaleDateString(currentLang === 'th' ? 'th-TH' : 'en-GB', { day: 'numeric', month: 'short' });
+                return rowD === label;
+            } else {
+                return row.zoneName === label;
+            }
+        });
+        
+        currentTableRows = filtered;
+        renderTableOnly();
+        document.getElementById("tableTitle").textContent = `รายการข้อมูล (${label})`;
+    }
+
+    function renderTable(rows) {
+        currentTableRows = rows || originalTableRows;
+        document.getElementById("tableTitle").textContent = t('tableTitle');
+        renderTableOnly();
+    }
+
+    function renderTableOnly() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const tableBody = document.getElementById("historyTableBody");
+        tableBody.innerHTML = "";
+
+        const filteredRows = currentTableRows.filter(item => {
+            if (!searchTerm) return true;
+            if (item.type === 'bin') {
+                return (item.col_bin && item.col_bin.toLowerCase().includes(searchTerm)) ||
+                       (item.col_truck && item.col_truck.toLowerCase().includes(searchTerm));
+            } else {
+                return (item.detail && item.detail.toLowerCase().includes(searchTerm)) || 
+                       (item.areaStr && item.areaStr.toLowerCase().includes(searchTerm));
+            }
+        });
+
+        // Sort: ใหม่ไปเก่า
+        filteredRows.sort((a,b) => b.date - a.date);
+
+        if (filteredRows.length === 0) {
+            const colSpan = currentDetailType === 'bin' ? 6 : 5;
+            tableBody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; color:#94a3b8; padding:30px;">${t('tableNoData')}</td></tr>`;
+        } else {
+            filteredRows.forEach(item => {
+                const tr = document.createElement("tr");
+                const dateStr = item.date ? item.date.toLocaleString(currentLang === 'th' ? 'th-TH' : 'en-US') : '-';
+                
+                if (item.type === 'bin') {
+                    const fillStyle = item.col_fill >= 80 ? 'color:#dc2626; font-weight:700;' : 'color:#059669; font-weight:600;';
+                    tr.innerHTML = `<td>${dateStr}</td><td><span class="badge-zone">${item.zoneName}</span></td><td>${item.col_bin}</td><td style="font-family:monospace; color:#64748b;">${item.col_truck}</td><td style="${fillStyle}">${item.col_fill}%</td><td style="text-align:right;">${item.col_weight}</td>`;
+                } else {
+                    let areaHtml = item.areaNames && item.areaNames.length > 0 
+                                   ? item.areaNames.map(a => `<span class="badge-area">${a}</span>`).join('') 
+                                   : `<span style="color:#94a3b8; font-size:12px;">${item.areaStr}</span>`;
+                    
+                    tr.innerHTML = `<td>${dateStr}</td><td><span class="badge-zone">${item.zoneName}</span></td><td>${item.detail}</td><td>${areaHtml}</td><td style="font-weight:600; color:#ea580c;">${item.val}</td>`;
+                }
+                tableBody.appendChild(tr);
+            });
+        }
+    }
+
+    function goBackToOverview() {
+      currentView = "overview";
+      currentDetailType = null;
+      detailSection.style.display = "none";
+      btnBack.style.display = "none";
+      zoneFilterSelect.style.display = "none";
+      searchInput.value = "";
+      zoneFilterSelect.value = "all";
+      overviewSection.style.display = "block";
+      sectionTitle.textContent = t('overviewTitle');
     }
 
     function changeLanguage(lang) {
       if (!translations[lang]) return;
       currentLang = lang;
-      if (LangState && typeof LangState.setLang === "function") {
-        LangState.setLang(lang);
-        currentLang = LangState.getLang();
-      } else {
-        localStorage.setItem("sw_lang", lang);
+      localStorage.setItem("sw_lang", lang);
+      langSelect.value = lang;
+      document.title = t('pageTitle');
+      document.querySelector('h1').textContent = t('pageTitle'); 
+      document.getElementById('backText').textContent = t('backBtn');
+      document.getElementById('tableTitle').textContent = t('tableTitle');
+      searchInput.placeholder = t('searchPlaceholder');
+      if(zoneFilterSelect.options.length > 0) zoneFilterSelect.options[0].text = t('zoneAll');
+      if(currentView === 'overview') {
+        sectionTitle.textContent = t('overviewTitle');
+        renderOverview();
+      } else if(currentView === 'detail' && currentDetailType) {
+        updateDetailView(currentDetailType);
       }
-      langSelect.value = currentLang;
-
-      document.title = getTranslation("pageTitle");
-      document.querySelector(".toggle-btn").textContent = getTranslation("menuBtn");
-      if (window.AdminNav) {
-        window.AdminNav.setLanguage(currentLang);
-      }
-      if (window.AdminUser) {
-        window.AdminUser.setLanguage(currentLang);
-      }
-      document.querySelector("h1").textContent = getTranslation("mainTitle");
-      loadingEl.textContent = getTranslation("loading");
-
-      updateFilterTexts();
-      populateZoneFilter();
-      refreshChartsByFilters();
     }
 
-    langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
-
-    if (LangState && typeof LangState.onChange === "function") {
-      LangState.onChange(lang => {
-        if (lang && lang !== currentLang) {
-          currentLang = lang;
-          langSelect.value = lang;
-          changeLanguage(lang);
-        }
-      });
-    }
-
-    // Time filter change
-    timeFilterSelect.addEventListener("change", (e) => {
-      currentTimeFilter = e.target.value || "all";
+    timeFilterSelect.addEventListener("change", async (e) => {
+      currentTimeFilter = e.target.value;
       localStorage.setItem("sw_report_time_filter", currentTimeFilter);
-      refreshChartsByFilters();
-    });
-
-    // Zone filter change
-    zoneFilterSelect.addEventListener("change", (e) => {
-      selectedZoneId = e.target.value || "all";
-      localStorage.setItem("sw_report_zone_filter", selectedZoneId);
-      refreshChartsByFilters();
-    });
-
-    // โหลดเขต + ถัง
-    async function loadZonesAndBins() {
-      const zonesSnap = await db.collection("zones").orderBy("name").get();
-      const zones = [];
-
-      for (const zDoc of zonesSnap.docs) {
-        const zoneId = zDoc.id;
-        const zoneName = zDoc.data().name || zoneId;
-
-        const binsSnap = await db
-          .collection("smartbins")
-          .doc(zoneId)
-          .collection("bin_data")
-          .get();
-
-        const bins = [];
-        binsSnap.forEach(bDoc => {
-          const d = bDoc.data() || {};
-          const binId = d.binId || bDoc.id;
-          const binName = d.binId || bDoc.id;
-          bins.push({ binId, name: binName });
-        });
-
-        zones.push({ zoneId, displayName: zoneName, bins });
-      }
-      return zones;
-    }
-
-    // สรุปจำนวนการเท + เวลาการวิ่งรถต่อเขต (ตามฟิลเตอร์เวลา)
-    async function loadSummaryByZone() {
-      loadingEl.style.display = "inline";
-
-      if (!cachedZones.length) {
-        cachedZones = await loadZonesAndBins();
-        populateZoneFilter();
-      }
-
-      const range = getCurrentDateRange();
-
-      const zoneCountMap = new Map();
-      const labels = [];
-      const countData = [];
-      const timeData = [];
-
-      for (const zone of cachedZones) {
-        let totalEmpty = 0;
-
-        for (const bin of zone.bins) {
-          const logsSnap = await db
-            .collection("smartbins")
-            .doc(zone.zoneId)
-            .collection("Emptythetrash")
-            .doc(bin.binId)
-            .collection(LOG_COLLECTION)
-            .get();
-
-          logsSnap.forEach(logDoc => {
-            const d = logDoc.data() || {};
-            const dt = getLogDate(d);
-            if (isInRange(dt, range)) {
-              totalEmpty += 1;
-            }
-          });
-        }
-
-        zoneCountMap.set(zone.zoneId, { totalEmpty, displayName: zone.displayName });
-      }
-
-      for (const zone of cachedZones) {
-        const info = zoneCountMap.get(zone.zoneId) || { totalEmpty: 0 };
-        const drive = await getDriveTimeForZone(zone.zoneId);
-
-        labels.push(zone.displayName);
-        countData.push(info.totalEmpty);
-        // ใช้จำนวนนาทีเต็ม ไม่มีทศนิยม
-        timeData.push(Math.round(drive.totalMinutes));
-      }
-
-      chartTitle.textContent = getTranslation("summaryTitle");
-      renderCountChart(labels, countData);
-      renderTimeChart(labels, timeData);
-      loadingEl.style.display = "none";
-    }
-
-    // รายละเอียดในเขต
-    async function showZoneDetail(zoneId) {
-      const zone = cachedZones.find(z => z.zoneId === zoneId);
-      if (!zone) return;
-
-      loadingEl.style.display = "inline";
-      const range = getCurrentDateRange();
-
-      const labelsBins = [];
-      const countData = [];
-
-      for (const bin of zone.bins) {
-        const logsSnap = await db
-          .collection("smartbins")
-          .doc(zone.zoneId)
-          .collection("Emptythetrash")
-          .doc(bin.binId)
-          .collection(LOG_COLLECTION)
-          .get();
-
-        let countForBin = 0;
-        logsSnap.forEach(logDoc => {
-          const d = logDoc.data() || {};
-          const dt = getLogDate(d);
-          if (isInRange(dt, range)) {
-            countForBin += 1;
-          }
-        });
-
-        labelsBins.push(bin.name);
-        countData.push(countForBin);
-      }
-
-      const drive = await getDriveTimeForZone(zone.zoneId);
-      const labelsRuns = [];
-      const timeData = [];
-
-      drive.runs.forEach(r => {
-        let label = r.id;
-        if (r.start instanceof Date) {
-          const d = r.start;
-          const dd = String(d.getDate()).padStart(2, "0");
-          const mm = String(d.getMonth() + 1).padStart(2, "0");
-          const hh = String(d.getHours()).padStart(2, "0");
-          const mi = String(d.getMinutes()).padStart(2, "0");
-          label = `${dd}/${mm} ${hh}:${mi}`;
-        }
-        labelsRuns.push(label);
-        // ใช้จำนวนนาทีเต็ม ไม่มีทศนิยม
-        timeData.push(Math.round(r.minutes));
-      });
-
-      chartTitle.textContent = `${getTranslation("detailTitle")}${zone.displayName}`;
-      renderCountChart(labelsBins, countData);
-      renderTimeChart(labelsRuns, timeData);
-      loadingEl.style.display = "none";
-    }
-
-    // เลือกว่าจะโหลดแบบรวม หรือรายเขต ตาม dropdown
-    function refreshChartsByFilters() {
-      // เคลียร์ cache เวลาวิ่ง เพราะช่วงเวลาเปลี่ยน
-      driveTimeCache.clear();
-      if (selectedZoneId && selectedZoneId !== "all") {
-        showZoneDetail(selectedZoneId);
+      loadingEl.style.display = "block";
+      if(currentView === 'overview') {
+         await renderOverview();
       } else {
-        loadSummaryByZone();
+         const fetchedData = await loadAllData();
+         globalLastData = fetchedData;
+         updateDetailView(currentDetailType);
       }
-    }
+      loadingEl.style.display = "none";
+    });
 
-    /* ===== Realtime listeners ===== */
-    function initRealtimeListeners() {
-      // ถ้ามีการเปลี่ยนแปลงในทุก log การเทถัง (collectionGroup 'logs')
-      db.collectionGroup(LOG_COLLECTION).onSnapshot(() => {
-        refreshChartsByFilters();
-      });
+    zoneFilterSelect.addEventListener("change", () => {
+        if(currentDetailType) updateDetailView(currentDetailType);
+    });
+    searchInput.addEventListener("keyup", () => {
+        if(currentDetailType) renderTableOnly();
+    });
+    langSelect.addEventListener("change", (e) => changeLanguage(e.target.value));
+    
+    (async () => {
+      changeLanguage(currentLang);
+      const admin = window.ADMIN_AUTH;
+      if (admin) {
+        document.getElementById('adminName').textContent = admin.fullName || admin.username || "-";
+        document.getElementById('adminAvatar').textContent = (admin.fullName || admin.username || "?").charAt(0).toUpperCase();
+        document.getElementById('adminRole').textContent = admin.roleLabel || "ผู้ดูแลระบบ";
+      }
+      db.collectionGroup("emptying_trash").onSnapshot(() => { if(currentView === 'overview') renderOverview(); });
+    })();
 
-      // ถ้ามีการเปลี่ยนแปลงในทุก run การวิ่งรถ (collectionGroup 'runs')
-      db.collectionGroup("runs").onSnapshot(() => {
-        refreshChartsByFilters();
-      });
-    }
-
-    // เริ่มต้นจากภาษาใน localStorage แล้วโหลดข้อมูล + ผูก realtime
-    updateFilterTexts();
-    changeLanguage(currentLang);
-    initRealtimeListeners();
   </script>
 </body>
-
 </html>

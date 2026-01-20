@@ -3,24 +3,47 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Smart Waste - ถังของฉัน</title>
+    <title></title>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script src="../Login/auth.js"></script>
-    <script>
-        const currentUser = window.SWAuth.requireAuth([2]);
-    </script>
+    <script src="../i18n/lang.js"></script>
+    <script src="../i18n/th.js"></script>
+    <script src="../i18n/en.js"></script>
+    <script src="../i18n/ms.js"></script>
 
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        /* =====================================================
+           HOME PAGE i18n BOOTSTRAP (CLEAN)
+           ===================================================== */
+        (function initHomeT() {
+
+            const lang =
+                localStorage.getItem("sw_lang") ||
+                (window.USER_LANG && window.USER_LANG.getLang?.()) ||
+                "th";
+
+            if (!window.SW_Translations || !window.SW_Translations[lang]) {
+                console.error("[i18n] Missing translations for lang:", lang);
+                window.T = {};
+                return;
+            }
+
+            window.T = window.SW_Translations[lang];
+
+        })();
+    </script>
 
     <style>
-        /* --- 1. Global Theme --- */
+        /* --- 1. Global Theme (คงเดิมทุกประการ) --- */
         :root {
             --primary: #059669;
             --primary-dark: #064e3b;
@@ -31,6 +54,8 @@
             --sidebar-width: 260px;
             --radius: 24px;
             --shadow: 0 10px 30px -10px rgba(5, 150, 105, 0.15);
+            --lang-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+
         }
 
         * {
@@ -46,8 +71,7 @@
             display: flex;
             background-color: var(--bg-body);
             color: var(--text-main);
-            overflow: hidden;
-            /* Desktop Lock */
+            overflow-y: auto;
         }
 
         /* Loading Screen */
@@ -95,6 +119,7 @@
             position: sticky;
             top: 0;
             height: 100vh;
+            overflow: hidden;
             z-index: 50;
             box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1);
         }
@@ -170,7 +195,7 @@
         main {
             flex: 1;
             padding: 30px 40px;
-            overflow-y: auto;
+            overflow: visible;
             max-width: 1600px;
             margin: 0 auto;
             position: relative;
@@ -274,6 +299,12 @@
             font-size: 15px;
         }
 
+        select:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
         .primary {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: #fff;
@@ -306,10 +337,15 @@
         .empty {
             text-align: center;
             padding: 60px 20px;
-            background: #f8fafc;
+            background: #fff;
             border-radius: 24px;
             border: 2px dashed #cbd5e1;
             margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
         }
 
         .empty i {
@@ -332,28 +368,43 @@
             align-items: flex-start;
         }
 
-        .bin-visual {
+        .bin-shell {
             width: 220px;
-            height: 280px;
-            background: #e2e8f0;
-            border-radius: 24px;
+            height: 320px;
+            border-radius: 30px;
+            border: 6px solid #9ca3af;
+            background: #f8fafc;
             position: relative;
             overflow: hidden;
-            margin-top: 10px;
-            border: 4px solid #fff;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .bin-fill {
+        /* ของเหลวในถัง */
+        .bin-liquid {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
             height: 0%;
-            background: linear-gradient(180deg, #34d399, #059669);
-            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0.9;
+            background: linear-gradient(180deg,
+                    #f97316,
+                    #fb923c);
+            transition: height 0.8s ease;
         }
+
+        /* ตัวเลข % */
+        .bin-percent {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            font-weight: 800;
+            color: #1f2937;
+            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.6);
+            z-index: 5;
+        }
+
 
         /* Wave Animation */
         .bin-fill::after {
@@ -669,7 +720,6 @@
             .brand-left {
                 display: flex;
                 align-items: center;
-                /* gap: 10px; REMOVED GAP */
                 font-size: 20px;
                 font-weight: 700;
             }
@@ -684,7 +734,6 @@
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                /* On green background, use semi-transparent white chip or just icon */
                 padding: 4px;
                 border-radius: 50%;
                 background: rgba(255, 255, 255, 0.2);
@@ -785,32 +834,149 @@
                 grid-column: span 1;
             }
         }
+
+        /* =====================================================
+   LANGUAGE SWITCHER (FINAL – CLEAN)
+   ===================================================== */
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* กล่องครอบ */
+        .lang-switcher {
+            position: relative;
+        }
+
+        /* ปุ่มไอคอนโลก */
+        .lang-switcher .icon-btn {
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lang-switcher .icon-btn:hover {
+            background: #f1f5f9;
+        }
+
+        /* Dropdown ภาษา */
+        .lang-menu {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: var(--lang-shadow);
+            padding: 6px;
+            min-width: 160px;
+            display: none;
+            z-index: 999;
+        }
+
+        /* แสดงเมนู */
+        .lang-menu.show {
+            display: block;
+        }
+
+        /* ปุ่มภาษา */
+        .lang-menu button {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: .2s;
+        }
+
+        /* hover */
+        .lang-menu button:hover {
+            background: #f1f5f9;
+        }
+
+        /* ภาษาที่เลือกอยู่ */
+        .lang-menu button.active {
+            background: #e6f9f1;
+            color: var(--primary-dark);
+            font-weight: 700;
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
     </style>
 </head>
 
 <body>
+    <script>
+        // -----------------------------------------------------
+        // Firebase Configuration
+        // -----------------------------------------------------
+        var firebaseConfig = {
+            apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+            authDomain: "smart-waste2568.firebaseapp.com",
+            projectId: "smart-waste2568",
+            storageBucket: "smart-waste2568.firebasestorage.app",
+            messagingSenderId: "122699752010",
+            appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
+            databaseURL: "https://smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
 
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+
+    <script src="../Login/auth.js"></script>
+    <script src="user-auth-bootstrap.js" defer></script>
+
+    <!-- =======================
+     GLOBAL LOADER
+======================= -->
     <div id="globalLoader">
         <div class="loader-spin"></div>
-        <p class="muted" style="font-size:14px;">กำลังโหลดข้อมูล...</p>
+        <p class="muted" id="loadingText" style="font-size:14px;"></p>
     </div>
 
+    <!-- =======================
+     SIDEBAR
+======================= -->
     <aside class="sidebar">
         <div class="brand">
             <i class="ri-recycle-line"></i>
-            <h2>Smart Waste</h2>
+            <h2 id="brandTitle"></h2>
         </div>
+
         <nav class="menu">
-            <a href="home.html" class="active"><i class="ri-delete-bin-2-line"></i> <span>ถังของฉัน</span></a>
-            <a href="map.html"><i class="ri-map-pin-2-line"></i> <span>แผนที่</span></a>
+            <a href="home.html" class="active">
+                <i class="ri-delete-bin-2-line"></i>
+                <span id="menuMyBins"></span>
+            </a>
+
+            <a href="map.html">
+                <i class="ri-map-pin-2-line"></i>
+                <span id="menuMap"></span>
+            </a>
+
             <div class="sw-logout-slot">
-                <button onclick="logout()" class="logout-btn"><i class="ri-logout-box-line"></i> ออกจากระบบ</button>
+                <button onclick="SWAuth.logout()" class="logout-btn">
+                    <i class="ri-logout-box-line"></i>
+                    <span id="menuLogout"></span>
+                </button>
             </div>
         </nav>
     </aside>
 
     <main>
+
+        <!-- ===== TOP BAR ===== -->
         <div class="topbar">
+
+            <!-- MOBILE BRAND -->
             <div class="mobile-brand">
                 <div class="brand-left">
                     <i class="ri-recycle-line"></i>
@@ -820,155 +986,135 @@
                 </div>
             </div>
 
+            <!-- TITLES -->
             <div class="titles">
-                <h1>จัดการถังขยะ</h1>
-                <p>ดูสถานะและปริมาณขยะในถังของคุณได้ที่นี่</p>
+                <h1 id="homeTitle"></h1>
+                <p id="homeSubtitle"></p>
             </div>
 
-            <div class="user-chip user-chip-desktop">
-                <div class="avatar" id="userAvatar">U</div>
-                <div><strong id="userLabel">User</strong></div>
+            <!-- RIGHT SIDE -->
+            <div class="topbar-right">
+
+                <!-- USER -->
+                <div class="user-chip user-chip-desktop">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div>
+                        <strong id="userLabel"></strong><br>
+                        <small id="userRole" style="font-size:12px;color:#64748b;"></small>
+                    </div>
+                </div>
+
+                <!-- LANGUAGE SWITCHER -->
+                <div class="lang-switcher">
+                    <button class="icon-btn" id="langIconBtn" type="button">
+                        <i class="ri-global-line"></i>
+                    </button>
+
+                    <div class="lang-menu" id="langMenu">
+                        <button type="button" data-lang="th">ไทย</button>
+                        <button type="button" data-lang="en">English</button>
+                        <button type="button" data-lang="ms">Bahasa Melayu</button>
+                    </div>
+                </div>
+
             </div>
         </div>
+        <!-- ===== END TOP BAR ===== -->
 
+        <!-- ===== CARD ===== -->
         <div class="card">
+
             <div class="selector">
                 <div class="select-wrap">
-                    <label><i class="ri-list-check"></i> เลือกรายการถังขยะ</label>
+                    <label>
+                        <i class="ri-list-check"></i>
+                        <span id="labelSelectBin"></span>
+                    </label>
                     <select id="binSelect" disabled>
-                        <option>กำลังโหลดข้อมูล...</option>
+                        <option id="binSelectInit"></option>
                     </select>
                 </div>
-                <div style="margin-left: auto;">
-                    <button class="primary" id="btnOpenForm"><i class="ri-add-circle-fill"></i> เพิ่มถังใหม่</button>
-                </div>
-            </div>
-
-            <div id="emptyState" class="empty" hidden>
-                <i class="ri-inbox-archive-line"></i>
-                <p class="muted" style="font-size:16px;">คุณยังไม่มีถังขยะในระบบ</p>
-                <button class="primary" id="btnAddFirst" style="margin-top:10px;">เริ่มเพิ่มถังแรกเลย</button>
             </div>
 
             <div id="binCard" hidden>
+
                 <div class="bin-visual">
-                    <div class="bin-fill" id="binFill"></div>
-                    <div class="bin-percent" id="binPercent">0%</div>
-                </div>
-                <div class="bin-info">
-                    <div class="bin-header">
-                        <h2 id="binTitle" style="font-size:26px; color:var(--text-main);">BIN-XXX</h2>
-                        <span id="liveBadge" class="status-badge" style="display:none;"><span class="live-dot"></span>
-                            LIVE</span>
+                    <div class="bin-shell">
+                        <div class="bin-liquid" id="binFill"></div>
+                        <div class="bin-percent" id="binPercent">0%</div>
                     </div>
-                    <p class="muted" id="binDesc" style="margin-bottom:20px;">รายละเอียดจุดตั้งถัง...</p>
+                </div>
+
+                <div class="bin-info">
+
+                    <div class="bin-header">
+                        <h2 id="binTitle" style="font-size:26px;color:var(--text-main);"></h2>
+                        <span id="liveBadge" class="status-badge" style="display:none;">
+                            <span class="live-dot"></span> LIVE
+                        </span>
+                    </div>
+
+                    <p class="muted" id="binDesc" style="margin-bottom:20px;"></p>
+
                     <div class="info-grid">
-                        <div class="info-item"><span><i class="ri-map-2-line"></i> เขตพื้นที่</span>
-                            <div class="info-value" id="binZone">-</div>
+
+                        <div class="info-item">
+                            <span><i class="ri-map-2-line"></i> <span id="labelZoneArea"></span></span>
+                            <div class="info-value" id="binZoneArea">-</div>
                         </div>
-                        <div class="info-item"><span><i class="ri-barcode-box-line"></i> RFID Tag</span>
+
+                        <div class="info-item">
+                            <span><i class="ri-barcode-box-line"></i> <span id="labelRfid"></span></span>
                             <div class="info-value" id="binRfid">-</div>
                         </div>
-                        <div class="info-item"><span><i class="ri-gps-line"></i> พิกัด GPS</span>
+
+                        <div class="info-item">
+                            <span><i class="ri-cpu-line"></i> <span id="labelMac"></span></span>
+                            <div class="info-value" id="binMac">-</div>
+                        </div>
+
+                        <div class="info-item">
+                            <span><i class="ri-gps-line"></i> <span id="labelGps"></span></span>
                             <div class="info-value" id="binCoords" style="font-size:14px;">-</div>
                         </div>
-                        <div class="info-item"><span><i class="ri-time-line"></i> อัปเดตล่าสุด</span>
+
+                        <div class="info-item">
+                            <span><i class="ri-time-line"></i> <span id="labelUpdated"></span></span>
                             <div class="info-value" id="binUpdated">-</div>
                         </div>
+
                     </div>
+
+                    <p id="status" class="muted" style="margin-top:20px;text-align:center;font-size:13px;">
+                    </p>
+
                 </div>
             </div>
-            <p id="status" class="muted" style="margin-top:20px; text-align:center; font-size:13px;"></p>
         </div>
+        <!-- ===== END CARD ===== -->
+
     </main>
-
-    <button class="fab-btn" id="fabAddBtn"><i class="ri-add-line"></i></button>
-
-    <div class="overlay" id="formOverlay">
-        <div class="panel">
-            <div class="close-btn" id="btnCloseOverlay"><i class="ri-close-line"></i></div>
-            <div style="text-align:center; margin-bottom:20px;">
-                <h2 style="color:var(--primary-dark); font-size:22px;">เพิ่มถังขยะใหม่</h2>
-                <p class="muted" style="font-size:13px;">กรอกข้อมูลให้ครบถ้วนเพื่อลงทะเบียน</p>
-            </div>
-            <form id="binForm" autocomplete="off">
-                <div class="form-grid">
-                    <div><label>เขตพื้นที่ <span style="color:#ef4444">*</span></label><select id="zoneSelect">
-                            <option value="">-- เลือกเขต --</option>
-                        </select></div>
-                    <div><label>รหัสถัง (Auto)</label><input id="binIdInput" readonly
-                            style="background:#e2e8f0; cursor: not-allowed;" placeholder="ระบบกำหนดให้" /></div>
-                    <div class="col-span-2"><label>RFID Tag</label><input id="rfidInput"
-                            placeholder="ตัวอย่าง: 04A1B2C3D4" /></div>
-                    <div><label>ละติจูด</label><input id="latInput" type="number" step="any" placeholder="13.xxx" />
-                    </div>
-                    <div><label>ลองจิจูด</label><input id="lngInput" type="number" step="any" placeholder="100.xxx" />
-                    </div>
-                    <div class="col-span-2"><label>รายละเอียด</label><textarea id="detailsInput" rows="3"
-                            placeholder="เช่น หน้าอาคารเรียน 1..."></textarea></div>
-                </div>
-                <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
-                    <button type="button" class="ghost" id="btnGps"><i class="ri-gps-fill"></i> พิกัด</button>
-                    <button type="button" class="ghost" id="btnAddZone"><i class="ri-add-line"></i> เขต</button>
-                    <button type="submit" class="primary"><i class="ri-save-3-line"></i> บันทึก</button>
-                </div>
-                <p id="formStatus" style="text-align:center; margin-top:15px; font-size:12px;" class="muted"></p>
-            </form>
-        </div>
-    </div>
-
-    <div class="overlay" id="successOverlay">
-        <div class="success-card">
-            <div class="success-icon"><i class="ri-check-line"></i></div>
-            <h3 style="color:var(--text-main); margin-bottom:10px;">บันทึกสำเร็จ!</h3>
-            <p class="muted">ข้อมูลถังขยะถูกเพิ่มเข้าระบบแล้ว</p>
-        </div>
-    </div>
 
     <script>
         const $ = id => document.getElementById(id);
         const userLabelEl = $("userLabel");
         const userAvatar = $("userAvatar");
-        const userAvatarMobile = $("userAvatarMobile"); // New Mobile Avatar
+        const userAvatarMobile = $("userAvatarMobile");
         const binSelect = $("binSelect");
-        const btnOpenForm = $("btnOpenForm");
-        const btnAddFirst = $("btnAddFirst");
-        const fabAddBtn = $("fabAddBtn");
-        const emptyState = $("emptyState");
         const binCard = $("binCard");
         const liveBadge = $("liveBadge");
         const binFill = $("binFill");
         const binPercent = $("binPercent");
         const binTitle = $("binTitle");
         const binDesc = $("binDesc");
-        const binZone = $("binZone");
+
+        const binZoneArea = $("binZoneArea");
         const binRfid = $("binRfid");
+        const binMac = $("binMac");
         const binCoords = $("binCoords");
         const binUpdated = $("binUpdated");
         const statusEl = $("status");
-        const formOverlay = $("formOverlay");
-        const successOverlay = $("successOverlay");
-        const binForm = $("binForm");
-        const zoneSelect = $("zoneSelect");
-        const binIdInput = $("binIdInput");
-        const rfidInput = $("rfidInput");
-        const latInput = $("latInput");
-        const lngInput = $("lngInput");
-        const detailsInput = $("detailsInput");
-        const formStatus = $("formStatus");
-        const btnGps = $("btnGps");
-        const btnAddZone = $("btnAddZone");
-        const btnCloseOverlay = $("btnCloseOverlay");
         const loader = $("globalLoader");
-
-        // Init UI
-        const displayName = currentUser.fullName || currentUser.username;
-        const initial = displayName ? displayName.charAt(0).toUpperCase() : "?";
-
-        // Update both Desktop and Mobile Avatars
-        userLabelEl.textContent = displayName;
-        userAvatar.textContent = initial;
-        if (userAvatarMobile) userAvatarMobile.textContent = initial;
 
         // Hide Loader
         window.addEventListener('load', () => {
@@ -978,146 +1124,390 @@
             }, 500);
         });
 
-        // Firebase Init
-        firebase.initializeApp({
-            apiKey: "AIzaSyBNPan4f39QzbwLn5A1SLOLNNhqnf-bZyo",
-            authDomain: "smart-waste-a2bf4.firebaseapp.com",
-            projectId: "smart-waste-a2bf4",
-            storageBucket: "smart-waste-a2bf4.firebasestorage.app",
-            messagingSenderId: "522733244689",
-            appId: "1:522733244689:web:5c6a0cbe1aaa9e9185fcb0",
-            databaseURL: "https://smart-waste-a2bf4-default-rtdb.firebaseio.com/"
-        });
-
         const db = firebase.firestore();
         const rtdb = firebase.database();
-        const zonesCol = db.collection("zones");
-        const smartbinsCol = db.collection("smartbins");
+        let myBins = [];
+        let currentBin = null;
+        let currentBinId = null;
+        let rtdbRef = null;
+        let rtdbCallback = null;
 
-        let zoneList = [], myBins = [], currentBinId = "", rtdbUnsub = null, lastCardData = null;
-        const BIN_MAX_HEIGHT_CM = 50; const BIN_MIN_FILL_CM = 5;
+        let currentUser = null;
 
-        function setStatus(text, type) { statusEl.textContent = text || ""; statusEl.style.color = type === "err" ? "#ef4444" : "#059669"; if (type === 'ok') setTimeout(() => statusEl.textContent = "", 4000); }
-        function setFormStatus(text, type) { formStatus.textContent = text || ""; formStatus.style.color = type === "err" ? "#ef4444" : "#059669"; }
-        function formatTimestamp(ts) { if (!ts) return "-"; let date = ts; if (typeof ts.toDate === "function") date = ts.toDate(); else if (!(ts instanceof Date)) date = new Date(ts); if (!(date instanceof Date) || isNaN(date)) return "-"; return date.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }); }
-
-        function toggleOverlay(show) { if (show) { formOverlay.classList.add("show"); document.body.style.overflow = "hidden"; } else { formOverlay.classList.remove("show"); document.body.style.overflow = ""; clearForm(); } setFormStatus("", ""); }
-        function showSuccess() { successOverlay.classList.add("show"); setTimeout(() => successOverlay.classList.remove("show"), 1500); }
-        function clearForm() { binForm.reset(); binIdInput.value = ""; document.querySelectorAll("input, select, textarea").forEach(el => el.style.borderColor = ""); }
-
-        function logout() {
-            if (confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-                localStorage.removeItem("sw_user");
-                window.location.href = "../index.html";
+        // Utilities
+        function setStatus(text, type) {
+            statusEl.textContent = text || "";
+            statusEl.style.color = type === "err" ? "#ef4444" : "#059669";
+            if (type === "ok") {
+                setTimeout(() => statusEl.textContent = "", 4000);
             }
         }
 
-        function renderZones() {
-            zoneSelect.innerHTML = "<option value=''>-- เลือกเขต --</option>";
-            zoneList.forEach(z => { const opt = document.createElement("option"); opt.value = z.id; opt.textContent = z.name || z.id; zoneSelect.appendChild(opt); });
-            const addOpt = document.createElement("option"); addOpt.value = "__new__"; addOpt.textContent = "+ เพิ่มเขตใหม่…"; zoneSelect.appendChild(addOpt);
+        function formatTimestamp(ts) {
+            if (!ts) return "-";
+            let date = ts;
+            if (typeof ts.toDate === "function") date = ts.toDate();
+            else if (!(ts instanceof Date)) date = new Date(ts);
+            if (!(date instanceof Date) || isNaN(date)) return "-";
+            const localeMap = { th: "th-TH", en: "en-US", ms: "ms-MY" };
+            const locale = localeMap[currentLang] || "th-TH";
+            return date.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
         }
 
-        function pad3(n) { return String(n).padStart(3, "0"); }
-        async function assignBinId(zone) {
-            if (!zone) return "";
+        // --- UPDATED: Load My Bins (Group Query) ---
+        async function loadMyBins() {
+            myBins = [];
+            binSelect.innerHTML = `<option>${T.loadingData}</option>`;
+            binSelect.disabled = true;
+
             try {
-                const snap = await smartbinsCol.doc(zone).collection("bin_data").get();
-                let maxNum = 0;
-                snap.forEach(doc => { const m = /(\d+)$/.exec(doc.data().binId || doc.id); if (m) maxNum = Math.max(maxNum, Number(m[1])); });
-                const id = "BIN" + pad3(maxNum + 1); binIdInput.value = id; return id;
-            } catch (err) { console.error(err); binIdInput.value = "BIN001"; return "BIN001"; }
+                // ใช้ collectionGroup เพื่อค้นหา bin_data จากทุก Zone ทันที
+                // ไม่ต้องสนว่า Zone (Parent) จะมีตัวตนจริงหรือไม่
+                const snapshot = await db.collectionGroup("bin_data")
+                    .where("ownerUsername", "==", currentUser.username)
+                    .where("isHidden", "==", false)
+                    .get();
+
+                if (snapshot.empty) {
+                    renderBinList();
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+
+                    // ดึงชื่อ Zone จาก Path (Parent ของ Parent)
+                    const zoneId = doc.ref.parent.parent ? doc.ref.parent.parent.id : "Unknown";
+
+                    myBins.push({
+                        id: `${zoneId}/${doc.id}`,
+                        zone: zoneId,
+                        binId: d.binId || doc.id,
+                        macAddress: d.macAddress || null,
+                        ...d
+                    });
+                });
+
+                renderBinList();
+
+            } catch (err) {
+                console.error("Load Bins Error:", err);
+                binSelect.innerHTML = `<option>${T.errorLoading}</option>`;
+
+                // แจ้งเตือนกรณีต้องสร้าง Index
+                if (err.code === 'failed-precondition' || err.message.includes("index")) {
+                    alert(T.errNeedIndex);
+                }
+            }
         }
 
-        function calculateFillLevel(distanceCm) {
-            if (typeof distanceCm !== 'number' || distanceCm <= 0 || distanceCm > BIN_MAX_HEIGHT_CM) return 0;
-            const fillableDistance = BIN_MAX_HEIGHT_CM - BIN_MIN_FILL_CM;
-            const remainingDistance = Math.max(0, distanceCm - BIN_MIN_FILL_CM);
-            return Math.max(0, Math.min(100, Math.round(((fillableDistance - remainingDistance) / fillableDistance) * 100)));
-        }
-
-        function updateCard(data) {
-            if (!data) { binCard.hidden = true; return; }
-            binCard.hidden = false;
-            binTitle.textContent = data.binId; binDesc.textContent = data.details || "ไม่มีรายละเอียด";
-            binZone.textContent = data.zone; binRfid.textContent = data.rfid || "-"; binCoords.textContent = data.coords || "-";
-            liveBadge.style.display = data.isSensorConnected ? "inline-flex" : "none";
-            const level = Math.max(0, Math.min(100, Math.round(data.fillLevel || 0)));
-            binPercent.textContent = level + "%"; binFill.style.height = level + "%";
-            if (level >= 80) binFill.style.background = "linear-gradient(180deg, #ef4444, #b91c1c)";
-            else if (level >= 50) binFill.style.background = "linear-gradient(180deg, #facc15, #eab308)";
-            else binFill.style.background = "linear-gradient(180deg, #34d399, #059669)";
-            binUpdated.textContent = formatTimestamp(data.updatedAt);
-        }
-
+        // --- 3. Load Bin Details & Listen RTDB ---
         async function loadBinDetail(entry) {
             if (!entry) return;
-            if (rtdbUnsub) { rtdbUnsub(); rtdbUnsub = null; }
-            setStatus("กำลังอัปเดตข้อมูล...", "");
-            try {
-                const zone = entry.zone; const binId = entry.binId;
-                const binDoc = await smartbinsCol.doc(zone).collection("bin_data").doc(binId).get();
-                const binData = binDoc.exists ? binDoc.data() : entry;
-                const lat = binData.lat, lng = binData.lng;
-                lastCardData = { zone: binData.zone || entry.zone, binId: binData.binId || entry.binId, details: binData.details || "", rfid: binData.rfid || "-", lat, lng, updatedAt: binData.updatedAt, fillLevel: 0, isSensorConnected: (binId === "BIN001" && zone === "A") };
-                updateCard({ ...lastCardData, coords: (lat && lng) ? `${lat.toFixed(5)}, ${lng.toFixed(5)}` : "-" });
-                if (lastCardData.isSensorConnected) {
-                    const rtdbLevelRef = rtdb.ref('/Sensor/Distance');
-                    rtdbUnsub = rtdbLevelRef.on('value', (snapshot) => {
-                        const dist = snapshot.val();
-                        if (dist !== null && typeof dist === 'number') {
-                            const fill = calculateFillLevel(dist);
-                            lastCardData.fillLevel = fill; lastCardData.updatedAt = new Date();
-                            updateCard(lastCardData); setStatus(`Live Update: ${dist.toFixed(1)} cm | ${fill}%`, "ok");
-                        }
-                    });
-                } else { setStatus("แสดงข้อมูลล่าสุด (Static)", ""); }
-            } catch (err) { console.error(err); setStatus("Error: " + err.message, "err"); }
+
+            if (rtdbRef && rtdbCallback) {
+                rtdbRef.off("value", rtdbCallback);
+                rtdbRef = null;
+                rtdbCallback = null;
+            }
+
+            currentBin = entry;
+
+            binTitle.textContent = entry.binId;
+            binDesc.textContent = entry.details || "-";
+            binZoneArea.textContent = `${entry.zone} / ${entry.area || "-"}`;
+            binRfid.textContent = entry.RFID || "-";
+            binMac.textContent = entry.macAddress || "-";
+            binCoords.textContent =
+                entry.lat && entry.lng
+                    ? `${entry.lat.toFixed(5)}, ${entry.lng.toFixed(5)}`
+                    : "-";
+            binUpdated.textContent = formatTimestamp(entry.updatedAt);
+
+            binFill.style.height = "0%";
+            binPercent.textContent = "0%";
+            liveBadge.style.display = "none";
+
+            if (!entry.macAddress) {
+                setStatus(T.errNoMac, "err");
+                return;
+            }
+
+            const devicePath = `esp32_devices/${entry.macAddress}`;
+            console.log("📡 RTDB PATH =", devicePath);
+
+            rtdbRef = rtdb.ref(devicePath);
+
+            rtdbCallback = snapshot => {
+                const device = snapshot.val();
+                console.log("📦 RTDB DATA =", device);
+
+                if (!device || typeof device.lastUpdate !== "number") {
+                    setOffline(T.errNoDevice);
+                    return;
+                }
+
+                const diffSec = (Date.now() - device.lastUpdate) / 1000;
+
+                if (diffSec > 30) {
+                    setOffline(`${T.offline} (${Math.floor(diffSec)}s)`);
+                    return;
+                }
+
+                if (typeof device.fillLevel !== "number") {
+                    setStatus(T.errNoFillLevel, "err");
+                    return;
+                }
+
+                const level = Math.max(0, Math.min(100, Math.round(device.fillLevel)));
+
+                binFill.style.height = level + "%";
+                binPercent.textContent = level + "%";
+
+                if (level > 80) {
+                    binFill.style.background = "linear-gradient(180deg, #dc2626, #ef4444)";
+                    liveBadge.style.background = "#fee2e2";
+                    liveBadge.style.color = "#dc2626";
+                    liveBadge.innerHTML = T.binNearFull;
+                } else {
+                    binFill.style.background = "linear-gradient(180deg, #f97316, #fb923c)";
+                    liveBadge.style.background = "#dcfce7";
+                    liveBadge.style.color = "#16a34a";
+                    liveBadge.innerHTML = `<span class="live-dot"></span> ${T.binLive}`;
+                }
+
+                liveBadge.style.display = "inline-flex";
+                binUpdated.textContent = new Date(device.lastUpdate).toLocaleString("th-TH");
+                setStatus(`${T.statusLive} ${level}%`, "ok");
+            };
+
+            rtdbRef.on("value", rtdbCallback);
+
+        }
+        function setOffline(msg) {
+            liveBadge.style.display = "inline-flex";
+            liveBadge.style.background = "#fee2e2";
+            liveBadge.style.color = "#dc2626";
+            liveBadge.innerHTML = T.binOffline;
+
+            binFill.style.height = "0%";
+            binPercent.textContent = "--";
+
+            setStatus(msg || T.errOffline, "err");
         }
 
+        // ===============================
+        // Refresh bin status text (i18n)
+        // ===============================
+        function refreshBinStatusText() {
+            if (!currentBin) return;
+
+            // live badge (offline)
+            if (liveBadge.style.display !== "none") {
+                liveBadge.innerHTML = T.binOffline;
+            }
+
+            // status message
+            if (statusEl.textContent) {
+                if (statusEl.textContent.includes("Device")) {
+                    statusEl.textContent = T.errNoDevice;
+                }
+                if (statusEl.textContent.includes("Offline")) {
+                    statusEl.textContent = T.errOffline;
+                }
+            }
+        }
+
+        // --- 4. Render Bin List ---
         function renderBinList() {
             if (!myBins.length) {
-                emptyState.hidden = false; binSelect.disabled = true; binSelect.innerHTML = "<option>ไม่มีรายการ</option>";
-                binCard.hidden = true; binCard.style.display = "none"; return;
+                binSelect.disabled = true;
+                binSelect.innerHTML = `<option>${T.noBins}</option>`;
+                binCard.hidden = true;
+                setStatus(T.noBins, "err");
+                return;
             }
-            emptyState.hidden = true; binSelect.disabled = false; binSelect.innerHTML = ""; binCard.style.display = "flex";
-            myBins.forEach(entry => { const opt = document.createElement("option"); opt.value = entry.id; opt.textContent = `${entry.binId} - ${entry.zone}`; binSelect.appendChild(opt); });
-            if (!currentBinId || !myBins.some(b => b.id === currentBinId)) currentBinId = myBins[0].id;
-            binSelect.value = currentBinId; loadBinDetail(myBins.find(b => b.id === currentBinId));
-        }
 
-        function validateForm() {
-            const zone = zoneSelect.value; const rfid = rfidInput.value.trim();
-            const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); const details = detailsInput.value.trim();
-            if (!zone) return setFormStatus("กรุณาเลือกเขต", "err");
-            if (!rfid) return setFormStatus("กรุณากรอก RFID", "err");
-            if (isNaN(lat) || isNaN(lng)) return setFormStatus("ระบุพิกัดให้ถูกต้อง", "err");
-            if (!details) return setFormStatus("กรุณากรอกรายละเอียด", "err");
-            return { zone, lat, lng, details, rfid };
+            binCard.hidden = false;
+            binSelect.disabled = false;
+            binSelect.innerHTML = "";
+
+            myBins.forEach(entry => {
+                const opt = document.createElement("option");
+                opt.value = entry.id;
+                opt.textContent = `${entry.binId} (${entry.area || "-"})`;
+                binSelect.appendChild(opt);
+            });
+
+            if (!currentBinId || !myBins.some(b => b.id === currentBinId)) {
+                currentBinId = myBins[0].id;
+            }
+
+            binSelect.value = currentBinId;
+            loadBinDetail(myBins.find(b => b.id === currentBinId));
         }
 
         // Listeners
-        const openOverlay = () => toggleOverlay(true);
-        btnOpenForm.onclick = openOverlay; btnAddFirst.onclick = openOverlay; fabAddBtn.onclick = openOverlay;
-        btnCloseOverlay.onclick = () => toggleOverlay(false); formOverlay.onclick = e => { if (e.target === formOverlay) toggleOverlay(false); };
-        binSelect.onchange = () => { const entry = myBins.find(b => b.id === binSelect.value); if (entry) { currentBinId = entry.id; loadBinDetail(entry); } };
-        btnGps.onclick = () => { if (!navigator.geolocation) return setFormStatus("Browser ไม่รองรับ GPS", "err"); setFormStatus("กำลังค้นหาพิกัด...", ""); navigator.geolocation.getCurrentPosition(pos => { latInput.value = pos.coords.latitude.toFixed(6); lngInput.value = pos.coords.longitude.toFixed(6); setFormStatus("พิกัด OK", "ok"); }); };
-        btnAddZone.onclick = async () => { const name = prompt("ตั้งชื่อเขตใหม่:"); if (name) { await zonesCol.doc(name).set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); zoneSelect.value = name; assignBinId(name); } };
-        zoneSelect.onchange = () => { if (zoneSelect.value === "__new__") { zoneSelect.value = ""; btnAddZone.click(); return; } if (zoneSelect.value) assignBinId(zoneSelect.value); else binIdInput.value = ""; };
-        binForm.onsubmit = async (e) => {
-            e.preventDefault(); const payload = validateForm(); if (!payload) return;
-            try {
-                setFormStatus("กำลังบันทึก...", ""); const zone = payload.zone; const binId = binIdInput.value || await assignBinId(zone); const rfid = payload.rfid.toUpperCase();
-                const rfidSnap = await db.collectionGroup("bin_data").where("rfid", "==", rfid).limit(1).get(); if (!rfidSnap.empty) return setFormStatus("RFID นี้ถูกใช้แล้ว", "err");
-                const data = { binId, zone, rfid, ownerUsername: currentUser.username, ownerName: currentUser.fullName || currentUser.username, lng: payload.lng, lat: payload.lat, details: payload.details, createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-                const zoneRef = smartbinsCol.doc(zone); await zoneRef.collection("bin_data").doc(binId).set(data); await zoneRef.collection("bin_level").doc(binId).set({ binId, zone, fillLevel: 0 });
-                toggleOverlay(false); showSuccess();
-            } catch (err) { console.error(err); setFormStatus("Error: " + err.message, "err"); }
+        binSelect.onchange = () => {
+            const entry = myBins.find(b => b.id === binSelect.value);
+            if (entry) { currentBinId = entry.id; loadBinDetail(entry); }
         };
 
-        zonesCol.orderBy("name").onSnapshot(snap => { zoneList = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderZones(); });
-        db.collectionGroup("bin_data").where("ownerUsername", "==", currentUser.username).onSnapshot(snap => { myBins = snap.docs.map(doc => { const d = doc.data(); return { id: doc.ref.path, zone: d.zone || doc.ref.parent.parent.id, binId: d.binId || doc.id, ...d }; }).sort((a, b) => a.zone.localeCompare(b.zone) || a.binId.localeCompare(b.binId)); renderBinList(); });
-        window.onbeforeunload = () => { if (rtdbUnsub) rtdbUnsub(); };
+        window.onbeforeunload = () => {
+            if (rtdbRef && rtdbCallback) {
+                rtdbRef.off("value", rtdbCallback);
+            }
+        };
+    </script>
+    <script>
+        document.addEventListener("user-auth-ready", () => {
+            applyTranslations();
+
+            $("binSelectInit").textContent = T.loadingData;
+            binTitle.textContent = T.binPlaceholder;
+            binDesc.textContent = T.binDescPlaceholder;
+
+            const user = window.USER_AUTH;
+            if (!user) return;
+
+            const initial = user.displayName.charAt(0).toUpperCase();
+
+            userLabelEl.textContent = user.displayName;
+            userAvatar.textContent = initial;
+            if (userAvatarMobile) userAvatarMobile.textContent = initial;
+
+            // role (user page = ผู้ใช้งาน)
+            document.getElementById("userRole").textContent = T.userRole_user;
+
+            currentUser = user;
+
+            loadMyBins();
+        });
+
+        function applyTranslations() {
+            document.title = T.pageTitle_userHome;
+
+            $("brandTitle").textContent = T.brandTitle;
+            $("loadingText").textContent = T.loadingData;
+
+            $("homeTitle").textContent = T.homeTitle;
+            $("homeSubtitle").textContent = T.homeSubtitle;
+
+            $("labelSelectBin").textContent = T.labelSelectBin;
+            $("labelZoneArea").textContent = T.labelZoneArea;
+            $("labelRfid").textContent = T.labelRfid;
+            $("labelMac").textContent = T.labelMac;
+            $("labelGps").textContent = T.labelGps;
+            $("labelUpdated").textContent = T.labelUpdated;
+
+            // ✅ เพิ่ม 3 บรรทัดนี้
+            $("menuMyBins").textContent = T.menuMyBins;
+            $("menuMap").textContent = T.menuMap;
+            $("menuLogout").textContent = T.menuLogout;
+
+            // user role
+            const roleEl = document.getElementById("userRole");
+            if (roleEl) {
+                roleEl.textContent = T.userRole_user;
+            }
+
+        }
+
+        /* ===============================
+       USER Language Switcher
+       =============================== */
+        function updateLangMenuActive() {
+            if (!langMenu) return;
+            langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.lang === currentLang);
+            });
+        }
+
+        let currentLang =
+            localStorage.getItem("sw_lang") ||
+            (window.USER_LANG && window.USER_LANG.getLang?.()) ||
+            "th";
+
+        const langIconBtn = document.getElementById("langIconBtn");
+        const langMenu = document.getElementById("langMenu"); // ✅ ต้องมาก่อน
+
+        applyLangTheme(currentLang);
+        updateLangMenuActive(); // ✅ ปลอดภัยแล้ว
+
+        function changeUserLanguage(lang) {
+            if (!window.SW_Translations || !window.SW_Translations[lang]) return;
+
+            currentLang = lang; // ✅ FIX หลัก
+
+            localStorage.setItem("sw_lang", lang);
+
+            if (window.USER_LANG && typeof window.USER_LANG.setLang === "function") {
+                window.USER_LANG.setLang(lang);
+            }
+
+            // re-init T
+            (function initHomeT() {
+                window.T = window.SW_Translations[lang];
+            })();
+
+            applyTranslations();
+            refreshBinStatusText();
+            updateLangMenuActive();
+            applyLangTheme(lang);
+        }
+
+        function applyLangTheme(lang) {
+            const root = document.documentElement;
+
+            switch (lang) {
+                case "th":
+                    root.style.setProperty(
+                        "--lang-shadow",
+                        "0 12px 30px rgba(5,150,105,.25)"
+                    );
+                    break;
+
+                case "en":
+                    root.style.setProperty(
+                        "--lang-shadow",
+                        "0 16px 40px rgba(37,99,235,.28)"
+                    );
+                    break;
+
+                case "ms":
+                    root.style.setProperty(
+                        "--lang-shadow",
+                        "0 14px 34px rgba(245,158,11,.28)"
+                    );
+                    break;
+            }
+        }
+
+        // เปิด/ปิดเมนู (SAFE)
+        if (langIconBtn && langMenu) {
+            langIconBtn.addEventListener("click", () => {
+                langMenu.classList.toggle("show");
+            });
+        }
+
+        // คลิกเลือกภาษา
+        // คลิกเลือกภาษา (SAFE)
+        if (langMenu) {
+            langMenu.addEventListener("click", e => {
+                const btn = e.target.closest("button[data-lang]");
+                if (!btn) return;
+
+                changeUserLanguage(btn.dataset.lang);
+                langMenu.classList.remove("show");
+            });
+        }
+
+        // คลิกนอกเมนู = ปิด
+        document.addEventListener("click", e => {
+            if (!langMenu.contains(e.target) && !langIconBtn.contains(e.target)) {
+                langMenu.classList.remove("show");
+            }
+        });
     </script>
 </body>
 

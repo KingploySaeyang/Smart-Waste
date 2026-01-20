@@ -1,150 +1,185 @@
 #include <WiFi.h>
 #include <SPI.h>
 #include <MFRC522.h>
-#include <Firebase_ESP_Client.h> 
+#include <Firebase_ESP_Client.h>
 
-// -------------------------------------------------------------------------------------------------
-// ⚠️ ต้องแก้ไขค่า FIREBASE_RTDB_SECRET 
-// -------------------------------------------------------------------------------------------------
-#define WIFI_SSID "3BB"
-#define WIFI_PASSWORD "12082546"
+// ================= WiFi =================
+#define WIFI_SSID     "SEEKUBALIK"
+#define WIFI_PASSWORD "123456878"
 
-// ข้อมูล Firebase (ใช้ API Key และ Realtime Database Secret Key)
-// โฮสต์ที่คุณใช้ (.firebaseio.com) ถูกต้องสำหรับ Host เก่า
-#define FIREBASE_HOST "smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app" 
-#define FIREBASE_API_KEY "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk" 
+// ================= Firebase =================
+#define FIREBASE_HOST "smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_API_KEY "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk"
+#define FIREBASE_RTDB_SECRET "Irran8J7yjOyDsoyi7btfcKr9Cz6KnSax0FLwoKe"
 
-// 💡 ต้องใส่ Secret Key ที่นี่
-#define FIREBASE_RTDB_SECRET "Irran8J7yjOyDsoyi7btfcKr9Cz6KnSax0FLwoKe" 
+// ================= MFRC522 Pins =================
+#define SS_PIN   5
+#define RST_PIN  22
 
-// Path ใน Realtime DB ที่จะใช้ส่งค่า RFID
-const String RFID_PATH = "/rfid_input/tagId"; 
+#define STATUS_LED_PIN 2
 
-// -------------------------------------------------------------------------------------------------
+// RTDB Paths
+static const char* PATH_SCANNER_CURRENT_ADMIN = "rfid_scanner/currentAdmin";
+static const char* PATH_ADMIN_ACTIVE_BASE     = "admin_rfid_active";
+static const char* PATH_ADMIN_RFID_INPUT_BASE = "admin_rfid_input";
 
-// กำหนด GPIO Pins สำหรับ RC522
-#define SS_PIN 5  // D5 (เป็น SDA/SS)
-#define RST_PIN 22 // D22
-
-MFRC522 mfrc522(SS_PIN, RST_PIN);  
-
-// ตัวแปร Firebase
 FirebaseData fbdo;
-FirebaseAuth auth; 
+FirebaseAuth auth;
 FirebaseConfig config;
 
-// ตัวแปรสำหรับตรวจสอบสถานะ
-bool firebaseSetupDone = false;
-unsigned long lastRfidClear = 0;
-const unsigned long RTDB_CLEAR_DELAY = 10000; // 10 วินาที 
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
-// ฟังก์ชันสำหรับตรวจสอบสถานะ Token (Callback function, โครงสร้างเปลี่ยนไป)
-void firebaseTokenStatusCallback(TokenInfo info);
+String activeAdminUid = "";
+String lastTagSent = "";
+unsigned long lastSendMs = 0;
 
-void setup() {
-    Serial.begin(115200);
-    SPI.begin();       
-    mfrc522.PCD_Init(); 
+const unsigned long POLL_INTERVAL_MS = 300;
+unsigned long lastPollMs = 0;
 
-    Serial.println("RC522 initialized.");
+const unsigned long SEND_COOLDOWN_MS = 900;
 
-    // --- เชื่อมต่อ Wi-Fi ---
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    Serial.print("Connecting to Wi-Fi");
-    while (WiFi.status() != WL_CONNECTED) {
-        Serial.print(".");
-        delay(500);
-    }
-    Serial.println();
-    Serial.print("Connected with IP: ");
-    Serial.println(WiFi.localIP());
-
-    // --- ตั้งค่า Firebase ---
-    
-    config.database_url = FIREBASE_HOST;
-    config.api_key = FIREBASE_API_KEY;
-    
-    // 💡 การยืนยันตัวตนด้วย Legacy Token (Secret Key)
-    if (String(FIREBASE_RTDB_SECRET).length() > 0) {
-        config.signer.tokens.legacy_token = FIREBASE_RTDB_SECRET;
-        Serial.println("Using Legacy Database Secret Token.");
-    }
-    
-    config.token_status_callback = firebaseTokenStatusCallback; 
-
-    // เริ่ม Firebase 
-    Firebase.begin(&config, &auth); 
-    
-    Firebase.reconnectWiFi(true);
-    firebaseSetupDone = true;
-    
-    fbdo.setResponseSize(2048); 
-    Serial.println("Firebase setup complete.");
+static void led(bool on) {
+  pinMode(STATUS_LED_PIN, OUTPUT);
+  digitalWrite(STATUS_LED_PIN, on ? HIGH : LOW);
 }
 
-// Callback สำหรับตรวจสอบสถานะ Token 
-void firebaseTokenStatusCallback(TokenInfo info) {
-    if (info.status == token_status_ready) {
-        Serial.println("Firebase Token is ready.");
-    } else {
-        Serial.printf("Token Status: %d\n", info.status);
-    }
+static String readTagHexUpper() {
+  if (!mfrc522.PICC_IsNewCardPresent()) return "";
+  if (!mfrc522.PICC_ReadCardSerial()) return "";
+
+  String tag = "";
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+    if (mfrc522.uid.uidByte[i] < 0x10) tag += "0";
+    tag += String(mfrc522.uid.uidByte[i], HEX);
+  }
+  tag.toUpperCase();
+
+  mfrc522.PICC_HaltA();
+  mfrc522.PCD_StopCrypto1();
+  return tag;
+}
+
+static String readCurrentAdminLock() {
+  if (Firebase.RTDB.getString(&fbdo, PATH_SCANNER_CURRENT_ADMIN)) {
+    String uid = fbdo.stringData();
+    uid.trim();
+    return uid;
+  }
+  return "";
+}
+
+// fallback: หา uid ตัวแรกที่ admin_rfid_active/{uid} == true
+static String findActiveAdminFallback() {
+  if (!Firebase.RTDB.getJSON(&fbdo, PATH_ADMIN_ACTIVE_BASE)) return "";
+  FirebaseJson *json = fbdo.jsonObjectPtr();
+  if (!json) return "";
+
+  size_t len = json->iteratorBegin();
+  String found = "";
+  for (size_t i = 0; i < len; i++) {
+    int type = 0;
+    String key, value;
+    json->iteratorGet(i, type, key, value);
+    String v = value; v.trim(); v.toLowerCase();
+    if (v == "true" || v == "1") { found = key; break; }
+  }
+  json->iteratorEnd();
+  return found;
+}
+
+static bool sendTagToAdmin(const String& uid, const String& tag) {
+  if (uid.isEmpty() || tag.isEmpty()) return false;
+  String path = String(PATH_ADMIN_RFID_INPUT_BASE) + "/" + uid + "/tagId";
+  return Firebase.RTDB.setString(&fbdo, path.c_str(), tag.c_str());
+}
+
+static bool shouldSend(const String& tag) {
+  unsigned long now = millis();
+  if (now - lastSendMs < SEND_COOLDOWN_MS) return false;
+  if (tag == lastTagSent && (now - lastSendMs) < (SEND_COOLDOWN_MS * 3)) return false;
+  return true;
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(200);
+
+  led(false);
+
+  // WiFi
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("WiFi connecting");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(300);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi OK");
+
+  // Firebase
+  config.database_url = String("https://") + FIREBASE_HOST;
+  config.api_key = FIREBASE_API_KEY;
+  config.signer.tokens.legacy_token = FIREBASE_RTDB_SECRET;
+
+  Firebase.reconnectWiFi(true);
+  Firebase.begin(&config, &auth);
+
+  // RFID
+  SPI.begin(); // ถ้าสายคุณไม่ใช่ค่า default ให้ใช้ SPI.begin(SCK,MISO,MOSI,SS)
+  mfrc522.PCD_Init();
+  Serial.println("MFRC522 ready");
+
+  Serial.println("Waiting session: rfid_scanner/currentAdmin (or fallback admin_rfid_active)");
 }
 
 void loop() {
-    if (!firebaseSetupDone) return;
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (!Firebase.ready()) { delay(100); return; }
 
-    // ตรวจสอบว่ามีบัตรวางอยู่หรือไม่
-    if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
-        
-        // อ่านค่า UID ของบัตร (RFID Tag)
-        String uidText = "";
-        for (byte i = 0; i < mfrc522.uid.size; i++) {
-            if (i > 0) uidText += ""; 
-            uidText += (mfrc522.uid.uidByte[i] < 0x10 ? "0" : "") + 
-                       String(mfrc522.uid.uidByte[i], HEX);
-        }
-        uidText.toUpperCase(); 
+  // poll session owner
+  if (millis() - lastPollMs > POLL_INTERVAL_MS) {
+    lastPollMs = millis();
 
-        Serial.print("RFID Tag Detected: ");
-        Serial.println(uidText);
-
-        // --- ส่งค่า RFID ไปยัง Firebase Realtime Database ---
-        // Path ที่ใช้: /rfid_input/tagId
-        if (Firebase.RTDB.setString(&fbdo, RFID_PATH, uidText)) {
-            Serial.println("✅ Sent to Firebase successfully.");
-            // 💡 ถ้าส่งสำเร็จ ให้ตั้งค่าล้างค่า
-            lastRfidClear = millis(); 
-        } else {
-            Serial.print("❌ Failed to send to Firebase: ");
-            // 💡 แสดงสาเหตุความผิดพลาดให้ชัดเจนที่สุด
-            Serial.println(fbdo.errorReason()); 
-        }
-
-        mfrc522.PICC_HaltA();      
-        mfrc522.PCD_StopCrypto1(); 
-
-        delay(1000); 
+    String uid = readCurrentAdminLock();
+    if (uid.isEmpty()) {
+      uid = findActiveAdminFallback(); // ให้ลองทำงานได้ก่อน แม้ยังไม่เพิ่ม lock
     }
 
-    // -----------------------------------------------------------------
-    // ฟังก์ชันเสริม: ล้างค่า RFID ใน Realtime DB (ถ้าไม่มีการสแกนใหม่ 10 วินาที)
-    // -----------------------------------------------------------------
-    if (millis() - lastRfidClear > RTDB_CLEAR_DELAY && lastRfidClear != 0) {
-        // ต้องตรวจสอบการเชื่อมต่อก่อนเรียกใช้
-        if (WiFi.isConnected() && Firebase.ready()) {
-            // 💡 แก้ไข: ใช้ deleteNode เพื่อล้างข้อมูลอย่างสมบูรณ์
-             if (Firebase.RTDB.deleteNode(&fbdo, RFID_PATH)) { 
-                 Serial.println("Auto-cleared RTDB RFID value.");
-                 lastRfidClear = 0; // ตั้งค่าเป็น 0 เพื่อหยุดการล้างซ้ำ
-             } else {
-                 Serial.print("❌ Failed to clear RTDB: ");
-                 // อาจจะแสดง error reason เดิม หรือแค่บอกว่าล้มเหลว
-                 Serial.println(fbdo.errorReason()); 
-             }
-        }
+    if (uid != activeAdminUid) {
+      activeAdminUid = uid;
+      if (!activeAdminUid.isEmpty()) {
+        Serial.print("ACTIVE ADMIN UID = ");
+        Serial.println(activeAdminUid);
+        led(true);
+        lastTagSent = "";
+        lastSendMs = 0;
+      } else {
+        Serial.println("No active admin. Standby.");
+        led(false);
+      }
     }
-    // -----------------------------------------------------------------
+  }
 
-    delay(50);
+  if (activeAdminUid.isEmpty()) { delay(10); return; }
+
+  // read tag
+  String tag = readTagHexUpper();
+  if (tag.isEmpty()) { delay(5); return; }
+
+  Serial.print("Scanned tag: ");
+  Serial.println(tag);
+
+  if (!shouldSend(tag)) return;
+
+  bool ok = sendTagToAdmin(activeAdminUid, tag);
+  if (ok) {
+    Serial.println("Sent tag OK -> admin_rfid_input/{uid}/tagId");
+    lastTagSent = tag;
+    lastSendMs = millis();
+  } else {
+    Serial.print("Send FAIL: ");
+    Serial.println(fbdo.errorReason());
+  }
+
+  delay(10);
 }
