@@ -1,4 +1,4 @@
-window.SW_Translations = window.SW_Translations || {};
+﻿window.SW_Translations = window.SW_Translations || {};
 window.SW_Translations.en = {
     // =====================================================
     // LOGIN PAGE (Sign In) - EN
@@ -23,8 +23,8 @@ window.SW_Translations.en = {
     /* ---------- Remember / Links ---------- */
     rememberMe: "Remember me",
     forgotPassword: "Forgot password?",
-    noAccount: "Don’t have an account?",
-    signup: "Sign up",
+    noAccount: "Don't have an account?",
+    signup: "Register",
 
     /* ---------- Buttons ---------- */
     btnLogin: "Sign In",
@@ -32,7 +32,7 @@ window.SW_Translations.en = {
 
     /* ---------- Login Status ---------- */
     loginSuccess: "Login successful",
-    loginSuccessDriver: "Login successful (Driver)",
+    loginSuccessDriver: "Login successful (Driver Staff)",
 
     /* ---------- Validation / Errors ---------- */
     errFillAll: "Please fill in all required fields",
@@ -60,7 +60,7 @@ window.SW_Translations.en = {
     forgotSendSuccess: "Reset link has been sent to",
 
     /* ---------- Forgot Password (Driver) ---------- */
-    forgotDriverTitle: "Driver Account",
+    forgotDriverTitle: "Driver Staff Account",
     forgotDriverHint:
         "Please contact the administrator to reset your password",
 
@@ -81,8 +81,8 @@ window.SW_Translations.en = {
     // Menu
     // ================================
     register: "Register Bin",
-    addDriver: "Drivers",
-    schedule: "Collection Schedule",
+    addDriver: "Driver Staff",
+    schedule: "Truck Schedule",
     truck: "Truck Tracking",
     report: "Reports",
     logout: "Logout",
@@ -102,16 +102,16 @@ window.SW_Translations.en = {
     ariaChangeLanguage: "Change language",
 
     /* ---------- Add Bin Header ---------- */
-    addBinHeaderTitle: "Add Waste Bin",
+    addBinHeaderTitle: "Add new bins to track status and plan collection efficiently",
     btnShowForm: "Add Bin",
 
     /* ---------- Filters ---------- */
     filterZoneLabel: "Zone",
     filterAreaLabel: "Sub-area",
     filterBinLabel: "BIN / Owner",
-    filterBinPlaceholder: "Filter by BIN or owner name",
-    filterZoneAll: "All zones",
-    filterAreaAll: "All",
+    filterBinPlaceholder: "🔍 Filter by BIN or owner name",
+    filterZoneAll: "📍 All Zones",
+    filterAreaAll: "📍 All Areas",
 
     /* ---------- Table ---------- */
     tableHeaderZone: "Zone",
@@ -144,6 +144,15 @@ window.SW_Translations.en = {
 
     /* ---------- Buttons ---------- */
     btnGetGps: "Get GPS Location",
+    btnSaveBin: "Save",
+    mapExit: "Exit map",
+    btnPickMap: "Pick from map",
+    mapConfirm: "Use this point",
+    mapModalTitle: "Select location on the map",
+    mapHintClick: "Click on the map to drop a pin",
+    mapNoPoint: "Please choose a point on the map",
+    mapApplySuccess: "Coordinates saved from the map",
+    mapLibMissing: "Map library failed to load",
     btnSave: "Save",
     btnReset: "Reset Form",
     btnCancel: "Cancel",
@@ -203,6 +212,7 @@ window.SW_Translations.en = {
     /* ---------- MAC ---------- */
     labelMacAddress: "Device Board (MAC Address)",
     btnConfirmMac: "Confirm Device",
+    btnConfirmMacShort: "Confirm",
     macSelectOffline: "No online devices",
     macSelectDefault: "Select device (MAC Address)",
     macLoading: "Loading online MAC addresses...",
@@ -272,14 +282,14 @@ window.SW_Translations.en = {
     // Driver Management Page
     // =====================================================
 
-    pageTitle_driver: "Smart Waste - Drivers",
-    mainTitle_driver: "Manage Garbage Truck Drivers",
-    pageHint_driver: "Create and manage driver accounts by zone.",
+    pageTitle_driver: "Smart Waste - Driver Staff",
+    mainTitle_driver: "Manage Garbage Truck Driver Staff",
+    pageHint_driver: "Create and manage driver staff accounts by zone.",
 
-    addDriverTitle: "Add New Driver",
-    addDriverHint: "Click to register a new driver",
-    btnOpenDriverForm: "Add Driver",
-    editDriverTitle: "Edit Driver Information",
+    addDriverTitle: "Add New Driver Staff",
+    addDriverHint: "Click to register a new driver staff",
+    btnOpenDriverForm: "Add Driver Staff",
+    editDriverTitle: "Edit Driver Staff Information",
 
     labelDriverZone: "Zone (Operation Area)",
     zoneHelp: "Select a zone first. Driver ID will be generated automatically.",
@@ -309,24 +319,24 @@ window.SW_Translations.en = {
     thDriverActions: "Actions",
 
     btnClearDriver: "Clear Form",
-    btnSaveDriver: "Save Driver",
+    btnSaveDriver: "Save Driver Staff",
     btnUpdateDriver: "Save Changes",
 
-    loadingDrivers: "Loading drivers...",
-    noDrivers: "No drivers found",
+    loadingDrivers: "Loading driver staff...",
+    noDrivers: "No driver staff found",
 
     statusSelectZoneFirst: "Please select a zone first",
     statusComputingDriverId: "Generating Driver ID...",
     statusDriverIdExists: "Driver ID already exists",
-    statusSavingDriver: "Saving driver data...",
-    statusSaveDriverOk: "Driver saved successfully",
-    statusUpdateDriverOk: "Driver updated successfully",
-    statusSaveDriverError: "Failed to save driver",
+    statusSavingDriver: "Saving driver staff data...",
+    statusSaveDriverOk: "Driver staff saved successfully",
+    statusUpdateDriverOk: "Driver staff updated successfully",
+    statusSaveDriverError: "Failed to save driver staff",
 
     statusMissingNamePhone: "Please enter full name and phone number",
     statusMissingUserPass: "Please enter username and password",
 
-    confirmDeleteDriver: "Do you want to delete (hide) this driver?",
+    confirmDeleteDriver: "Do you want to delete (hide) this driver staff?",
     deleteDriverFail: "Delete failed: ",
 
     // ================================
@@ -334,15 +344,15 @@ window.SW_Translations.en = {
     // Driver Management (English)
     // ================================
     /* ---------- Page ---------- */
-    pageTitle_driver: "Smart Waste - Garbage Truck Driver",
-    mainTitle: "Garbage Truck Driver Management",
-    pageHint: "Add / manage driver user accounts for each working zone",
+    pageTitle_driver: "Smart Waste - Garbage Truck Driver Staff",
+    mainTitle: "Garbage Truck Driver Staff Management",
+    pageHint: "Add / manage driver staff user accounts for each working zone",
 
     /* ---------- Header ---------- */
-    addDriverTitle: "Add New Driver",
-    editDriverTitle: "Edit Driver Information",
-    addDriverHint: "Click the button to add / register a new driver",
-    btnOpenDriverForm: "Add Driver",
+    addDriverTitle: "Add New Driver Staff",
+    editDriverTitle: "Edit Driver Staff Information",
+    addDriverHint: "Click the button to add / register a new driver staff",
+    btnOpenDriverForm: "Add Driver Staff",
 
     /* ---------- Form ---------- */
     labelZone: "Working Zone",
@@ -366,16 +376,17 @@ window.SW_Translations.en = {
     passwordEditHint: "Leave blank if you do not want to change password",
 
     btnClear: "Clear Form",
-    btnSaveDriver: "Save Driver",
+    btnSaveDriver: "Save Driver Staff",
     btnUpdateDriver: "Save Changes",
 
     /* ---------- Filter ---------- */
     labelZoneFilter: "Zone",
-    filterZoneAll: "All Zones",
+    filterZoneAll: "📍 All Zones",
     labelSearch: "Search Driver ID / Username",
-    searchPh: "Search Driver ID / Username",
+    searchPh: "🔍 Search Driver ID / Username",
 
     /* ---------- Table ---------- */
+    driverTableTitle: "Driver Staff Data Table",
     thZone: "Zone",
     thDriverId: "Driver ID",
     thUsername: "Username",
@@ -390,13 +401,13 @@ window.SW_Translations.en = {
     countPrefix: "Showing",
     countSuffix: "items",
 
-    loadingText: "Loading driver data...",
-    noDrivers: "No drivers found",
+    loadingText: "Loading driver staff data...",
+    noDrivers: "No driver staff found",
 
     /* ---------- Status / Validation ---------- */
     statusSaving: "Saving...",
-    statusSaveOk: "Driver saved successfully",
-    statusUpdateOk: "Driver updated successfully",
+    statusSaveOk: "Driver staff saved successfully",
+    statusUpdateOk: "Driver staff updated successfully",
     statusSaveErrorPrefix: "Failed to save: ",
 
     statusMissingNamePhone: "Please enter full name and phone number",
@@ -410,7 +421,7 @@ window.SW_Translations.en = {
 
     /* ---------- Confirm ---------- */
     confirmTitle: "Confirmation",
-    confirmDelete: "Do you want to delete (hide) this driver?",
+    confirmDelete: "Do you want to delete (hide) this driver staff?",
     confirmDuplicateName:
         "Duplicate name {name} found in this zone. Do you want to continue?",
     confirmPhoneDuplicate:
@@ -426,9 +437,10 @@ window.SW_Translations.en = {
     /* ---------- Page ---------- */
     pageTitle_schedule: "Smart Waste - Truck Schedule",
     mainTitle_schedule: "Garbage Truck Schedule",
-
+    pageSubtitle_schedule: "Manage the operating schedule of garbage trucks in each area.",
     /* ---------- Common ---------- */
-    menuBtn: "☰ Menu",
+    menuBtn: "Menu",
+    scheduleSearch: "🔍 Search for Date/Zone/Vehicle/Driver/Service Area.",
 
     /* ---------- Header ---------- */
     addScheduleHeaderTitle: "Create Truck Schedule",
@@ -452,10 +464,10 @@ window.SW_Translations.en = {
     truckNoData: "No trucks in this zone",
     truckLoadFail: "Failed to load trucks",
 
-    labelDriver: "Select Driver",
+    labelDriver: "Select Driver Staff",
     driverPlaceholder: "Select zone first...",
-    driverSelect: "Select driver...",
-    driverNoData: "No drivers in this zone",
+    driverSelect: "Select driver staff...",
+    driverNoData: "No driver staff in this zone",
 
     btnClear: "Clear Form",
     btnSave: "Save Schedule",
@@ -466,7 +478,7 @@ window.SW_Translations.en = {
     thWorkDate: "Work Date",
     thZoneArea: "Zone / Area",
     thTruck: "Truck",
-    thDriver: "Driver",
+    thDriver: "Driver Staff",
     thWorkStatus: "Work Status",
     workFinished: "Completed",
     workNotFinished: "Not completed",
@@ -491,7 +503,7 @@ window.SW_Translations.en = {
     alertLoadZoneFail: "Failed to load zone data",
 
     /* ---------- Conflict / Duplicate ---------- */
-    conflictTitle: "⚠️ Duplicate Schedule",
+    conflictTitle: "Duplicate Schedule",
     conflictSameDay: "A schedule already exists for this date.\nSaving is not allowed.",
     btnCancel: "Cancel",
     btnConfirm: "Confirm",
@@ -506,10 +518,11 @@ window.SW_Translations.en = {
     /* ---------- Page / Title ---------- */
     pageTitle_truck: "Smart Waste - Truck Tracking",
     mainTitle_truck: "Truck Tracking",
+    pageSubtitle_truck: "Live garbage truck locations and work status",
 
     /* ---------- Sidebar / Common ---------- */
     sidebarTitle: "Smart Waste",
-    menuBtn: "☰ Menu",
+    menuBtn: "Menu",
     ariaChangeLanguage: "Change language",
 
     /* ---------- Role ---------- */
@@ -523,7 +536,7 @@ window.SW_Translations.en = {
 
     /* ---------- Zone Filter / Actions ---------- */
     zoneFilterLabel: "Select Zone",
-    zoneFilterAll: "All Zones",
+    zoneFilterAll: "📍 All Zones",
     createTruckBtn: "Add Truck",
     focusBtn: "Focus Map",
     noZoneSelected: "No zone selected",
@@ -548,15 +561,17 @@ window.SW_Translations.en = {
     usageTitle: "Realtime Truck Monitering",
     usageHint: "Realtime truck monitering records",
     usageThDate: "Date",
+    usageThZone: "Zone",
     usageThStart: "Start",
     usageThEnd: "End",
     usageThDuration: "Duration",
+    usageThDriver: "Driver",
     usageThLat: "Latitude",
     usageThLng: "Longitude",
     loading: "Loading...",
 
     /* ---------- Duration / Placeholder ---------- */
-    dashPlaceholder: "—",
+    dashPlaceholder: "-",
     durationFormat: "%h%h %m%m %s%s",
 
     /* ---------- Create Truck Overlay ---------- */
@@ -573,33 +588,44 @@ window.SW_Translations.en = {
     noScheduleTitle: "No Schedule",
     noScheduleText: "This truck has no schedule today",
 
-    // =====================================================
+     // =====================================================
     // DRIVER DASHBOARD (Driver.html)
     // =====================================================
 
     /* ---------- Page / Header ---------- */
-    pageTitle_driverDashboard: "Smart Waste - Driver Dashboard",
+    pageTitle_driverDashboard: "Smart Waste - Driver Staff Dashboard",
     pageSub_driverDashboard: "Today's work overview and garbage truck route",
+    pageTitle_driverSchedule: "Smart Waste - Driver Schedule",
+    mainTitle_driverDashboard: "Driver Dashboard",
+    mainSubtitle_driverDashboard: "Today's work overview and garbage truck route",
+    mainTitle_driverSchedule: "Driver Schedule",
+    mainSubtitle_driverSchedule: "See all shifts (pending, today, next shift)",
 
     brandDriver: "Smart Waste - Control Center",
-    driverRole: "Garbage Truck Driver",
+    driverRole: "Garbage Truck Driver Staff",
 
     /* ---------- Top Right ---------- */
     btnLogout: "Logout",
-    logoutConfirm: "Do you want to log out?",
+    logoutConfirm: "Logout",
 
     /* ---------- Summary Cards ---------- */
-    cardDriverLabel: "Driver Name",
+    cardDriverLabel: "Driver Staff Name",
     cardTodayRouteLabel: "Today's Schedule",
     cardWorkStatusLabel: "Today's Work Status",
+    routeDetailDate: "Date",
+    routeDetailZone: "Zone",
+    routeDetailTruck: "Truck",
+    routeDetailAreas: "Service Areas",
+    routeDetailDriver: "Driver",
 
-    driverCodePrefix: "Driver ID: ",
+    driverCodePrefix: "Driver Staff ID: ",
     truckCodePrefix: "Truck",
 
     /* ---------- Work Status ---------- */
     workStatusOff: "Not Started",
     workStatusOn: "Working",
     workStatusDone: "Finished",
+    workStatusLate: "Finished late",
 
     statusOptionNotStart: "Not Started",
     statusOptionWorking: "Collecting Waste",
@@ -607,12 +633,36 @@ window.SW_Translations.en = {
 
     workTimeLabel: "Working Time Today",
 
+    /* ---------- Pending Jobs ---------- */
+    pendingTitle: "Pending Jobs",
+    pendingSubtitle: "All your unfinished routes",
+    pendingEmpty: "No pending jobs",
+    pendingZone: "Zone",
+    pendingTruck: "Truck",
+
+    /* ---------- Schedule Calendar ---------- */
+    scheduleTitle: "Schedule",
+    scheduleSubtitle: "All your assigned shifts",
+    scheduleEmpty: "No schedules available",
+    scheduleStatusToday: "Today",
+    scheduleStatusPending: "Not done",
+    scheduleStatusFuture: "Next shift",
+    scheduleStatusDone: "Done",
+    scheduleStatusLate: "Finished late",
+    scheduleLegendToday: "Today",
+    scheduleLegendPending: "Not done",
+    scheduleLegendLate: "Finished late",
+    scheduleLegendFuture: "Next shift",
+    scheduleLegendDone: "Done",
+    scheduleFutureLocked: "You cannot start future work yet",
+
     /* ---------- Map Section ---------- */
     mapSectionTitle: "Route Map",
     mapSectionSub: "Real-time truck location and bins to be collected",
 
     tabLive: "Start Work",
     tabBreak: "Finish Work",
+    startingWork: "Starting...",
 
     truckLocationPopup: "Garbage Truck Location",
 
@@ -624,34 +674,41 @@ window.SW_Translations.en = {
     gpsNotSupported: "GPS not supported on this device",
     gpsErrorPrefix: "GPS Error: ",
 
+
     /* ---------- Schedule ---------- */
     noScheduleToday: "No schedule for today",
     noScheduleSub: "Please contact the administrator",
     noScheduleForDriver: "No schedule assigned to you",
 
-    errNoZoneAssigned: "No zone assigned to this driver",
+    errNoZoneAssigned: "No zone assigned to this driver staff",
     errNoTruckAssigned: "No truck assigned",
 
     /* ---------- Start / Finish Work ---------- */
-    errDriverOrTruckMissing: "Driver or truck information is missing",
+    errDriverOrTruckMissing: "Driver staff or truck information is missing",
     errSystemNotReady: "System is not ready",
     errAlreadyWorkingOtherDevice: "This account is already working on another device",
+    errWorkAlreadyFinished: "This shift is already finished",
     errStartWorkFailed: "Failed to start work. Please try again",
 
     confirmFinishTitle: "Confirm Finish Work",
     confirmFinishDesc: "Do you want to confirm finishing today's work?",
     confirmYes: "Confirm",
     confirmNo: "Cancel",
+    confirmStartTitle: "Confirm Start Work",
+    confirmStartDesc: "Do you want to start work now?",
 
     /* ---------- RFID Scan Popup ---------- */
     scanTitle: "Waste Collection Recorded",
     scanBinId: "Bin",
-    scanDriver: "Driver",
+    scanDriver: "Driver Staff",
     scanSavedAt: "Time",
-    scanFillBefore: "Fill Level",
-    scanWeightBefore: "Weight",
+    scanFillBefore: "Bin Level",
+    scanWeightBefore: "Waste Weight",
 
     /* ---------- Navigation ---------- */
+    navDashboard: "Dashboard",
+    navSchedule: "Schedule",
+    btnBackDashboard: "Back to Dashboard",
     btnBackLogin: "Back to Login",
     logoutTitle: "Sign out?",
     logoutText: "Do you want to sign out?",
@@ -680,6 +737,28 @@ window.SW_Translations.en = {
 
     labelGps: "Coordinates",
     labelUpdated: "Last Updated",
+    labelWeight: "Waste Weight",
+
+    // =====================================================
+    // USER MAP (map.html)
+    // =====================================================
+    pageTitle_userMap: "Smart Waste - Map",
+    mapTitle: "My Bin Map",
+    mapSubtitle: "Track your bins and collection trucks in real time",
+    mapSectionBins: "My Bins",
+    mapSectionTrucks: "Trucks (Online)",
+    mapNoBins: "No bins found for your account",
+    mapNoTrucksZone: "No trucks found in your area",
+    mapNoTrucksOnline: "No trucks online right now",
+    mapZoneUnknown: "Unknown zone",
+    mapTruckWorkingPrefix: "Working •",
+    mapPopupOnline: "● Online",
+    mapPopupOffline: "○ Offline",
+    mapPopupZoneLabel: "Zone",
+    mapPopupFillLabel: "Fill level",
+    mapPopupMacLabel: "MAC",
+    mapPopupTruckLabel: "Truck",
+    mapPopupDriverLabel: "Driver",
 
     statusLive: "Status:",
     binLive: "Online",

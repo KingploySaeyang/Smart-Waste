@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Smart Waste - สมัครสมาชิก</title>
+  <title>Smart Waste - ลงทะเบียน</title>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -228,12 +228,12 @@
       <div class="left-panel">
         <div class="left-brand"><i class="ri-recycle-line"></i> Smart Waste</div>
         <h1 id="txtJoinSubtitle">Join Us &<br>Start Tracking</h1>
-        <p id="txtJoinDesc">สมัครสมาชิกเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที</p>
+        <p id="txtJoinDesc">ลงทะเบียนเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที</p>
       </div>
 
       <div class="register-card">
         <div class="form-header">
-          <h2 id="txtRegHeader">สมัครสมาชิก</h2>
+          <h2 id="txtRegHeader">ลงทะเบียน</h2>
           <p id="txtRegHint">กรอกข้อมูลเพื่อสร้างบัญชีใหม่</p>
         </div>
 
@@ -270,7 +270,7 @@
           </div>
 
           <button type="submit" class="btn-submit" id="submitBtn">
-            <span id="txtBtnReg">ยืนยันการสมัคร</span> <i class="ri-arrow-right-line"></i>
+            <span id="txtBtnReg">ยืนยันการลงทะเบียน</span> <i class="ri-arrow-right-line"></i>
           </button>
 
           <div class="form-footer">
@@ -323,8 +323,8 @@
     
     // Fallback Dictionary
     const fallbackDict = {
-      th: { regHeader: "สมัครสมาชิก", regHint: "กรอกข้อมูลเพื่อเริ่มต้นใช้งาน", btnReg: "ยืนยันการสมัคร", haveAccount: "มีบัญชีอยู่แล้ว?", btnLogin: "เข้าสู่ระบบ", errUserExists: "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว", errEmailExists: "อีเมลนี้ถูกใช้งานแล้ว", errPassMatch: "รหัสผ่านไม่ตรงกัน", successReg: "สมัครสมาชิกสำเร็จ!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "สมัครสมาชิกเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที" },
-      en: { regHeader: "Sign Up", regHint: "Fill details to create account", btnReg: "Register", haveAccount: "Already have an account?", btnLogin: "Sign In", errUserExists: "Username already taken", errEmailExists: "Email already in use", errPassMatch: "Passwords do not match", successReg: "Registration Successful!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "Sign up to access smart waste management, track trucks, and view statistics instantly." },
+      th: { regHeader: "ลงทะเบียน", regHint: "กรอกข้อมูลเพื่อเริ่มต้นใช้งาน", btnReg: "ยืนยันการลงทะเบียน", haveAccount: "มีบัญชีอยู่แล้ว?", btnLogin: "เข้าสู่ระบบ", errUserExists: "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว", errEmailExists: "อีเมลนี้ถูกใช้งานแล้ว", errPassMatch: "รหัสผ่านไม่ตรงกัน", successReg: "ลงทะเบียนสำเร็จ!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "ลงทะเบียนเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที" },
+      en: { regHeader: "Register", regHint: "Fill details to create account", btnReg: "Register", haveAccount: "Already have an account?", btnLogin: "Sign In", errUserExists: "Username already taken", errEmailExists: "Email already in use", errPassMatch: "Passwords do not match", successReg: "Registration Successful!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "Register to access smart waste management, track trucks, and view statistics instantly." },
       ms: { regHeader: "Daftar", regHint: "Isi butiran untuk membuat akaun", btnReg: "Daftar", haveAccount: "Sudah mempunyai akaun?", btnLogin: "Log Masuk", errUserExists: "Nama pengguna telah diambil", errEmailExists: "E-mel sudah digunakan", errPassMatch: "Kata laluan tidak sepadan", successReg: "Pendaftaran Berjaya!", welcomeTitle: "Sertai Kami & Mula Menjejak", welcomeDesc: "Daftar untuk mengakses pengurusan sisa pintar, menjejak lori, dan melihat statistik dengan serta-merta." }
     };
 
@@ -434,3 +434,4 @@
   </script>
 </body>
 </html>
+

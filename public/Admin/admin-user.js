@@ -13,8 +13,8 @@
 
   const ROLE_LABELS = {
     th: { 0: "ผู้ดูแลระบบ", 1: "พนักงานขับรถ", 2: "ผู้ใช้ทั่วไป" },
-    en: { 0: "Administrator", 1: "Driver", 2: "User" },
-    ms: { 0: "Pentadbir", 1: "Pemandu", 2: "Pengguna" }
+    en: { 0: "Administrator", 1: "Driver Staff", 2: "User" },
+    ms: { 0: "Pentadbir", 1: "Kakitangan Pemandu", 2: "Pengguna" }
   };
 
   function getRoleLabel(role) {

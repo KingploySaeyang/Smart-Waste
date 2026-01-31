@@ -17,126 +17,109 @@
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <script src="../i18n/lang.js"></script>
+  <script src="../i18n/th.js"></script>
+  <script src="../i18n/en.js"></script>
+  <script src="../i18n/ms.js"></script>
+
+  <script>
+    (function initMapT() {
+      const lang = localStorage.getItem("sw_lang") || "th";
+      if (!window.SW_Translations || !window.SW_Translations[lang]) {
+        window.T = {};
+        return;
+      }
+      window.T = window.SW_Translations[lang];
+    })();
+  </script>
+
+  <link rel="stylesheet" href="../Admin/admin-shell.css">
+  <link rel="stylesheet" href="user-shell.css">
+  <link rel="stylesheet" href="user-map.css">
+
   <script src="../Login/auth.js"></script>
 
-  <style>
-    /* --- Styles --- */
-    :root { --primary: #059669; --primary-dark: #064e3b; --accent: #34d399; --bg-body: #f0fdf4; --text-main: #1e293b; --text-muted: #64748b; --sidebar-width: 260px; --radius: 20px; --shadow: 0 10px 30px -10px rgba(5, 150, 105, 0.15); }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Prompt", sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { min-height: 100vh; display: flex; background-color: var(--bg-body); color: var(--text-main); overflow: hidden; }
-    
-    #globalLoader { position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-    .loader-spin { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, #064e3b 0%, #047857 100%); color: #fff; padding: 30px 20px; display: flex; flex-direction: column; justify-content: space-between; position: sticky; top: 0; height: 100vh; z-index: 1000; box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1); }
-    .brand { margin-bottom: 40px; display: flex; align-items: center; gap: 12px; } .brand i { font-size: 32px; color: var(--accent); } .brand h2 { font-size: 24px; font-weight: 700; }
-    .menu { display: flex; flex-direction: column; gap: 10px; flex: 1; } .menu a { display: flex; align-items: center; gap: 12px; color: #d1fae5; text-decoration: none; padding: 14px 16px; border-radius: 16px; transition: 0.3s; font-weight: 500; } .menu a:hover { background: rgba(255, 255, 255, 0.1); color: #fff; } .menu a.active { background: #fff; color: var(--primary-dark); font-weight: 700; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-    .logout-btn { background: rgba(0, 0, 0, 0.2); color: #fca5a5; border: 1px solid rgba(252, 165, 165, 0.2); padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; width: 100%; display: flex; justify-content: center; gap: 8px; } .logout-btn:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-    
-    main { flex: 1; padding: 30px 40px; display: flex; flex-direction: column; gap: 20px; height: 100vh; overflow: hidden; position: relative; }
-    .topbar { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; flex-wrap: wrap; gap: 20px; }
-    .titles h1 { font-size: 28px; font-weight: 800; color: var(--primary-dark); margin: 0; } .titles p { font-size: 14px; color: var(--text-muted); margin-top: 5px; }
-    
-    .mobile-brand { display: none; }
-
-    .user-chip { display: flex; align-items: center; gap: 12px; background: #fff; padding: 8px 20px 8px 8px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; } .avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 18px; }
-    
-    .layout { flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 20px; min-height: 0; }
-    #map { width: 100%; height: 100%; border-radius: var(--radius); box-shadow: var(--shadow); border: 2px solid #fff; z-index: 1; }
-    
-    /* --- Pins --- */
-    .truck-pin { --pin-color: #f43f5e; position: relative; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 8px 15px rgba(244, 63, 94, 0.4)); }
-    .truck-pin__bubble { width: 48px; height: 48px; border-radius: 50%; background: #fff; border: 3px solid var(--pin-color); display: flex; align-items: center; justify-content: center; font-size: 24px; animation: bounce 2s infinite; }
-    
-    /* 🔥 ปรับความเร็วตรงนี้ (จาก 2s เป็น 4s) 🔥 */
-    .truck-pulse { 
-        position: absolute; 
-        width: 48px; 
-        height: 48px; 
-        background: var(--pin-color); 
-        border-radius: 50%; 
-        opacity: 0.5; 
-        animation: pulse-ring 4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; 
-        z-index: -1; 
-    }
-
-    @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2); opacity: 0; } }
-    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-    
-    .bin-pin { --pin-color: #94a3b8; position: relative; display: flex; flex-direction: column; align-items: center; transition: all 0.3s; }
-    .bin-pin__bubble { width: 40px; height: 40px; border-radius: 50%; background: var(--pin-color); border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; transition: background 0.3s; }
-    .bin-pin__label { margin-top: 4px; font-size: 11px; font-weight: 700; color: var(--text-main); background: rgba(255, 255, 255, 0.9); padding: 2px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-    
-    .leaflet-popup-content-wrapper { border-radius: 16px; overflow: hidden; padding: 0; } .leaflet-popup-content { margin: 0; width: 220px !important; }
-    .custom-popup-header { background: var(--primary); color: #fff; padding: 10px 15px; font-weight: 600; font-size: 14px; } .custom-popup-body { padding: 15px; font-size: 13px; color: var(--text-main); }
-    
-    .panel { background: #fff; border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: var(--shadow); overflow: hidden; }
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; } .section-header h2 { font-size: 16px; color: var(--text-main); font-weight: 700; margin: 0; }
-    .badge { background: #dcfce7; color: var(--primary); font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-    .list-container { flex: 1; overflow-y: auto; padding-right: 5px; }
-    
-    .list-card { background: #fff; border: 1px solid #f1f5f9; border-radius: 14px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; gap: 12px; } .list-card:hover { border-color: var(--accent); transform: translateX(3px); } 
-    .list-card.active { border-color: var(--primary); background: #f0fdf4; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1); }
-    .truck-card.active { border-color: #f43f5e; background: #fff1f2; }
-
-    .card-icon { width: 40px; height: 40px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text-muted); } .list-card.active .card-icon { background: var(--primary); color: #fff; }
-    .card-info h4 { margin: 0; font-size: 14px; color: var(--text-main); } .card-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
-    
-    .status-container { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-    .fill-percent { font-size: 16px; font-weight: 700; color: var(--text-main); }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; transition: all 0.3s; }
-
-    @media (max-width: 850px) {
-      body { flex-direction: column; overflow: auto; }
-      .sidebar { position: fixed; bottom: 0; top: auto; width: 100%; height: auto; flex-direction: row; padding: 10px 20px; background: rgba(255, 255, 255, 0.98); border-top: 1px solid #e2e8f0; backdrop-filter: blur(10px); z-index: 9999; }
-      .sidebar .brand, .sw-logout-slot { display: none; }
-      .menu { flex-direction: row; justify-content: space-around; width: 100%; gap: 0; } .menu a { flex-direction: column; gap: 4px; padding: 8px; font-size: 10px; color: var(--text-muted); background: none; } .menu a i { font-size: 28px; margin-bottom: 2px; } .menu a.active { color: var(--primary); background: transparent; }
-      main { padding: 0; height: auto; display: block; min-height: 100vh; padding-bottom: 90px; }
-      .topbar { padding: 0; margin: 0; width: 100%; display: flex; flex-direction: column; gap: 0; }
-      .mobile-brand { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 15px 25px; background: linear-gradient(180deg, #064e3b 0%, #047857 100%); color: #fff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-      .brand-left { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; } .brand-left i { font-size: 24px; color: var(--accent); }
-      .user-chip-mobile { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); } .user-chip-desktop { display: none; }
-      .avatar-mobile { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
-      .titles { padding: 20px 25px 0 25px; width: 100%; } .titles h1 { font-size: 22px; } .titles p { display: none; }
-      .layout { grid-template-columns: 1fr; display: flex; flex-direction: column; padding: 20px 25px; gap: 20px; }
-      #map { height: 400px; min-height: 400px; border-radius: 20px; } .panel { height: auto; max-height: 500px; }
-    }
-  </style>
+  
 </head>
 
-<body>
-  <div id="globalLoader"><div class="loader-spin"></div><p class="muted" style="font-size:14px;">กำลังโหลดแผนที่...</p></div>
+<body data-active-nav="map">
+  <script src="user-shell.js" defer></script>
 
-  <aside class="sidebar">
-    <div class="brand"><i class="ri-recycle-line"></i><h2>Smart Waste</h2></div>
+  <div id="globalLoader" class="shell-loader show">
+    <div class="loader-box">
+      <div class="loader-spinner"></div>
+      <div class="loader-text" id="loadingText">กำลังโหลดแผนที่...</div>
+    </div>
+  </div>
+
+  <header class="top-header">
+    <div class="brand-left">
+      <button class="menu-toggle" id="menuToggleBtn" type="button" aria-label="เมนู">
+        <i class="ri-menu-fill"></i>
+      </button>
+      <div class="brand-mark"><i class="ri-recycle-line"></i></div>
+      <div class="brand-name" id="brandTitle">Smart Waste</div>
+    </div>
+    <div class="header-right">
+      <div class="lang-switcher" style="position:relative;">
+        <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+          <i class="ri-global-line"></i>
+        </button>
+        <div class="lang-menu" id="langMenu">
+          <button type="button" data-lang="th">ไทย</button>
+          <button type="button" data-lang="en">English</button>
+          <button type="button" data-lang="ms">Bahasa Melayu</button>
+        </div>
+      </div>
+      <div class="header-user" id="userProfileTop">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="userLabel">Loading...</div>
+          <div class="user-role" id="userRole"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="เมนูด้านข้าง">
+    <div class="sidebar-user">
+      <div class="user-avatar" id="userAvatarMobile">?</div>
+      <div class="user-meta">
+        <div class="user-name" id="userLabelSide"></div>
+        <div class="user-role" id="userRoleSide"></div>
+      </div>
+    </div>
     <nav class="menu">
-      <a href="home.html"><i class="ri-delete-bin-2-line"></i> <span>ถังของฉัน</span></a>
-      <a href="map.html" class="active"><i class="ri-map-pin-2-line"></i> <span>แผนที่</span></a>
-      <div class="sw-logout-slot"><button onclick="SWAuth.logout()" class="logout-btn"><i class="ri-logout-box-line"></i> ออกจากระบบ</button></div>
+      <a href="home.html" data-nav="home"><i class="ri-delete-bin-2-line"></i> <span class="menu-text" id="menuMyBins">ถังของฉัน</span></a>
+      <a href="map.html" data-nav="map"><i class="ri-map-pin-2-line"></i> <span class="menu-text" id="menuMap">แผนที่</span></a>
     </nav>
+    <div class="sw-logout-slot">
+      <button onclick="SWAuth.logout()" class="sw-logout-btn" type="button"><i class="ri-logout-box-line"></i> <span id="menuLogout">ออกจากระบบ</span></button>
+    </div>
   </aside>
 
-  <main>
-    <div class="topbar">
-      <div class="mobile-brand">
-        <div class="brand-left"><i class="ri-recycle-line"></i> Smart Waste</div>
-        <div class="user-chip-mobile"><div class="avatar-mobile" id="userAvatarMobile">?</div></div>
+  <main class="admin-main user-main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title" id="mapTitle">แผนที่ถังขยะของฉัน</h1>
+        <p class="page-sub" id="mapSubtitle">ติดตามตำแหน่งถังขยะและรถเก็บขยะแบบเรียลไทม์</p>
       </div>
-      <div class="titles"><h1>แผนที่จุดติดตั้ง</h1><p>ติดตามตำแหน่งถังขยะและรถเก็บขยะในเขต</p></div>
-      <div class="user-chip user-chip-desktop"><div class="avatar" id="userAvatar">?</div><div><strong id="userLabel">Loading...</strong></div></div>
     </div>
 
-    <div class="layout">
-      <div id="map" aria-label="แผนที่"></div>
-      <div class="panel">
+    <div class="map-layout">
+      <div class="card map-card">
+        <div id="map" aria-label="แผนที่"></div>
+      </div>
+      <div class="card map-panel">
         <div>
-          <div class="section-header"><h2><i class="ri-delete-bin-line"></i> ถังขยะของฉัน</h2><span class="badge" id="binCount">0</span></div>
+          <div class="section-header"><h2><i class="ri-delete-bin-line"></i> <span id="binSectionTitle">รายการถังขยะ</span></h2><span class="badge" id="binCount">0</span></div>
           <div id="binList" class="list-container" style="max-height: 250px;"></div>
         </div>
         <hr style="border:0; border-top:1px solid #f1f5f9; margin: 5px 0;">
         <div>
-          <div class="section-header"><h2><i class="ri-truck-line"></i> รถเก็บขยะ (Online)</h2><span class="badge" id="truckCount" style="background:#fee2e2; color:#ef4444;">0</span></div>
+          <div class="section-header"><h2><i class="ri-truck-line"></i> <span id="truckSectionTitle">รถเก็บขยะ (ออนไลน์)</span></h2><span class="badge" id="truckCount" style="background:#fee2e2; color:#ef4444;">0</span></div>
           <div id="truckList" class="list-container" style="max-height: 200px;"></div>
           <p id="truckStatus" style="font-size:12px; text-align:center; margin-top:10px; color:#64748b;"></p>
         </div>
@@ -150,7 +133,17 @@
     const userLabelEl = $("userLabel");
     const userAvatarEl = $("userAvatar");
     const userAvatarMobile = $("userAvatarMobile");
+    const userLabelSide = $("userLabelSide");
+    const userRoleEl = $("userRole");
+    const userRoleSide = $("userRoleSide");
     const loader = $("globalLoader");
+    const t = (key, fallback) => (window.T && window.T[key]) || fallback;
+    let binsLoaded = false;
+    let trucksLoaded = false;
+    function tryHideLoader() {
+        if (!loader) return;
+        if (binsLoaded && trucksLoaded) loader.classList.remove("show");
+    }
 
     const firebaseConfig = {
       apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
@@ -174,6 +167,7 @@
     // --- Variables ---
     const binMarkers = new Map();
     const truckMarkers = new Map();
+    const truckIconState = new Map();
     const binDocCache = new Map();
     let rtdbListeners = new Map(); 
     let deviceLastSeen = new Map(); 
@@ -199,11 +193,12 @@
             const displayName = currentUser.fullName || currentUser.username || "User";
             const initial = displayName.charAt(0).toUpperCase();
             userLabelEl.textContent = displayName;
+            if (userLabelSide) userLabelSide.textContent = displayName;
             userAvatarEl.textContent = initial;
             if (userAvatarMobile) userAvatarMobile.textContent = initial;
-
-            loader.style.opacity = '0';
-            setTimeout(() => loader.style.display = 'none', 500);
+            const roleText = (window.T && window.T.userRole_user) || "User";
+            if (userRoleEl) userRoleEl.textContent = roleText;
+            if (userRoleSide) userRoleSide.textContent = roleText;
 
             startFetchingData(currentUser);
 
@@ -232,6 +227,19 @@
       if (val >= 80) return "#ef4444"; 
       if (val >= 50) return "#f59e0b"; 
       return "#10b981"; 
+    }
+
+    function formatWeight(weight) {
+      if (typeof weight !== "number" || Number.isNaN(weight)) return "N/A";
+      const rounded = Math.round(weight * 100) / 100;
+      const localeMap = { th: "th-TH", en: "en-US", ms: "ms-MY" };
+      const lang = (typeof currentLang === "string" && currentLang) || localStorage.getItem("sw_lang") || "th";
+      const locale = localeMap[lang] || "th-TH";
+      const fractionDigits = rounded % 1 ? 2 : 0;
+      return `${rounded.toLocaleString(locale, {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: 2
+      })} g`;
     }
 
     function buildBinIcon(fillLevel) {
@@ -283,16 +291,18 @@
                 const newIcon = buildBinIcon(info.fillLevel);
                 marker.setIcon(newIcon);
 
-                if (marker.isPopupOpen()) {
+            if (marker.isPopupOpen()) {
+                     const weightText = (info.weight !== null && info.weight !== undefined) ? formatWeight(info.weight) : "N/A";
                      const popupContent = `
                         <div class="custom-popup-header" style="background:${isOnline ? 'var(--primary)' : '#64748b'}">
                             <i class="ri-map-pin-line"></i> ${info.binId} 
-                            <span style="font-size:10px; float:right; margin-top:2px;">${isOnline ? '● Online' : '○ Offline'}</span>
+                            <span style="font-size:10px; float:right; margin-top:2px;">${isOnline ? t("mapPopupOnline", "Online") : t("mapPopupOffline", "Offline")}</span>
                         </div>
                         <div class="custom-popup-body">
-                            <b>เขต:</b> ${info.zone}<br>
-                            <b>ระดับขยะ:</b> ${info.fillLevel !== null ? info.fillLevel + "%" : "N/A"}<br>
-                            <span style="color:#64748b; font-size:11px">MAC: ${info.macAddress}</span>
+                            <b>${t("mapPopupZoneLabel", "Zone")}:</b> ${info.zone}<br>
+                            <b>${t("mapPopupFillLabel", "Fill level")}:</b> ${info.fillLevel !== null ? info.fillLevel + "%" : "N/A"}<br>
+                            <b>${t("labelWeight", "Weight")}:</b> ${weightText}<br>
+                            <span style="color:#64748b; font-size:11px">${t("mapPopupMacLabel", "MAC")}: ${info.macAddress}</span>
                         </div>`;
                      if (marker.getPopup().getContent() !== popupContent) marker.setPopupContent(popupContent);
                 }
@@ -307,8 +317,12 @@
             }
             if (truckMarkers.has(id)) {
                 const marker = truckMarkers.get(id);
-                const newIcon = buildTruckIcon(isOnline);
-                marker.setIcon(newIcon); 
+                const prevState = truckIconState.get(id);
+                if (prevState !== isOnline) {
+                    const newIcon = buildTruckIcon(isOnline);
+                    marker.setIcon(newIcon);
+                    truckIconState.set(id, isOnline);
+                }
             }
         }
     }
@@ -368,10 +382,13 @@
         .onSnapshot(async snapshot => {
             rtdbListeners.forEach((val) => val.ref.off('value', val.listener));
             rtdbListeners.clear();
+            binsLoaded = true;
             
             if (snapshot.empty) {
-                $("binList").innerHTML = `<p style="text-align:center; color:#999; margin-top:20px; font-size:12px;">ไม่พบรายการถังขยะของคุณ</p>`;
+                $("binList").innerHTML = `<p style="text-align:center; color:#999; margin-top:20px; font-size:12px;">${t("mapNoBins", "ไม่พบรายการถังขยะของคุณ")}</p>`;
                 $("binCount").innerText = "0";
+                trucksLoaded = true;
+                tryHideLoader();
                 return;
             }
 
@@ -393,7 +410,7 @@
                         macAddress = macAddress || linked.macAddress; 
                     }
                 }
-                return { id: doc.ref.path, lat, lng, zone: zone || "ไม่ระบุเขต", binId, details: d.details, macAddress };
+                return { id: doc.ref.path, lat, lng, zone: zone || t("mapZoneUnknown", "ไม่ระบุเขต"), binId, details: d.details, macAddress };
             }));
 
             docs.forEach(data => {
@@ -404,6 +421,7 @@
                     type: 'bin', 
                     lastSeenClientTime: 0, 
                     fillLevel: null,
+                    weight: null,
                     binId: data.binId,
                     zone: data.zone,
                     macAddress: data.macAddress
@@ -427,7 +445,7 @@
                 count++;
                 bounds.push([data.lat, data.lng]);
                 
-                const popupContent = `<div class="custom-popup-header"><i class="ri-map-pin-line"></i> ${data.binId}</div><div class="custom-popup-body">Loading...</div>`;
+                const popupContent = `<div class="custom-popup-header"><i class="ri-map-pin-line"></i> ${data.binId}</div><div class="custom-popup-body">${t("loadingData", "Loading...")}</div>`;
 
                 if (binMarkers.has(data.id)) {
                     binMarkers.get(data.id).setLatLng([data.lat, data.lng]);
@@ -446,6 +464,7 @@
                 zoomed = true;
             }
             restartTruckListener();
+            tryHideLoader();
         });
     }
 
@@ -455,6 +474,9 @@
         const listener = sensorRef.on('value', (snapshot) => {
             const data = snapshot.val();
             const liveLevel = data ? data.fillLevel : null;
+            const liveWeight = data
+              ? (typeof data.weight === "number" ? data.weight : (typeof data.weightGram === "number" ? data.weightGram : null))
+              : null;
             
             let clientTime = 0; 
             if (data && data.lastUpdate) {
@@ -468,6 +490,7 @@
                 type: 'bin', 
                 lastSeenClientTime: clientTime, 
                 fillLevel: liveLevel,
+                weight: liveWeight,
                 binId: binData.binId,
                 zone: binData.zone,
                 macAddress: macAddress
@@ -483,7 +506,9 @@
     function restartTruckListener() {
         if (truckRTDBRef) truckRTDBRef.off();
         if (userZones.size === 0) {
-            $("truckList").innerHTML = "<p class='muted' style='text-align:center; font-size:12px; margin-top:10px;'>ไม่พบรถในเขตของคุณ</p>";
+            $("truckList").innerHTML = `<p class="muted" style="text-align:center; font-size:12px; margin-top:10px;">${t("mapNoTrucksZone", "ไม่พบรถในเขตของคุณ")}</p>`;
+            trucksLoaded = true;
+            tryHideLoader();
             return;
         }
 
@@ -497,7 +522,9 @@
 
             if (!drivers) {
                 $("truckCount").innerText = "0";
-                $("truckStatus").innerText = "ไม่มีรถออนไลน์ในขณะนี้";
+                $("truckStatus").innerText = t("mapNoTrucksOnline", "ไม่มีรถออนไลน์ในขณะนี้");
+                trucksLoaded = true;
+                tryHideLoader();
                 return;
             }
 
@@ -539,14 +566,15 @@
                         marker.setLatLng([d.lat, d.lng]);
                         marker.setPopupContent(`
                             <div class="custom-popup-body">
-                                <b>รถ:</b> ${d.truckId}<br><b>คนขับ:</b> ${d.driverName}<br>
-                                <span style="font-size:10px; color:#64748b;">Zone: ${d.zoneId}</span>
+                                <b>${t("mapPopupTruckLabel", "Truck")}:</b> ${d.truckId}<br><b>${t("mapPopupDriverLabel", "Driver")}:</b> ${d.driverName}<br>
+                                <span style="font-size:10px; color:#64748b;">${t("mapPopupZoneLabel", "Zone")}: ${d.zoneId}</span>
                             </div>`);
                     } else {
                         const m = L.marker([d.lat, d.lng], { icon: buildTruckIcon(isOnline) }).addTo(map)
-                            .bindPopup(`<div class="custom-popup-body"><b>รถ:</b> ${d.truckId}<br><b>คนขับ:</b> ${d.driverName}<br><span style="font-size:10px; color:#64748b;">Zone: ${d.zoneId}</span></div>`, { autoPan: false });
+                    .bindPopup(`<div class="custom-popup-body"><b>${t("mapPopupTruckLabel", "Truck")}:</b> ${d.truckId}<br><b>${t("mapPopupDriverLabel", "Driver")}:</b> ${d.driverName}<br><span style="font-size:10px; color:#64748b;">${t("mapPopupZoneLabel", "Zone")}: ${d.zoneId}</span></div>`, { autoPan: false });
                         m.on("click", () => selectTruck(driverId, d.lat, d.lng));
                         truckMarkers.set(driverId, m);
+                        truckIconState.set(driverId, isOnline);
                     }
                     if (selectedTruckId === driverId) map.panTo([d.lat, d.lng], { animate: true, duration: 1.0 });
                 }
@@ -558,7 +586,7 @@
                 
                 item.innerHTML = `
                    <div class="card-icon" style="color:#f43f5e; background:#fff1f2;"><i class="ri-truck-fill"></i></div>
-                   <div class="card-info"><h4>${d.driverName} (${d.truckId})</h4><p>กำลังทำงาน • ${d.zoneId}</p></div>
+                   <div class="card-info"><h4>${d.driverName} (${d.truckId})</h4><p>${t("mapTruckWorkingPrefix", "กำลังทำงาน •")} ${d.zoneId}</p></div>
                    <div id="truck-dot-${driverId}" class="status-dot" style="position:static; background:${isOnline?'#22c55e':'#94a3b8'}; box-shadow: ${isOnline?'0 0 0 2px rgba(34, 197, 94, 0.2)':'none'};"></div>`;
                 list.appendChild(item);
                 count++;
@@ -568,11 +596,84 @@
                 if (!activeDriverIds.has(id)) {
                     map.removeLayer(marker);
                     truckMarkers.delete(id);
+                    truckIconState.delete(id);
                 }
             }
             $("truckCount").innerText = count;
-            $("truckStatus").innerText = count === 0 ? "ไม่มีรถออนไลน์ในขณะนี้" : "";
+            $("truckStatus").innerText = count === 0 ? t("mapNoTrucksOnline", "ไม่มีรถออนไลน์ในขณะนี้") : "";
+            trucksLoaded = true;
+            tryHideLoader();
         });
+    }
+  </script>
+
+  <script>
+    function applyMapTranslations() {
+      if (!window.T) return;
+      const titleFallback = window.T.menuMap ? `Smart Waste - ${window.T.menuMap}` : document.title;
+      document.title = window.T.pageTitle_userMap || titleFallback;
+
+      const brand = document.getElementById("brandTitle");
+      if (brand) brand.textContent = window.T.brandTitle || "Smart Waste";
+
+      const loadingText = document.getElementById("loadingText");
+      if (loadingText) loadingText.textContent = window.T.loadingData || "Loading...";
+
+      const menuMyBins = document.getElementById("menuMyBins");
+      if (menuMyBins) menuMyBins.textContent = window.T.menuMyBins || "My Bins";
+      const menuMap = document.getElementById("menuMap");
+      if (menuMap) menuMap.textContent = window.T.menuMap || "Map";
+      const menuLogout = document.getElementById("menuLogout");
+      if (menuLogout) menuLogout.textContent = window.T.menuLogout || "Logout";
+
+      const mapTitle = document.getElementById("mapTitle");
+      if (mapTitle) mapTitle.textContent = window.T.mapTitle || window.T.menuMap || "Map";
+
+      const mapSubtitle = document.getElementById("mapSubtitle");
+      if (mapSubtitle) mapSubtitle.textContent = window.T.mapSubtitle || "";
+
+      const binSectionTitle = document.getElementById("binSectionTitle");
+      if (binSectionTitle) binSectionTitle.textContent = window.T.mapSectionBins || "Bins";
+
+      const truckSectionTitle = document.getElementById("truckSectionTitle");
+      if (truckSectionTitle) truckSectionTitle.textContent = window.T.mapSectionTrucks || "Trucks";
+
+      const roleText = window.T.userRole_user || "User";
+      const roleTop = document.getElementById("userRole");
+      const roleSide = document.getElementById("userRoleSide");
+      if (roleTop) roleTop.textContent = roleText;
+      if (roleSide) roleSide.textContent = roleText;
+    }
+
+    function updateLangMenuActive() {
+      const langMenu = document.getElementById("langMenu");
+      if (!langMenu) return;
+      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === currentLang);
+      });
+    }
+
+    let currentLang = localStorage.getItem("sw_lang") || "th";
+    applyMapTranslations();
+    updateLangMenuActive();
+
+    function changeUserLanguage(lang) {
+      if (!window.SW_Translations || !window.SW_Translations[lang]) return;
+      currentLang = lang;
+      localStorage.setItem("sw_lang", lang);
+      window.T = window.SW_Translations[lang];
+      applyMapTranslations();
+      updateLangMenuActive();
+    }
+
+    const langMenu = document.getElementById("langMenu");
+    if (langMenu) {
+      langMenu.addEventListener("click", e => {
+        const btn = e.target.closest("button[data-lang]");
+        if (!btn) return;
+        changeUserLanguage(btn.dataset.lang);
+        langMenu.classList.remove("show");
+      });
     }
   </script>
 </body>

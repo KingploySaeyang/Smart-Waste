@@ -7,6 +7,15 @@
     { id: "report", href: "report.html" }
   ];
 
+  const MENU_ICONS = {
+    register: "ri-add-circle-line",
+    addDriver: "ri-user-3-line",
+    schedule: "ri-calendar-event-line",
+    truck: "ri-truck-line",
+    report: "ri-bar-chart-fill",
+    capacity: "ri-donut-chart-line"
+  };
+
   const NAV_LABELS = {
     th: {
       register: "ลงทะเบียนถังขยะ",
@@ -24,8 +33,8 @@
     },
     en: {
       register: "Register Bin",
-      addDriver: "Drivers",
-      schedule: "Collection Schedule",
+      addDriver: "Driver Staff",
+      schedule: "Truck Schedule",
       truck: "Truck Tracking",
       report: "Reports",
       logout: "Logout",
@@ -38,7 +47,7 @@
     },
     ms: {
       register: "Daftar Tong",
-      addDriver: "Pemandu",
+      addDriver: "Kakitangan Pemandu",
       schedule: "Jadual Kutipan",
       truck: "Lokasi Lori",
       report: "Laporan",
@@ -81,8 +90,11 @@
           }
         });
       } else {
-        localStorage.removeItem("sw_user");
-        location.href = "../Login/login.html";
+        const ok = window.confirm(labels.logoutText || "Do you want to sign out?");
+        if (ok) {
+          localStorage.removeItem("sw_user");
+          location.href = "../Login/login.html";
+        }
       }
     };
     return btn;
@@ -93,7 +105,11 @@
       const active = nav.dataset.active || "home";
       const links = MENU_ITEMS.map(item => {
         const cls = item.id === active ? "active" : "";
-        return `<a href="${item.href}" data-nav="${item.id}" class="${cls}"></a>`;
+        const icon = MENU_ICONS[item.id] || "ri-checkbox-blank-circle-line";
+        return `<a href="${item.href}" data-nav="${item.id}" class="${cls}">
+                  <i class="${icon}" aria-hidden="true"></i>
+                  <span class="menu-text"></span>
+                </a>`;
       }).join("");
       nav.innerHTML = links;
     });
@@ -105,7 +121,10 @@
     const labels = NAV_LABELS[currentLang] || NAV_LABELS.th;
     document.querySelectorAll("[data-admin-menu] a[data-nav]").forEach(link => {
       const key = link.dataset.nav;
-      link.textContent = labels[key] || key;
+      const label = labels[key] || key;
+      const textEl = link.querySelector(".menu-text");
+      if (textEl) textEl.textContent = label;
+      else link.textContent = label;
     });
 
     document.querySelectorAll("[data-sw-logout-slot]").forEach(slot => {
@@ -129,6 +148,11 @@
     },
     getLanguage() {
       return currentLang;
+    },
+    setActive(navId){
+      document.querySelectorAll("[data-admin-menu] a[data-nav]").forEach(link=>{
+        link.classList.toggle("active", link.dataset.nav === navId);
+      });
     }
   };
 

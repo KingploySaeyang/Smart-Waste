@@ -42,876 +42,14 @@
         })();
     </script>
 
-    <style>
-        /* --- 1. Global Theme (คงเดิมทุกประการ) --- */
-        :root {
-            --primary: #059669;
-            --primary-dark: #064e3b;
-            --accent: #34d399;
-            --bg-body: #f0fdf4;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --sidebar-width: 260px;
-            --radius: 24px;
-            --shadow: 0 10px 30px -10px rgba(5, 150, 105, 0.15);
-            --lang-shadow: 0 12px 30px rgba(0, 0, 0, .18);
-
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: "Prompt", sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            overflow-y: auto;
-        }
-
-        /* Loading Screen */
-        #globalLoader {
-            position: fixed;
-            inset: 0;
-            background: #fff;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease;
-        }
-
-        .loader-spin {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Sidebar (Desktop) */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, #064e3b 0%, #047857 100%);
-            color: #fff;
-            padding: 30px 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow: hidden;
-            z-index: 50;
-            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .brand {
-            margin-bottom: 40px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand i {
-            font-size: 32px;
-            color: var(--accent);
-        }
-
-        .brand h2 {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            flex: 1;
-        }
-
-        .menu a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #d1fae5;
-            text-decoration: none;
-            padding: 14px 16px;
-            border-radius: 16px;
-            transition: 0.3s;
-            font-weight: 500;
-        }
-
-        .menu a:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .menu a.active {
-            background: #fff;
-            color: var(--primary-dark);
-            font-weight: 700;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .logout-btn {
-            background: rgba(0, 0, 0, 0.2);
-            color: #fca5a5;
-            border: 1px solid rgba(252, 165, 165, 0.2);
-            padding: 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .logout-btn:hover {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-
-        /* Main Content */
-        main {
-            flex: 1;
-            padding: 30px 40px;
-            overflow: visible;
-            max-width: 1600px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        /* Topbar */
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .titles h1 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--primary-dark);
-            margin: 0;
-        }
-
-        .titles p {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-top: 5px;
-        }
-
-        /* Desktop: Hide Mobile Brand */
-        .mobile-brand {
-            display: none;
-        }
-
-        /* Profile Chip */
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: #fff;
-            padding: 8px 20px 8px 8px;
-            border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e2e8f0;
-            white-space: nowrap;
-        }
-
-        .avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), var(--primary));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        /* Card (Desktop) */
-        .card {
-            background: #fff;
-            border-radius: var(--radius);
-            padding: 35px;
-            box-shadow: var(--shadow);
-            position: relative;
-            height: auto;
-            min-height: 400px;
-        }
-
-        /* Controls */
-        .selector {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            margin-bottom: 40px;
-        }
-
-        .select-wrap {
-            flex: 1;
-            min-width: 280px;
-        }
-
-        label {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            display: block;
-            color: var(--text-main);
-        }
-
-        select,
-        input,
-        textarea {
-            width: 100%;
-            padding: 14px 16px;
-            border-radius: 12px;
-            border: 1px solid #cbd5e1;
-            background: #f8fafc;
-            font-size: 15px;
-        }
-
-        select:disabled {
-            background: #e2e8f0;
-            color: #94a3b8;
-            cursor: not-allowed;
-        }
-
-        .primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: #fff;
-            border: none;
-            padding: 14px 24px;
-            border-radius: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-        }
-
-        .primary:active {
-            transform: scale(0.98);
-        }
-
-        .ghost {
-            background: #f1f5f9;
-            color: var(--text-muted);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        /* Empty State */
-        .empty {
-            text-align: center;
-            padding: 60px 20px;
-            background: #fff;
-            border-radius: 24px;
-            border: 2px dashed #cbd5e1;
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 300px;
-        }
-
-        .empty i {
-            font-size: 64px;
-            color: #cbd5e1;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        /* Bin Visual */
-        #binCard[hidden] {
-            display: none !important;
-        }
-
-        #binCard {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 50px;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        .bin-shell {
-            width: 220px;
-            height: 320px;
-            border-radius: 30px;
-            border: 6px solid #9ca3af;
-            background: #f8fafc;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* ของเหลวในถัง */
-        .bin-liquid {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 0%;
-            background: linear-gradient(180deg,
-                    #f97316,
-                    #fb923c);
-            transition: height 0.8s ease;
-        }
-
-        /* ตัวเลข % */
-        .bin-percent {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 42px;
-            font-weight: 800;
-            color: #1f2937;
-            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.6);
-            z-index: 5;
-        }
-
-
-        /* Wave Animation */
-        .bin-fill::after {
-            content: "";
-            position: absolute;
-            top: -10px;
-            left: 0;
-            width: 200%;
-            height: 20px;
-            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg"><path d="M0 0v46.29c47.79 22.2 103.59 32.17 158 28 70.36-5.37 136.33-33.31 206.8-37.5 73.84-4.36 147.54 16.88 218.2 35.26 69.27 18 138.3 24.88 209.4 13.08 36.15-6 69.85-17.84 104.45-29.34C989.49 25 1113-14.29 1200 52.47V0z" opacity=".25" fill="%23FFFFFF" /></svg>');
-            background-size: 50% 100%;
-            animation: wave 3s linear infinite;
-        }
-
-        @keyframes wave {
-            0% {
-                transform: translateX(0);
-            }
-
-            100% {
-                transform: translateX(-50%);
-            }
-        }
-
-        .bin-percent {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            font-weight: 800;
-            color: #fff;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            z-index: 5;
-        }
-
-        .bin-info {
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .bin-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
-
-        .status-badge {
-            background: #dcfce7;
-            color: #16a34a;
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #16a34a;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
-            }
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 25px;
-        }
-
-        .info-item {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 15px;
-            border-radius: 16px;
-            transition: 0.2s;
-        }
-
-        .info-item span {
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        /* Overlay */
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(5px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            transition: 0.3s;
-        }
-
-        .overlay.show {
-            display: flex;
-            opacity: 1;
-        }
-
-        .panel {
-            background: #fff;
-            width: 100%;
-            max-width: 550px;
-            border-radius: 24px;
-            padding: 35px;
-            position: relative;
-            max-height: 90vh;
-            overflow-y: auto;
-            transform: scale(0.9);
-            transition: 0.3s;
-        }
-
-        .overlay.show .panel {
-            transform: scale(1);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .col-span-2 {
-            grid-column: span 2;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #f1f5f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .success-card {
-            background: #fff;
-            padding: 40px;
-            border-radius: 24px;
-            text-align: center;
-        }
-
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            background: #dcfce7;
-            color: #16a34a;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            margin: 0 auto 20px;
-        }
-
-        /* FAB Button */
-        .fab-btn {
-            display: none;
-            position: fixed;
-            bottom: 110px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), var(--primary));
-            color: #fff;
-            border: none;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            z-index: 90;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .fab-btn:active {
-            transform: scale(0.9);
-        }
-
-        /* --- MOBILE RESPONSIVE --- */
-        @media (max-width: 850px) {
-            body {
-                flex-direction: column;
-                padding: 0;
-                overflow: auto;
-                /* Allow body scroll */
-            }
-
-            /* Sidebar Bottom Nav */
-            .sidebar {
-                position: fixed;
-                bottom: 0;
-                top: auto;
-                width: 100%;
-                height: auto;
-                flex-direction: row;
-                padding: 10px 20px;
-                background: rgba(255, 255, 255, 0.98);
-                backdrop-filter: blur(10px);
-                border-top: 1px solid #e2e8f0;
-                z-index: 100;
-            }
-
-            .sidebar .brand,
-            .sw-logout-slot {
-                display: none;
-            }
-
-            .menu {
-                flex-direction: row;
-                justify-content: space-around;
-                width: 100%;
-                gap: 0;
-            }
-
-            .menu a {
-                flex-direction: column;
-                gap: 4px;
-                padding: 8px;
-                font-size: 10px;
-                color: var(--text-muted);
-                background: none;
-            }
-
-            .menu a i {
-                font-size: 28px;
-                margin-bottom: 2px;
-            }
-
-            .menu a.active {
-                color: var(--primary);
-            }
-
-            /* MAIN: Layout Adjustment */
-            main {
-                padding: 0;
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
-                width: 100%;
-                padding-bottom: 90px;
-                /* Space for Bottom Nav */
-            }
-
-            /* TOPBAR STYLE */
-            .topbar {
-                padding: 0;
-                margin: 0;
-                width: 100%;
-                flex-shrink: 0;
-                display: flex;
-                flex-direction: column;
-                /* Stack Brand Bar and Title */
-                gap: 0;
-            }
-
-            /* 1. Mobile Brand (Full Width Green Header) */
-            .mobile-brand {
-                display: flex;
-                justify-content: space-between;
-                /* Brand Left, Profile Right */
-                align-items: center;
-                width: 100%;
-                padding: 15px 25px;
-
-                /* Dark Green Gradient Background */
-                background: linear-gradient(180deg, #064e3b 0%, #047857 100%);
-                color: #fff;
-                /* White Text */
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            }
-
-            .brand-left {
-                display: flex;
-                align-items: center;
-                font-size: 20px;
-                font-weight: 700;
-            }
-
-            .brand-left i {
-                font-size: 24px;
-                color: var(--accent);
-            }
-
-            /* 2. User Profile inside Mobile Brand */
-            .user-chip-mobile {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 4px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.2);
-                border: 1px solid rgba(255, 255, 255, 0.4);
-            }
-
-            .user-chip-desktop {
-                display: none;
-            }
-
-            /* Hide the desktop profile in topbar area */
-            .avatar-mobile {
-                width: 34px;
-                height: 34px;
-                border-radius: 50%;
-                background: #fff;
-                color: var(--primary);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 700;
-                font-size: 14px;
-            }
-
-            /* 3. Titles (Below Green Header) */
-            .titles {
-                padding: 20px 25px 0 25px;
-                /* Add top spacing */
-                width: 100%;
-            }
-
-            .titles h1 {
-                font-size: 24px;
-                color: var(--primary-dark);
-                margin: 0;
-            }
-
-            .titles p {
-                display: block;
-                font-size: 13px;
-                color: var(--text-muted);
-                margin-top: 6px;
-                opacity: 0.8;
-            }
-
-            /* CARD */
-            .card {
-                margin: 20px auto;
-                width: 92%;
-                border-radius: 24px;
-                flex: none;
-                height: auto;
-                min-height: auto;
-                padding: 30px 25px 50px 25px;
-                border: none;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            }
-
-            /* FORM PANEL */
-            .panel {
-                width: 88%;
-                padding: 25px;
-            }
-
-            .selector {
-                gap: 10px;
-                margin-bottom: 20px;
-            }
-
-            .select-wrap {
-                width: 100%;
-                min-width: 0;
-            }
-
-            #btnOpenForm {
-                display: none;
-            }
-
-            .fab-btn {
-                display: flex;
-            }
-
-            #binCard {
-                flex-direction: column;
-                align-items: center;
-                gap: 30px;
-            }
-
-            .bin-info {
-                width: 100%;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .col-span-2 {
-                grid-column: span 1;
-            }
-        }
-
-        /* =====================================================
-   LANGUAGE SWITCHER (FINAL – CLEAN)
-   ===================================================== */
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* กล่องครอบ */
-        .lang-switcher {
-            position: relative;
-        }
-
-        /* ปุ่มไอคอนโลก */
-        .lang-switcher .icon-btn {
-            border-radius: 50%;
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .lang-switcher .icon-btn:hover {
-            background: #f1f5f9;
-        }
-
-        /* Dropdown ภาษา */
-        .lang-menu {
-            position: absolute;
-            top: 55px;
-            right: 0;
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: var(--lang-shadow);
-            padding: 6px;
-            min-width: 160px;
-            display: none;
-            z-index: 999;
-        }
-
-        /* แสดงเมนู */
-        .lang-menu.show {
-            display: block;
-        }
-
-        /* ปุ่มภาษา */
-        .lang-menu button {
-            width: 100%;
-            background: none;
-            border: none;
-            padding: 10px 14px;
-            text-align: left;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: .2s;
-        }
-
-        /* hover */
-        .lang-menu button:hover {
-            background: #f1f5f9;
-        }
-
-        /* ภาษาที่เลือกอยู่ */
-        .lang-menu button.active {
-            background: #e6f9f1;
-            color: var(--primary-dark);
-            font-weight: 700;
-            box-shadow: inset 0 0 0 1px var(--accent);
-        }
-    </style>
+    
+
+    <link rel="stylesheet" href="../Admin/admin-shell.css">
+    <link rel="stylesheet" href="user-shell.css">
+    <link rel="stylesheet" href="user-home.css">
 </head>
 
-<body>
+<body data-active-nav="home">
     <script>
         // -----------------------------------------------------
         // Firebase Configuration
@@ -933,96 +71,87 @@
 
     <script src="../Login/auth.js"></script>
     <script src="user-auth-bootstrap.js" defer></script>
+    <script src="user-shell.js" defer></script>
 
     <!-- =======================
      GLOBAL LOADER
 ======================= -->
-    <div id="globalLoader">
-        <div class="loader-spin"></div>
-        <p class="muted" id="loadingText" style="font-size:14px;"></p>
+    <div id="globalLoader" class="shell-loader show">
+        <div class="loader-box">
+            <div class="loader-spinner"></div>
+            <div class="loader-text" id="loadingText"></div>
+        </div>
     </div>
 
-    <!-- =======================
-     SIDEBAR
-======================= -->
-    <aside class="sidebar">
-        <div class="brand">
-            <i class="ri-recycle-line"></i>
-            <h2 id="brandTitle"></h2>
+    <header class="top-header">
+        <div class="brand-left">
+            <button class="menu-toggle" id="menuToggleBtn" type="button" aria-label="????">
+                <i class="ri-menu-fill"></i>
+            </button>
+            <div class="brand-mark"><i class="ri-recycle-line"></i></div>
+            <div class="brand-name" id="brandTitle">Smart Waste</div>
+        </div>
+        <div class="header-right">
+            <div class="lang-switcher" style="position:relative;">
+                <button class="icon-btn" id="langIconBtn" type="button" aria-label="???????????">
+                    <i class="ri-global-line"></i>
+                </button>
+                <div class="lang-menu" id="langMenu">
+                    <button type="button" data-lang="th">ไทย</button>
+                    <button type="button" data-lang="en">English</button>
+                    <button type="button" data-lang="ms">Bahasa Melayu</button>
+                </div>
+            </div>
+            <div class="header-user" id="userProfileTop">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-meta">
+                    <div class="user-name" id="userLabel"></div>
+                    <div class="user-role" id="userRole"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+
+    <aside class="sidebar" id="sidebar" aria-label="????????????">
+        <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatarMobile">U</div>
+            <div class="user-meta">
+                <div class="user-name" id="userLabelSide"></div>
+                <div class="user-role" id="userRoleSide"></div>
+            </div>
         </div>
 
         <nav class="menu">
-            <a href="home.html" class="active">
+            <a href="home.html" data-nav="home">
                 <i class="ri-delete-bin-2-line"></i>
-                <span id="menuMyBins"></span>
+                <span class="menu-text" id="menuMyBins"></span>
             </a>
 
-            <a href="map.html">
+            <a href="map.html" data-nav="map">
                 <i class="ri-map-pin-2-line"></i>
-                <span id="menuMap"></span>
+                <span class="menu-text" id="menuMap"></span>
             </a>
-
-            <div class="sw-logout-slot">
-                <button onclick="SWAuth.logout()" class="logout-btn">
-                    <i class="ri-logout-box-line"></i>
-                    <span id="menuLogout"></span>
-                </button>
-            </div>
         </nav>
+
+        <div class="sw-logout-slot">
+            <button onclick="SWAuth.logout()" class="sw-logout-btn" type="button">
+                <i class="ri-logout-box-line"></i>
+                <span id="menuLogout"></span>
+            </button>
+        </div>
     </aside>
 
-    <main>
-
-        <!-- ===== TOP BAR ===== -->
-        <div class="topbar">
-
-            <!-- MOBILE BRAND -->
-            <div class="mobile-brand">
-                <div class="brand-left">
-                    <i class="ri-recycle-line"></i>
-                </div>
-                <div class="user-chip-mobile">
-                    <div class="avatar-mobile" id="userAvatarMobile">U</div>
-                </div>
-            </div>
-
-            <!-- TITLES -->
-            <div class="titles">
-                <h1 id="homeTitle"></h1>
-                <p id="homeSubtitle"></p>
-            </div>
-
-            <!-- RIGHT SIDE -->
-            <div class="topbar-right">
-
-                <!-- USER -->
-                <div class="user-chip user-chip-desktop">
-                    <div class="avatar" id="userAvatar">U</div>
-                    <div>
-                        <strong id="userLabel"></strong><br>
-                        <small id="userRole" style="font-size:12px;color:#64748b;"></small>
-                    </div>
-                </div>
-
-                <!-- LANGUAGE SWITCHER -->
-                <div class="lang-switcher">
-                    <button class="icon-btn" id="langIconBtn" type="button">
-                        <i class="ri-global-line"></i>
-                    </button>
-
-                    <div class="lang-menu" id="langMenu">
-                        <button type="button" data-lang="th">ไทย</button>
-                        <button type="button" data-lang="en">English</button>
-                        <button type="button" data-lang="ms">Bahasa Melayu</button>
-                    </div>
-                </div>
-
+    <main class="admin-main user-main">
+        <div class="page-head">
+            <div>
+                <h1 class="page-title" id="homeTitle"></h1>
+                <p class="page-sub" id="homeSubtitle"></p>
             </div>
         </div>
-        <!-- ===== END TOP BAR ===== -->
 
-        <!-- ===== CARD ===== -->
-        <div class="card">
+        <div class="card user-card">
 
             <div class="selector">
                 <div class="select-wrap">
@@ -1083,6 +212,11 @@
                             <div class="info-value" id="binUpdated">-</div>
                         </div>
 
+                        <div class="info-item">
+                            <span><i class="ri-scales-3-line"></i> <span id="labelWeight"></span></span>
+                            <div class="info-value" id="binWeight">-</div>
+                        </div>
+
                     </div>
 
                     <p id="status" class="muted" style="margin-top:20px;text-align:center;font-size:13px;">
@@ -1100,6 +234,8 @@
         const userLabelEl = $("userLabel");
         const userAvatar = $("userAvatar");
         const userAvatarMobile = $("userAvatarMobile");
+        const userLabelSide = $("userLabelSide");
+        const userRoleSide = $("userRoleSide");
         const binSelect = $("binSelect");
         const binCard = $("binCard");
         const liveBadge = $("liveBadge");
@@ -1113,16 +249,15 @@
         const binMac = $("binMac");
         const binCoords = $("binCoords");
         const binUpdated = $("binUpdated");
+        const binWeight = $("binWeight");
         const statusEl = $("status");
         const loader = $("globalLoader");
-
-        // Hide Loader
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 500);
-            }, 500);
-        });
+        let loaderHidden = false;
+        function hideLoader() {
+            if (!loader || loaderHidden) return;
+            loaderHidden = true;
+            loader.classList.remove("show");
+        }
 
         const db = firebase.firestore();
         const rtdb = firebase.database();
@@ -1154,6 +289,18 @@
             return date.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
         }
 
+        function formatWeight(weight) {
+            if (typeof weight !== "number" || Number.isNaN(weight)) return "-";
+            const rounded = Math.round(weight * 100) / 100;
+            const localeMap = { th: "th-TH", en: "en-US", ms: "ms-MY" };
+            const locale = localeMap[currentLang] || "th-TH";
+            const fractionDigits = rounded % 1 ? 2 : 0;
+            return `${rounded.toLocaleString(locale, {
+                minimumFractionDigits: fractionDigits,
+                maximumFractionDigits: 2
+            })} g`;
+        }
+
         // --- UPDATED: Load My Bins (Group Query) ---
         async function loadMyBins() {
             myBins = [];
@@ -1170,6 +317,7 @@
 
                 if (snapshot.empty) {
                     renderBinList();
+                    hideLoader();
                     return;
                 }
 
@@ -1189,6 +337,7 @@
                 });
 
                 renderBinList();
+                hideLoader();
 
             } catch (err) {
                 console.error("Load Bins Error:", err);
@@ -1198,6 +347,8 @@
                 if (err.code === 'failed-precondition' || err.message.includes("index")) {
                     alert(T.errNeedIndex);
                 }
+            } finally {
+                hideLoader();
             }
         }
 
@@ -1223,6 +374,11 @@
                     ? `${entry.lat.toFixed(5)}, ${entry.lng.toFixed(5)}`
                     : "-";
             binUpdated.textContent = formatTimestamp(entry.updatedAt);
+            const weightValue =
+                typeof entry.weightGram === "number"
+                    ? entry.weightGram
+                    : (typeof entry.weight === "number" ? entry.weight : null);
+            binWeight.textContent = formatWeight(weightValue);
 
             binFill.style.height = "0%";
             binPercent.textContent = "0%";
@@ -1266,18 +422,21 @@
 
                 if (level > 80) {
                     binFill.style.background = "linear-gradient(180deg, #dc2626, #ef4444)";
-                    liveBadge.style.background = "#fee2e2";
-                    liveBadge.style.color = "#dc2626";
-                    liveBadge.innerHTML = T.binNearFull;
                 } else {
                     binFill.style.background = "linear-gradient(180deg, #f97316, #fb923c)";
-                    liveBadge.style.background = "#dcfce7";
-                    liveBadge.style.color = "#16a34a";
-                    liveBadge.innerHTML = `<span class="live-dot"></span> ${T.binLive}`;
                 }
+
+                liveBadge.style.background = "#dcfce7";
+                liveBadge.style.color = "#16a34a";
+                liveBadge.innerHTML = `<span class="live-dot"></span> ${T.binLive}`;
 
                 liveBadge.style.display = "inline-flex";
                 binUpdated.textContent = new Date(device.lastUpdate).toLocaleString("th-TH");
+                if (typeof device.weight === "number") {
+                    binWeight.textContent = formatWeight(device.weight);
+                } else if (typeof device.weightGram === "number") {
+                    binWeight.textContent = formatWeight(device.weightGram);
+                }
                 setStatus(`${T.statusLive} ${level}%`, "ok");
             };
 
@@ -1373,11 +532,14 @@
             const initial = user.displayName.charAt(0).toUpperCase();
 
             userLabelEl.textContent = user.displayName;
+            if (userLabelSide) userLabelSide.textContent = user.displayName;
             userAvatar.textContent = initial;
             if (userAvatarMobile) userAvatarMobile.textContent = initial;
 
-            // role (user page = ผู้ใช้งาน)
-            document.getElementById("userRole").textContent = T.userRole_user;
+            // role (user page = ?????????)
+            const roleEl = document.getElementById("userRole");
+            if (roleEl) roleEl.textContent = T.userRole_user;
+            if (userRoleSide) userRoleSide.textContent = T.userRole_user;
 
             currentUser = user;
 
@@ -1396,9 +558,10 @@
             $("labelSelectBin").textContent = T.labelSelectBin;
             $("labelZoneArea").textContent = T.labelZoneArea;
             $("labelRfid").textContent = T.labelRfid;
-            $("labelMac").textContent = T.labelMac;
+            $("labelMac").textContent = T.labelMacAddress || T.labelMac || "MAC Address";
             $("labelGps").textContent = T.labelGps;
             $("labelUpdated").textContent = T.labelUpdated;
+            $("labelWeight").textContent = T.labelWeight;
 
             // ✅ เพิ่ม 3 บรรทัดนี้
             $("menuMyBins").textContent = T.menuMyBins;
@@ -1409,6 +572,9 @@
             const roleEl = document.getElementById("userRole");
             if (roleEl) {
                 roleEl.textContent = T.userRole_user;
+            }
+            if (userRoleSide) {
+                userRoleSide.textContent = T.userRole_user;
             }
 
         }
@@ -1483,13 +649,6 @@
             }
         }
 
-        // เปิด/ปิดเมนู (SAFE)
-        if (langIconBtn && langMenu) {
-            langIconBtn.addEventListener("click", () => {
-                langMenu.classList.toggle("show");
-            });
-        }
-
         // คลิกเลือกภาษา
         // คลิกเลือกภาษา (SAFE)
         if (langMenu) {
@@ -1501,13 +660,6 @@
                 langMenu.classList.remove("show");
             });
         }
-
-        // คลิกนอกเมนู = ปิด
-        document.addEventListener("click", e => {
-            if (!langMenu.contains(e.target) && !langIconBtn.contains(e.target)) {
-                langMenu.classList.remove("show");
-            }
-        });
     </script>
 </body>
 

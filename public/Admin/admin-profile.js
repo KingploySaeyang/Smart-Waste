@@ -13,12 +13,12 @@
     },
     en: {
       admin: "Administrator",
-      driver: "Driver",
+      driver: "Driver Staff",
       user: "User"
     },
     ms: {
       admin: "Pentadbir",
-      driver: "Pemandu",
+      driver: "Kakitangan Pemandu",
       user: "Pengguna"
     }
   };

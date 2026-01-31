@@ -5,6 +5,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Waste - โปรไฟล์ผู้ดูแล</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="admin-shell.css">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -14,6 +17,7 @@
   <!-- Auth + Shared -->
   <script src="../Login/auth.js"></script>
   <script src="admin-lang.js"></script>
+  <script src="admin-shell.js" defer></script>
   <script src="admin-user.js" defer></script>
   <script src="admin-nav.js" defer></script>
   <script>
@@ -25,7 +29,7 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+      font-family: "Prompt", "Segoe UI", system-ui, sans-serif
     }
 
     body {
@@ -370,7 +374,7 @@
   </style>
 </head>
 
-<body>
+<body data-active-nav="profile">
   <button id="menuToggle" class="toggle-btn" onclick="toggleMenu()">☰ เมนู</button>
 
   <aside class="sidebar" id="sidebar">

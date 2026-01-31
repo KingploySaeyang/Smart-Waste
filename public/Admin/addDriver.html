@@ -4,8 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Waste - คนขับรถเก็บขยะ</title>
+  <title>Smart Waste - พนักงานขับรถเก็บขยะ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link rel="stylesheet" href="a_style.css">
+  <link rel="stylesheet" href="admin-shell.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -13,6 +16,7 @@
 
   <script src="../Login/auth.js"></script>
   <script src="admin-lang.js"></script>
+  <script src="admin-shell.js" defer></script>
   <script src="../i18n/lang.js"></script>
   <script src="../i18n/th.js"></script>
   <script src="../i18n/en.js"></script>
@@ -23,27 +27,12 @@
   <script src="admin-auth-bootstrap.js" defer></script> <!-- ⭐ เพิ่ม -->
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif;
-    }
-
-    body {
-      display: flex;
-      min-height: 100vh;
-      background: #f5f6fa;
-      flex-direction: row;
-      overflow-x: hidden;
-    }
-
     :root {
-      --btn-min-h: 44px;
+      --btn-min-h: 46px;
       --btn-pad-x: 16px;
       --btn-pad-y: 10px;
-      --btn-radius: 12px;
-      --btn-font: 16px;
+      --btn-radius: 14px;
+      --btn-font: 15px;
     }
 
     body.modal-open {
@@ -52,202 +41,56 @@
       touch-action: none;
     }
 
-    /* ---------- Sidebar ---------- */
-    .sidebar {
-      width: 250px;
-      background: #2f3640;
-      color: #f5f6fa;
+    .driver-page {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 12px 0;
+    }
+
+    .page-head {
       display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      padding-top: 20px;
-      transition: .3s;
-    }
-
-    .sidebar h2 {
-      text-align: center;
-      color: #00a8ff;
-      margin-bottom: 25px;
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 4px;
-    }
-
-    .sidebar .sw-logout-slot {
-      margin-top: 0 !important;
-      margin-left: 18px;
-      margin-right: 18px;
-      margin-bottom: 24px;
-      padding: 0;
-    }
-
-    .menu a {
-      display: block;
-      color: #f5f6fa;
-      padding: 14px 20px;
-      text-decoration: none;
-      border-left: 4px solid transparent;
-      transition: .3s;
-    }
-
-    .menu a:hover,
-    .menu a.active {
-      background: #353b48;
-      border-left: 4px solid #00a8ff;
-    }
-
-    .sidebar .sw-logout-slot .sw-logout-btn {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 14px 20px;
-      margin-top: 6px;
-      border: none;
-      border-radius: 10px;
-      background: #dc2626;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      box-shadow: none !important;
-      transform: none !important;
-    }
-
-    .sidebar .sw-logout-slot .sw-logout-btn:hover,
-    .sidebar .sw-logout-slot .sw-logout-btn:focus {
-      background: #b91c1c;
-      border-left: 0;
-    }
-
-    /* ปุ่ม 3 ขีด */
-    .toggle-btn {
-      display: none;
-      position: fixed;
-      top: 14px;
-      left: 14px;
-      background: #00a8ff;
-      color: #fff;
-      border: none;
-      padding: var(--btn-pad-y) var(--btn-pad-x);
-      border-radius: var(--btn-radius);
-      cursor: pointer;
-      z-index: 1000;
-      font-size: var(--btn-font);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-    }
-
-    /* ---------- Main ---------- */
-    main {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto;
-      min-width: 0;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-      line-height: 1.25;
-      color: #2f3640;
-      font-size: 22px;
-    }
-
-    .topbar {
-      display: flex;
+      align-items: flex-end;
       justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
       gap: 16px;
-      margin-bottom: 16px;
+      margin: 0 0 18px;
+      flex-wrap: wrap;
     }
 
-    .page-header {
-      max-width: 60%;
+    .page-title {
+      margin: 0;
+      font-size: 38px;
+      font-weight: 900;
+      color: #1f2937;
+      letter-spacing: -0.4px;
     }
 
-    .page-header .muted {
-      font-size: 13px;
+    .page-sub {
+      margin: 6px 0 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #6b7280;
+    }
+
+    .page-actions {
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-shrink: 0;
     }
 
     .content {
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-    }
-
-    .card {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 16px 18px;
-      margin-bottom: 16px;
-      background: #f9fafb;
-    }
-
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: #111827;
-    }
-
-    input[type="text"],
-    input[type="password"],
-    select {
-      width: 100%;
-      min-height: var(--btn-min-h);
-      padding: var(--btn-pad-y) var(--btn-pad-x);
-      border-radius: var(--btn-radius);
-      border: 1px solid #cbd5e1;
-      font-size: var(--btn-font);
-      background: #f9fafb;
-      margin-bottom: 10px;
-    }
-
-    #searchInput {
-      margin-bottom: 0 !important;
-    }
-
-    input:focus,
-    select:focus {
-      outline: 3px solid #93c5fd;
-      border-color: #2563eb;
-      background: #fff;
-    }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .row>div {
-      flex: 0 0 auto;
-      /* ค่าเริ่มต้นสำหรับ Desktop */
-    }
-
-    /* filter row layout */
-    #filterZoneSelect {
-      min-width: 180px;
-    }
-
-    #filterAreaSelect {
-      min-width: 180px;
-    }
-
-    .search-box-wrapper {
-      flex: 1 1 auto;
-      min-width: 260px;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
     }
 
 
-    /* Class พิเศษสำหรับกล่องค้นหา */
-    .search-box-wrapper {
-      flex: 0 0 260px;
+    .muted {
+      font-size: 13px;
+      color: #6b7280;
     }
 
     button {
@@ -264,8 +107,24 @@
       transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, filter .2s;
     }
 
+    button:hover {
+      filter: brightness(1.03);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    button:focus,
+    input:focus,
+    select:focus {
+      outline: 3px solid rgba(14, 165, 233, .25);
+      outline-offset: 2px;
+    }
+
     .primary {
-      background: #2563eb;
+      background: #10b981;
       color: #fff;
     }
 
@@ -279,87 +138,307 @@
       color: #fff;
     }
 
-    button:hover {
-      filter: brightness(1.03);
-    }
-
-    button:active {
-      transform: translateY(1px);
-      box-shadow: none;
-    }
-
-    button:focus,
-    .toggle-btn:focus,
-    input:focus,
-    select:focus {
-      outline: 3px solid #93c5fd;
-      outline-offset: 2px;
-    }
-
-    .muted {
+    label {
+      display: block;
       font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
       color: #6b7280;
     }
 
-    /* zone filter chips */
-    .chips-row {
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      min-height: 52px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      font-size: 14px;
+      background: #fff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 6px 12px rgba(15, 23, 42, .04);
+    }
+
+    input:focus,
+    select:focus {
+      border-color: rgba(14, 165, 233, .55);
+    }
+
+    .row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 12px;
+      align-items: flex-start;
     }
 
-    .chip {
-      padding: 6px 12px;
-      border-radius: 999px;
-      border: 1px solid #d4d4d8;
-      background: #f4f4f5;
-      font-size: 13px;
-      cursor: pointer;
+    .row>div {
+      flex: 1 1 220px;
+      min-width: 220px;
     }
 
-    .chip.active {
-      background: #2563eb;
-      color: #fff;
-      border-color: #2563eb;
-    }
-
-    .table-tools {
+    .add-driver-header {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .add-driver-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #1f2937;
+      margin: 0;
+    }
+
+    .add-driver-hint {
+      font-size: 14px;
+      color: #6b7280;
       margin-top: 4px;
     }
 
-    .table-tools input[type="text"] {
-      max-width: 260px;
-      margin-bottom: 0;
+    #btnOpenDriverForm {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px;
+      min-height: 48px;
+      background: #10b981;
+      color: #fff;
+      border: 1px solid rgba(16, 185, 129, .32);
+      border-radius: 12px;
+      font-weight: 900;
+      letter-spacing: -0.1px;
+      box-shadow: 0 10px 20px rgba(16, 185, 129, .2);
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      font-size: 13px;
+    #btnOpenDriverForm:hover {
+      box-shadow: 0 14px 28px rgba(16, 185, 129, .26);
+      filter: brightness(1.03);
     }
 
-    th,
-    td {
-      padding: 8px 10px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: left;
+    #btnOpenDriverForm:active {
+      transform: translateY(1px) scale(.99);
+    }
+
+    #btnOpenDriverForm .btnCreateLabel {
+      font-size: 16px;
+      line-height: 1;
+      display: inline-block;
+      transform: translateY(-1px);
+    }
+
+    #btnOpenDriverForm .btn-icon {
+      font-size: 18px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #btnSaveDriver {
       white-space: nowrap;
     }
 
-    th {
-      background: #f9fafb;
-      font-weight: 600;
+    #btnClear {
+      white-space: nowrap;
     }
 
-    td:last-child {
-      text-align: right;
+    .driver-table-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px;
+      background: #fff;
+      border-bottom: 1px solid #e6ebf3;
+      flex-wrap: wrap;
+    }
+
+    .table-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .table-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 900;
+      color: #1f2937;
+    }
+
+    .table-toolbar .count-label {
+      font-weight: 600;
+      color: #16a34a;
+      font-size: 13px;
+    }
+
+    .toolbar-fields {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+
+    .toolbar-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 180px;
+    }
+
+    .toolbar-field.search-box {
+      min-width: 240px;
+      width: 280px;
+      max-width: 100%;
+    }
+
+    .toolbar-field select,
+    .toolbar-field input {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      box-shadow: 0 10px 18px rgba(17, 24, 39, 0.02);
+    }
+
+    .toolbar-field select:focus,
+    .toolbar-field input:focus {
+      outline: 2px solid rgba(14, 165, 233, .25);
+      border-color: rgba(14, 165, 233, .55);
+      outline-offset: 2px;
+    }
+
+    .toolbar-field.search-box input {
+      height: 44px;
+      min-height: 44px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 10px 12px;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid #e6ebf3;
+      background: #f8fafc;
+    }
+
+    .usage-table {
+      width: 100%;
+      min-width: 920px;
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 14px;
+      margin-top: -1px;
+    }
+
+    .usage-table th,
+    .usage-table td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 12px 12px;
+      border-bottom: 1px solid #e6ebf3;
+      color: #0f172a;
+      background: #fff;
+    }
+
+    .usage-table thead th {
+      background: #f8fafc;
+      color: #374151;
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1.2;
+      padding-top: 14px;
+      padding-bottom: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .usage-table th:last-child,
+    .usage-table td:last-child {
+      text-align: center;
+    }
+
+    .usage-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .usage-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .input-with-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-with-icon input {
+      padding-right: 52px;
+    }
+
+    .toggle-pass {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease;
+      z-index: 2;
+    }
+
+    .toggle-pass:hover {
+      background: #f1f5f9;
+    }
+
+    .toggle-pass:active {
+      transform: translateY(-50%);
+    }
+
+    .toggle-pass i {
+      font-size: 18px;
+      color: #64748b;
+    }
+
+    .toggle-pass .icon-eye-off {
+      display: none;
+    }
+
+    .toggle-pass.is-visible .icon-eye {
+      display: none;
+    }
+
+    .toggle-pass.is-visible .icon-eye-off {
+      display: block;
     }
 
     .badge-zone {
@@ -371,50 +450,50 @@
       font-size: 12px;
     }
 
-    .btn-small {
-      min-height: var(--btn-min-h);
-      padding: var(--btn-pad-y) var(--btn-pad-x);
-      font-size: var(--btn-font);
-      border-radius: var(--btn-radius);
-    }
-
-    .btn-edit {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
-    .btn-delete {
-      background: #ef4444;
-      color: #fff;
-      margin-left: 6px;
-    }
-
-    .count-label {
-      font-size: 13px;
-      color: #16a34a;
-    }
-
-    .add-driver-header {
+    .bin-actions {
       display: flex;
-      justify-content: flex-end;
+      gap: 6px;
       align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 4px;
-      margin-top: 4px;
+      justify-content: center;
     }
 
-    .add-driver-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #111827;
-      margin-right: auto;
+    .bin-actions .icon-btn {
+      width: 32px;
+      height: 32px;
+      padding: 4px;
+      min-height: 0;
+      border-radius: 999px;
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
     }
 
-    .add-driver-hint {
-      font-size: 13px;
-      color: #6b7280;
-      margin-top: 4px;
+    .bin-actions .icon-btn:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .bin-actions .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .icon-edit-btn svg {
+      fill: #2563eb;
+    }
+
+    .icon-delete-btn svg {
+      fill: #dc2626;
+    }
+
+    .bin-actions .icon-btn:focus {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
     }
 
     .modal-backdrop {
@@ -469,76 +548,63 @@
       align-items: center;
     }
 
-    .bin-actions {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
+    @media (max-width: 900px) {
+      .page-actions {
+        width: 100%;
+        justify-content: flex-start;
+        padding-top: 4px;
+      }
 
-    .bin-actions .icon-btn {
-      width: 32px;
-      height: 32px;
-      padding: 4px;
-      border-radius: 999px;
-      border: none;
-      box-shadow: none;
-      background: transparent;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s;
-    }
+      #btnOpenDriverForm {
+        width: 100%;
+      }
 
-    .bin-actions .icon-btn:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-    }
+      #driverForm .row:not(.modal-footer-row) {
+        margin-top: 0 !important;
+      }
 
-    .bin-actions .icon-btn svg {
-      width: 18px;
-      height: 18px;
-      display: block;
-    }
+      #driverForm .row:not(.modal-footer-row) + .row:not(.modal-footer-row) {
+        margin-top: 0 !important;
+      }
 
-    .icon-edit-btn svg {
-      fill: #2563eb;
-      /* สีน้ำเงิน */
-    }
+      #driverForm .row {
+        display: block;
+        gap: 0;
+      }
 
-    .icon-delete-btn svg {
-      fill: #dc2626;
-      /* สีแดง */
-    }
+      #driverForm .row > div {
+        width: 100%;
+        min-width: 0;
+      }
 
-    .icon-btn:focus {
-      outline: 3px solid #93c5fd;
-      outline-offset: 2px;
-    }
+      #driverForm .row > div + div {
+        margin-top: 0;
+      }
 
-    /* Responsive */
-    @media(max-width:900px) {
-      body {
+      #driverForm label {
+        margin-bottom: 0;
+      }
+
+      .table-toolbar {
         flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 14px;
       }
 
-      .sidebar {
-        position: fixed;
-        left: -250px;
-        top: 0;
-        height: 100%;
-        z-index: 999;
+      .toolbar-fields {
+        width: 100%;
+        margin-left: 0;
       }
 
-      .sidebar.show {
-        left: 0;
+      .toolbar-field {
+        width: 100%;
+        min-width: 0;
       }
 
-      .toggle-btn {
-        display: inline-flex;
-      }
-
-      main {
-        padding: 70px 16px 20px;
+      .toolbar-field.search-box {
+        width: 100%;
+        min-width: 0;
       }
 
       .row {
@@ -548,30 +614,7 @@
 
       .row>div {
         width: 100%;
-        /* ===== แก้ไขจุดสำคัญ: รีเซ็ตความสูงที่ถูกดันจาก flex-basis 220px ===== */
-        flex: 1 1 auto;
-      }
-
-      .search-box-wrapper {
-        flex: 1 1 auto;
-        width: 100%;
-        margin-top: 8px;
-      }
-
-      .page-header {
-        max-width: 100%;
-      }
-
-      /* Modal บนมือถือ */
-      .modal-backdrop {
-        align-items: flex-start;
-        padding: 32px 0;
-      }
-
-      .modal {
-        max-width: 100%;
-        margin: 0 16px 24px;
-        -webkit-overflow-scrolling: touch;
+        min-width: 0;
       }
 
       .add-driver-header {
@@ -582,6 +625,17 @@
       .add-driver-header button {
         width: 100%;
         justify-content: center;
+      }
+
+      .modal-backdrop {
+        align-items: flex-start;
+        padding: 32px 0;
+      }
+
+      .modal {
+        max-width: 100%;
+        margin: 0 16px 24px;
+        -webkit-overflow-scrolling: touch;
       }
 
       .bin-actions .icon-btn {
@@ -596,253 +650,174 @@
       }
     }
 
-    @media(min-width:901px) {
-      .toggle-btn {
-        display: none !important;
+    @media (max-width: 720px) {
+      .page-head {
+        max-width: 640px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .driver-table-card {
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+        border-radius: 16px;
+      }
+
+      .driver-table-card .table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        background: #fff;
+        overflow-x: auto;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        border-top: 0;
+      }
+
+      .usage-table {
+        min-width: 760px;
+      }
+
+      .usage-table thead th {
+        white-space: nowrap;
       }
     }
   </style>
 
   <style>
-    /* ---------- Loader Animation ---------- */
-    #loader-overlay {
-      position: fixed;
-      inset: 0;
-      background-color: rgba(245, 246, 250, 0.95);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      transition: opacity 0.3s ease;
-      opacity: 0;
-      pointer-events: none;
+    /* Language Dropdown (match truck page) */
+    .lang-switcher {
+      position: relative;
     }
 
-    #loader-overlay.show {
-      opacity: 1;
-      pointer-events: auto;
+    .lang-menu {
+      position: absolute;
+      top: 46px;
+      right: 0;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 6px;
+      min-width: 180px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+      display: none;
+      z-index: 1200;
     }
 
-    .loading-text {
-      text-align: center;
-      font-size: 14px;
+    .lang-menu.show {
+      display: block;
+    }
+
+    .lang-menu button {
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .lang-menu button:hover {
+      background: #e0f2fe;
+    }
+
+    .lang-menu button:active {
+      background: #bae6fd;
+    }
+
+    .lang-menu button.active {
+      background: #e0f2fe;
       font-weight: 600;
-      color: #2f3640;
-      animation: pulse 1.5s ease-in-out infinite;
     }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 0.7;
-      }
-
-      50% {
-        opacity: 1;
-      }
-    }
-
-    /* Bouncing dots loader */
-    .spinner {
-      margin: 0 auto 20px;
-      width: 70px;
-      text-align: center;
-    }
-
-    .spinner>div {
-      width: 15px;
-      height: 15px;
-      background-color: #2563eb;
-      border-radius: 100%;
-      display: inline-block;
-      animation: sk-bouncedelay 1.4s infinite ease-in-out both;
-    }
-
-    .spinner .bounce1 {
-      animation-delay: -0.32s;
-    }
-
-    .spinner .bounce2 {
-      animation-delay: -0.16s;
-    }
-
-    @keyframes sk-bouncedelay {
-
-      0%,
-      80%,
-      100% {
-        transform: scale(0);
-      }
-
-      40% {
-        transform: scale(1.0);
-      }
-    }
-
-    /* ---------- Language Dropdown (เหมือนภาพแรก) ---------- */
-.lang-switcher {
-  position: relative;
-}
-
-.lang-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 180px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(0,0,0,.12);
-  padding: 6px;
-  display: none;
-  z-index: 2000;
-}
-
-.lang-menu.show {
-  display: block;
-}
-
-.lang-menu button {
-  width: 100%;
-  text-align: left;
-  padding: 10px 14px;
-  border: none;
-  background: transparent;
-  border-radius: 10px;
-  font-size: 15px;
-  cursor: pointer;
-  color: #111827;
-}
-
-.lang-menu button:hover {
-  background: #f1f5f9;
-}
-
-.lang-menu button.active {
-  background: #e0ecff;   /* ฟ้าอ่อนแบบในรูป */
-  font-weight: 600;
-}
-
   </style>
 </head>
 
-<body>
-  <div id="loader-overlay">
-    <div class="spinner">
-      <div class="bounce1"></div>
-      <div class="bounce2"></div>
-      <div class="bounce3"></div>
-    </div>
-    <div class="loading-text" id="loaderText">กำลังโหลด...</div>
-  </div>
-
-  <button class="toggle-btn" id="menuToggleBtn">☰ เมนู</button>
-
-  <aside class="sidebar" id="sidebar">
-    <h2>Smart Waste</h2>
-    <nav class="menu" data-admin-menu data-active="addDriver"></nav>
-    <div class="sw-logout-slot" data-sw-logout-slot></div>
-  </aside>
-
+<body data-active-nav="addDriver">
   <main>
-    <div class="topbar">
-      <div class="page-header">
-        <h1 id="mainTitle">จัดการคนขับรถเก็บขยะ</h1>
-        <p class="muted" id="pageHint">
-          เพิ่ม / จัดการบัญชีผู้ใช้ของพนักงานขับรถเก็บขยะในแต่ละเขตพื้นที่
-        </p>
-      </div>
-      <div class="topbar-right">
-        <!-- ไอคอนเลือกภาษา -->
-        <div class="lang-switcher">
-          <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
-            <img src="images/lang-icon.png" alt="Language" class="top-icon">
-          </button>
-          <div class="lang-menu" id="langMenu">
-            <button type="button" data-lang="th">ไทย</button>
-            <button type="button" data-lang="en">English</button>
-            <button type="button" data-lang="ms">Bahasa Melayu</button>
-          </div>
-          <select id="langSelect" style="display:none;">
-            <option value="th">ไทย</option>
-            <option value="en">English</option>
-            <option value="ms">Bahasa Melayu</option>
-          </select>
-        </div>
-
-        <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
-        <a href="profile.html" class="user-chip" id="profileBtn">
-          <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
-          <div class="user-chip-text">
-            <div class="user-chip-name" id="profileName">User Name</div>
-            <div class="user-chip-role" id="profileRole">Role</div>
-          </div>
-        </a>
+    <div id="pageLoader" class="shell-loader">
+      <div class="loader-box">
+        <div class="loader-spinner"></div>
+        <div class="loader-text" id="loaderText">กำลังโหลด...</div>
       </div>
     </div>
 
-    <div class="content">
-
-      <div class="card">
-        <div class="add-driver-header">
-          <div class="add-driver-title" id="addDriverHeaderTitle">เพิ่มคนขับใหม่</div>
-          <button type="button" class="primary" id="btnOpenDriverForm">เพิ่มคนขับ</button>
+    <div class="driver-page">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" id="mainTitle">จัดการพนักงานขับรถเก็บขยะ</h1>
+          <p class="page-sub" id="pageHint">
+            เพิ่ม / จัดการบัญชีผู้ใช้ของพนักงานขับรถเก็บขยะในแต่ละเขตพื้นที่
+          </p>
         </div>
-        <p class="add-driver-hint" id="addDriverHeaderHint">
-          กดปุ่มเพื่อเพิ่ม / ลงทะเบียนคนขับใหม่ในระบบ
-        </p>
+        <div class="page-actions">
+          <button type="button" class="primary" id="btnOpenDriverForm">
+            <i class="ri-user-add-line btn-icon"></i>
+            <span class="btnCreateLabel" id="btnOpenDriverFormLabel">เพิ่มพนักงานขับรถ</span>
+          </button>
+        </div>
+        <select id="langSelect" style="display:none;">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
       </div>
 
-      <div class="card">
-        <div class="row" style="margin-bottom:0;">
-          <div>
-            <label class="muted" id="labelZoneFilter">เขตพื้นที่</label>
-            <select id="filterZoneSelect">
-              <option value="__all" id="optZoneAll"></option>
-            </select>
+      <div class="content">
+
+        <div class="card driver-table-card">
+          <div class="table-toolbar">
+            <div class="table-title-wrap">
+              <h4 class="table-title" id="driverTableTitle">ตารางข้อมูลพนักงานขับรถ</h4>
+              <span class="count-label" id="countLabel">แสดง 0 รายการ</span>
+            </div>
+            <div class="toolbar-fields">
+              <div class="toolbar-field">
+                <select id="filterZoneSelect">
+                  <option value="__all" id="optZoneAll"></option>
+                </select>
+              </div>
+
+              <div class="toolbar-field search-box">
+                <input id="searchInput" type="text" />
+              </div>
+            </div>
           </div>
 
-          <div class="search-box-wrapper">
-            <label for="searchInput" class="muted" id="labelSearch">
-              ค้นหา Driver ID / Username
-            </label>
-            <input id="searchInput" type="text" />
+          <div class="table-wrapper">
+            <table class="usage-table">
+              <thead>
+                <tr>
+                  <th id="thZone">เขต</th>
+                  <th id="thDriverId">Driver ID</th>
+                  <th id="thUsername">ชื่อผู้ใช้</th>
+                  <th id="thFullName">ชื่อ - สกุล</th>
+                  <th id="thPhone">เบอร์โทรศัพท์</th>
+                  <th id="thUpdated">อัปเดตเมื่อ</th>
+                  <th id="thActions">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="driversTbody">
+                <!-- Data will be rendered here by JS -->
+              </tbody>
+            </table>
           </div>
         </div>
 
-
-        <div class="table-tools">
-          <span class="count-label" id="countLabel">แสดง 0 รายการ</span>
-        </div>
-
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th id="thZone">เขต</th>
-                <th id="thDriverId">Driver ID</th>
-                <th id="thUsername">ชื่อผู้ใช้</th>
-                <th id="thFullName">ชื่อ - สกุล</th>
-                <th id="thPhone">เบอร์โทรศัพท์</th>
-                <th id="thUpdated">อัปเดตเมื่อ</th>
-                <th id="thActions">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody id="driversTbody">
-              <!-- Data will be rendered here by JS -->
-            </tbody>
-          </table>
-        </div>
       </div>
-
     </div>
   </main>
   <!-- ================= Driver Modal ================= -->
   <div class="modal-backdrop" id="driverModalBackdrop">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title" id="driverModalTitle">เพิ่มคนขับใหม่</div>
+        <div class="modal-title" id="driverModalTitle">เพิ่มพนักงานขับรถใหม่</div>
         <button type="button" class="modal-close" id="btnCloseDriverModal">✕</button>
       </div>
 
@@ -855,13 +830,7 @@
             <select id="zoneSelect" required>
               <option value="">เลือกเขต...</option>
             </select>
-            <p class="muted" id="zoneHelp">
-              เลือกเขตก่อน ระบบจะสร้างรหัส Driver ID ให้อัตโนมัติ
-            </p>
           </div>
-        </div>
-
-        <div class="row" style="margin-top:8px;">
           <div>
             <label for="driverId" id="labelDriverId">Driver ID</label>
             <input id="driverId" type="text" readonly placeholder="เลือกเขตก่อน" />
@@ -889,7 +858,13 @@
         <div class="row" id="passwordRow">
           <div>
             <label for="password" id="labelPassword">รหัสผ่าน</label>
-            <input id="password" type="password" />
+            <div class="input-with-icon">
+              <input id="password" type="password" />
+              <button type="button" class="toggle-pass" id="togglePassword" aria-label="แสดงรหัสผ่าน">
+                <i class="ri-eye-line icon-eye" aria-hidden="true"></i>
+                <i class="ri-eye-off-line icon-eye-off" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -898,7 +873,7 @@
           <div style="display:flex;gap:8px;justify-content:flex-end;flex:1;">
             <button type="button" class="ghost" id="btnClear">ล้างฟอร์ม</button>
             <button type="submit" class="primary" id="btnSaveDriver">
-              บันทึกคนขับ
+              บันทึกพนักงานขับรถ
             </button>
           </div>
         </div>
@@ -1043,8 +1018,6 @@
     }
 
     /* ---------- DOM refs ---------- */
-    const langIconBtn = document.getElementById("langIconBtn");
-    const langMenu = document.getElementById("langMenu");
     const filterZoneSelect = document.getElementById("filterZoneSelect");
     const zoneSelect = document.getElementById('zoneSelect');
     const driverIdInput = document.getElementById('driverId');
@@ -1052,14 +1025,15 @@
     const phoneInput = document.getElementById('phone');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById("togglePassword");
     const formStatus = document.getElementById('formStatus');
     const driverForm = document.getElementById('driverForm');
     const btnClear = document.getElementById('btnClear');
-    const menuToggleBtn = document.getElementById('menuToggleBtn');
 
     const addDriverHeaderTitle = document.getElementById('addDriverHeaderTitle');
     const addDriverHeaderHint = document.getElementById('addDriverHeaderHint');
     const btnOpenDriverForm = document.getElementById('btnOpenDriverForm');
+    const btnOpenDriverFormLabel = document.getElementById('btnOpenDriverFormLabel');
     const driverModalBackdrop = document.getElementById('driverModalBackdrop');
     const btnCloseDriverModal = document.getElementById('btnCloseDriverModal');
     const driverModalTitle = document.getElementById('driverModalTitle');
@@ -1067,7 +1041,8 @@
     const searchInput = document.getElementById('searchInput');
     const driversTbody = document.getElementById('driversTbody');
     const countLabel = document.getElementById('countLabel');
-    const loaderOverlay = document.getElementById('loader-overlay');
+    const pageLoader = document.getElementById("pageLoader");
+    const loaderTextEl = document.getElementById("loaderText");
 
     /* ---------- State ---------- */
     let zones = [];
@@ -1173,12 +1148,13 @@
 
 
     /* ---------- Loader ---------- */
-    function showLoader() {
-      if (loaderOverlay) loaderOverlay.classList.add('show');
+    function showLoader(text) {
+      if (text && loaderTextEl) loaderTextEl.textContent = text;
+      if (pageLoader) pageLoader.classList.add("show");
     }
 
     function hideLoader() {
-      if (loaderOverlay) loaderOverlay.classList.remove('show');
+      if (pageLoader) pageLoader.classList.remove("show");
     }
 
     /* ---------- Load zones ---------- */
@@ -1545,32 +1521,7 @@
       }
     });
 
-    /* ---------- Sidebar mobile ---------- */
-    function toggleMenu() {
-      const sidebar = document.getElementById('sidebar');
-      const btn = document.querySelector('.toggle-btn');
-      const isShow = sidebar.classList.toggle('show');
-      if (window.innerWidth <= 900) {
-        btn.style.display = isShow ? 'none' : 'inline-flex';
-      }
-    }
-    window.toggleMenu = toggleMenu;
-
-    menuToggleBtn.addEventListener("click", toggleMenu);
-
-    window.addEventListener('resize', () => {
-      const sidebar = document.getElementById('sidebar');
-      const btn = document.querySelector('.toggle-btn');
-      if (window.innerWidth > 900) {
-        sidebar.classList.remove('show');
-        btn.style.display = 'none';
-      } else {
-        sidebar.classList.remove('show');
-        btn.style.display = 'inline-flex';
-      }
-    });
-
-    /* ---------- เปิด/ปิด Modal เพิ่มคนขับ ---------- */
+    /* ---------- เปิด/ปิด Modal เพิ่มพนักงานขับรถ ---------- */
     async function openDriverModal(driver = null) {
       driverForm.reset();
       setFormStatus("", "");
@@ -1658,11 +1609,20 @@
       document.title = tMap.pageTitle_driver || tMap.pageTitle || "Smart Waste";
       document.getElementById("mainTitle").textContent = tMap.mainTitle;
       document.getElementById("pageHint").textContent = tMap.pageHint;
+      const driverTableTitle = document.getElementById("driverTableTitle");
+      if (driverTableTitle) {
+        driverTableTitle.textContent =
+          tMap.driverTableTitle || "ตารางข้อมูลพนักงานขับรถ";
+      }
 
       // หัวข้อ + hint + ปุ่มของหัวการ์ด
       if (addDriverHeaderTitle) addDriverHeaderTitle.textContent = tMap.addDriverTitle;
       if (addDriverHeaderHint) addDriverHeaderHint.textContent = tMap.addDriverHint;
-      if (btnOpenDriverForm) btnOpenDriverForm.textContent = tMap.btnOpenDriverForm; // This is for the top button
+      if (btnOpenDriverFormLabel) {
+        btnOpenDriverFormLabel.textContent = tMap.btnOpenDriverForm;
+      } else if (btnOpenDriverForm) {
+        btnOpenDriverForm.textContent = tMap.btnOpenDriverForm;
+      }
       if (driverModalTitle) {
         driverModalTitle.textContent = editingDriverDocId
           ? tMap.editDriverTitle
@@ -1670,7 +1630,8 @@
       }
 
       document.getElementById("labelZone").textContent = tMap.labelZone;
-      document.getElementById("zoneHelp").textContent = tMap.zoneHelp;
+      const zoneHelpEl = document.getElementById("zoneHelp");
+      if (zoneHelpEl) zoneHelpEl.textContent = tMap.zoneHelp;
       document.getElementById("labelDriverId").textContent = tMap.labelDriverId;
       document.getElementById("labelFullName").textContent = tMap.labelFullName;
       document.getElementById("labelPhone").textContent = tMap.labelPhone;
@@ -1684,8 +1645,24 @@
         btnSave.textContent = tMap.btnUpdateDriver;
       } else { btnSave.textContent = tMap.btnSaveDriver; }
 
-      document.getElementById("labelZoneFilter").textContent = tMap.labelZoneFilter;
-      document.getElementById("labelSearch").textContent = tMap.labelSearch;
+      const labelZoneFilterEl = document.getElementById("labelZoneFilter");
+      if (labelZoneFilterEl) {
+        labelZoneFilterEl.textContent = tMap.labelZoneFilter;
+      } else if (filterZoneSelect) {
+        filterZoneSelect.setAttribute(
+          "aria-label",
+          tMap.labelZoneFilter || "Zone"
+        );
+      }
+      const labelSearchEl = document.getElementById("labelSearch");
+      if (labelSearchEl) {
+        labelSearchEl.textContent = tMap.labelSearch;
+      } else if (searchInput) {
+        searchInput.setAttribute(
+          "aria-label",
+          tMap.labelSearch || "Search"
+        );
+      }
 
       document.getElementById("thZone").textContent = tMap.thZone;
       document.getElementById("thDriverId").textContent = tMap.thDriverId;
@@ -1699,7 +1676,23 @@
         tMap.confirmTitle || tMap.confirm || "Confirm";
       document.getElementById("btnConfirmCancel").textContent = tMap.btnCancel;
       document.getElementById("btnConfirmOk").textContent = tMap.btnConfirm;
-      menuToggleBtn.setAttribute("aria-label", tMap.menuBtn);
+      if (togglePasswordBtn) {
+        togglePasswordBtn.setAttribute(
+          "aria-label",
+          togglePasswordBtn.classList.contains("is-visible")
+            ? (tMap.hidePassword || "ซ่อนรหัสผ่าน")
+            : (tMap.showPassword || "แสดงรหัสผ่าน")
+        );
+        togglePasswordBtn.setAttribute(
+          "title",
+          togglePasswordBtn.getAttribute("aria-label") || ""
+        );
+      }
+      const menuToggleBtn = document.getElementById("menuToggleBtn");
+      if (menuToggleBtn) {
+        menuToggleBtn.setAttribute("aria-label", tMap.menuBtn);
+        menuToggleBtn.setAttribute("title", tMap.menuBtn);
+      }
 
       // placeholders
       if (zoneSelect.options.length > 0) {
@@ -1730,8 +1723,7 @@
       }
       searchInput.placeholder = tMap.searchPh;
 
-      // ปุ่มเมนู
-      menuToggleBtn.textContent = tMap.menuBtn;
+      // ปุ่มเมนู (บน admin shell)
 
       // ให้เมนูซ้ายเปลี่ยนภาษาด้วย
       if (window.AdminNav && typeof window.AdminNav.setLanguage === "function") {
@@ -1748,6 +1740,8 @@
     }
 
     function updateLangMenuActive() {
+      const langMenu = document.getElementById("langMenu");
+      if (!langMenu) return;
       langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.lang === currentLang);
       });
@@ -1764,39 +1758,49 @@
         localStorage.setItem("sw_lang", lang);
       }
 
-      langSelect.value = currentLang;
+      if (langSelect) langSelect.value = currentLang;
       applyLanguage();
       updateLangMenuActive(); // ⭐ เพิ่มบรรทัดนี้
     }
 
-    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
-    langSelect.value = currentLang;
-
-    langIconBtn.addEventListener("click", () => {
-      langMenu.classList.toggle("show");
-    });
-
-    langMenu.addEventListener("click", e => {
-      const btn = e.target.closest("button[data-lang]");
-      if (!btn) return;
-      changeLanguage(btn.dataset.lang);
-      langMenu.classList.remove("show");
-    });
+    if (langSelect) {
+      langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+      langSelect.value = currentLang;
+    }
 
     if (LangState && typeof LangState.onChange === "function") {
       LangState.onChange(lang => {
         if (lang && lang !== currentLang) {
           currentLang = lang;
-          langSelect.value = lang;
+          if (langSelect) langSelect.value = lang;
           applyLanguage();
+          updateLangMenuActive();
         }
       });
     }
 
-    // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
-    document.addEventListener("click", e => {
-      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
-      if (!clickedInLang) langMenu.classList.remove("show");
+    if (togglePasswordBtn && passwordInput) {
+      togglePasswordBtn.addEventListener("click", () => {
+        const isHidden = passwordInput.type === "password";
+        passwordInput.type = isHidden ? "text" : "password";
+        togglePasswordBtn.classList.toggle("is-visible", isHidden);
+        const tMap =
+          (window.SW_Translations && window.SW_Translations[currentLang]) ||
+          (window.SW_Translations && window.SW_Translations.th) ||
+          {};
+        togglePasswordBtn.setAttribute(
+          "aria-label",
+          isHidden ? (tMap.hidePassword || "ซ่อนรหัสผ่าน") : (tMap.showPassword || "แสดงรหัสผ่าน")
+        );
+        togglePasswordBtn.setAttribute(
+          "title",
+          togglePasswordBtn.getAttribute("aria-label") || ""
+        );
+      });
+    }
+
+    window.addEventListener("load", () => {
+      updateLangMenuActive();
     });
 
     /* ---------- Init data ---------- */

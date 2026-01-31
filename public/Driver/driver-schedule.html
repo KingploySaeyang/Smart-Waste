@@ -1,0 +1,1565 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Waste - Driver Schedule</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- Auth -->
+  <script src="../Login/auth.js"></script>
+  <script src="../i18n/lang.js"></script>
+  <script src="../i18n/th.js"></script>
+  <script src="../i18n/en.js"></script>
+  <script src="../i18n/ms.js"></script>
+  <script src="driver-auth-bootstrap.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --primary: #10b981;
+      --primary-dark: #047857;
+      --accent: #0ea5e9;
+      --primary-soft: rgba(16, 185, 129, .12);
+      --accent-soft: rgba(14, 165, 233, .12);
+      --border: #e6ebf3;
+      --shadow: 0 10px 24px rgba(17, 24, 39, .08);
+      --header-h: 72px;
+      --sidebar-w: 260px;
+      --side-pad-x: 6px;
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 15px;
+      --card-radius: 18px;
+      --muted: var(--text-muted);
+      --brand: var(--primary);
+      --pill-bg: var(--accent-soft);
+      --pill-text: #0ea5e9;
+      --danger: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Prompt", "Segoe UI", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text-main);
+      display: block;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+
+    .app-shell {
+      max-width: 100%;
+      margin: 0;
+      padding: 0 28px 30px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .page-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 18px;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 38px;
+      font-weight: 900;
+      color: #1f2937;
+      letter-spacing: -0.4px;
+    }
+
+    .page-sub {
+      margin: 6px 0 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #6b7280;
+    }
+
+    /* Header */
+    .top-header {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 6px 18px rgba(17, 24, 39, .08);
+      z-index: 1200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      gap: 12px;
+      transform: translateZ(0);
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 220px;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, .18), rgba(14, 165, 233, .18));
+      border: 1px solid rgba(16, 185, 129, .22);
+      display: grid;
+      place-items: center;
+      color: var(--primary-dark);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .brand-name {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.2px;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: block;
+    }
+
+    .brand-mark i {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .header-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .menu-toggle {
+      display: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(17, 24, 39, .06);
+      transition: transform .2s;
+    }
+
+    .menu-toggle:active { transform: scale(.96); }
+
+    .menu-toggle i {
+      font-size: 22px;
+      color: #000;
+    }
+
+    .lang-switcher { position: relative; }
+    .lang-switcher select { display: none; }
+
+    .icon-btn {
+      width: 58px;
+      height: 58px;
+      min-height: 58px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(17, 24, 39, .06);
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+    }
+
+    .icon-btn:active { transform: scale(0.96); }
+
+    .icon-btn:hover {
+      border-color: rgba(0, 0, 0, .22);
+      box-shadow: 0 14px 28px rgba(17, 24, 39, .09);
+    }
+
+    .icon-btn i {
+      font-size: 28px;
+      color: #000;
+      opacity: 1;
+    }
+
+    .lang-menu {
+      position: absolute;
+      right: 0;
+      top: 60px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      display: none;
+      overflow: hidden;
+      min-width: 120px;
+      z-index: 1500;
+    }
+
+    .lang-menu.show { display: block; }
+
+    .lang-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 12px 14px;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    .lang-menu button:hover { background: #f8fafc; }
+    .lang-menu button.active { background: #e0edff; }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      height: 52px;
+      min-height: 52px;
+      box-shadow: 0 10px 22px rgba(17, 24, 39, .06);
+      user-select: none;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #111827;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      display: grid;
+      place-items: center;
+    }
+
+    .user-meta { line-height: 1.1; }
+    .user-name { font-weight: 900; font-size: 13px; }
+    .user-role { font-weight: 800; font-size: 12px; color: var(--muted); }
+
+    .drawer-overlay {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      background: rgba(15, 23, 42, .35);
+      backdrop-filter: blur(2px);
+      z-index: 1050;
+      display: none;
+    }
+
+    .drawer-overlay.show { display: block; }
+
+    .sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      background: var(--surface);
+      color: var(--text-main);
+      border-right: 1px solid var(--border);
+      padding: 14px 14px 16px;
+      display: flex;
+      flex-direction: column;
+      z-index: 1100;
+    }
+
+    .sidebar-user {
+      display: none;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 12px;
+      margin: 4px var(--side-pad-x) 10px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(17, 24, 39, .06);
+    }
+
+    .sidebar-user .user-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+    }
+
+    .sidebar-user .user-name { font-size: 14px; color: var(--text-main); }
+    .sidebar-user .user-role { font-size: 12px; }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px var(--side-pad-x);
+      margin: 0;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .menu a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: #111827;
+      font-weight: 900;
+      font-size: 16px;
+      transition: all .16s ease;
+      border: 1px solid transparent;
+      background: transparent;
+    }
+
+    .menu a i { font-size: 20px; }
+    .menu a .menu-text { flex: 1; display: inline-block; }
+    .menu a:hover { background: #f4f7ff; border-color: #e8efff; }
+
+    .menu a.active {
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(16, 185, 129, .18);
+      border: 1px solid rgba(16, 185, 129, .26);
+    }
+    .menu a.active i { color: #fff; }
+
+    .sidebar-logout {
+      padding: 0 var(--side-pad-x) 6px;
+      margin-top: auto;
+    }
+
+    .sidebar-logout .logout-btn {
+      width: 100%;
+      min-width: 220px;
+      max-width: 245px;
+    }
+
+    .driver-main {
+      margin-left: var(--sidebar-w);
+      width: calc(100% - var(--sidebar-w));
+      min-height: 100vh;
+      padding-top: calc(var(--header-h) + 26px);
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      animation: fadeUp 0.55s ease both;
+    }
+
+    .schedule-card { padding: 18px 20px 20px; }
+
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.2px;
+    }
+
+    .section-sub { font-size: 12px; color: var(--muted); }
+
+    .calendar-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 6px 10px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    .icon-btn.sm {
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      border-radius: 10px;
+      box-shadow: none;
+    }
+
+    .icon-btn.sm i { font-size: 20px; }
+
+    .calendar-month {
+      font-weight: 900;
+      font-size: 14px;
+      color: var(--text-main);
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+      margin: 10px 0 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .calendar-weekdays div {
+      text-align: center;
+      padding: 6px 0;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .calendar-cell {
+      min-height: 92px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 8px;
+      background: #fff;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+      transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+      cursor: default; /* ✅ ดูอย่างเดียว */
+    }
+
+    .calendar-cell.is-empty {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .calendar-day { font-weight: 900; font-size: 13px; color: var(--text-main); }
+
+    .calendar-chip {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      width: fit-content;
+      background: #f3f4f6;
+      color: var(--text-main);
+    }
+
+    .calendar-meta {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .calendar-bars {
+      display: none;
+      justify-content: center;
+      margin-top: 6px;
+      height: 6px;
+    }
+    .calendar-bar {
+      width: 70%;
+      height: 6px;
+      border-radius: 999px;
+      background: #cbd5e1;
+    }
+    .calendar-bar.status-today { background: #0ea5e9; }
+    .calendar-bar.status-pending { background: #ef4444; }
+    .calendar-bar.status-late { background: #f59e0b; }
+    .calendar-bar.status-done { background: #10b981; }
+    .calendar-bar.status-future { background: #94a3b8; }
+
+    .calendar-cell.is-today {
+      border-color: rgba(14, 165, 233, .4);
+      box-shadow: 0 8px 20px rgba(14, 165, 233, .16);
+    }
+
+    .calendar-cell.is-today .calendar-chip {
+      background: var(--accent-soft);
+      color: #0369a1;
+      border-color: #bfdbfe;
+    }
+
+    /* ✅ ไม่ใช้ is-selected / is-selectable แล้ว (ดูอย่างเดียว) */
+
+    .calendar-cell.is-done { background: rgba(16, 185, 129, 0.08); }
+    .calendar-cell.is-done .calendar-chip {
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      border-color: rgba(16, 185, 129, .3);
+    }
+
+    .calendar-cell.is-late { background: rgba(245, 158, 11, 0.12); }
+    .calendar-cell.is-late .calendar-chip {
+      background: rgba(245, 158, 11, 0.2);
+      color: #92400e;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .calendar-cell.is-pending { background: rgba(239, 68, 68, 0.06); }
+    .calendar-cell.is-pending .calendar-chip {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
+    .calendar-cell.is-future {
+      background: #f8fafc;
+      color: var(--muted);
+    }
+
+    .calendar-cell.is-future .calendar-chip {
+      background: #f3f4f6;
+      color: #94a3b8;
+      border-color: #e5e7eb;
+    }
+
+    .calendar-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .muted { font-size: 12px; color: var(--muted); }
+
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+
+    .empty-state {
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    /* Footer buttons */
+    .footer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 18px;
+      gap: 10px;
+      animation: fadeUp 0.5s ease 0.15s both;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      min-height: var(--btn-min-h);
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      border-radius: var(--btn-radius);
+      border: 1px solid transparent;
+      font-size: var(--btn-font);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.12s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: rgba(16, 185, 129, 0.35);
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.18);
+    }
+
+    .btn-ghost {
+      background: #fff;
+      color: var(--text-main);
+      border-color: var(--border);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    .logout-btn {
+      min-height: 52px;
+      padding: 0 22px;
+      border-radius: 14px;
+      font-weight: 800;
+      border: none;
+      background: #dc2626;
+      color: #fff;
+      font-size: var(--btn-font);
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(220, 38, 38, .16);
+    }
+
+    .logout-btn:hover { background: #b91c1c; }
+    .logout-btn:active { transform: translateY(1px); }
+
+    .btn:hover { filter: brightness(1.03); }
+    .btn:active { transform: translateY(1px); }
+
+    /* Page loader (admin-like) */
+    .shell-loader{
+      position: fixed;
+      top: calc(var(--header-h) + 8px);
+      left: var(--sidebar-w);
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(243,246,251,.65);
+      backdrop-filter: blur(6px);
+      z-index: 1080;
+    }
+    .shell-loader.show{ display:flex; }
+    .shell-loader .loader-box{
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 160px;
+      text-align: center;
+      border-radius: 16px;
+    }
+    .shell-loader .loader-spinner{
+      position: relative;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: conic-gradient(#0ea5e9 0deg, #0ea5e9 120deg, #10b981 240deg, rgba(14,165,233,.1) 320deg, rgba(14,165,233,.08) 360deg);
+      mask: radial-gradient(farthest-side, transparent calc(50% - 7px), #000 calc(50% - 6px));
+      animation: loaderSpin 1s linear infinite;
+      box-shadow: 0 12px 26px rgba(14,165,233,.16);
+    }
+    .shell-loader .loader-spinner::after{
+      content:"";
+      position:absolute;
+      inset:16px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow: inset 0 0 0 2px rgba(14,165,233,.08);
+    }
+    @keyframes loaderSpin{
+      100%{ transform: rotate(360deg); }
+    }
+    .shell-loader .loader-text{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      line-height:1.2;
+      color:#0f172a;
+      font-weight: 800;
+    }
+    body.loader-lock { overflow: hidden; }
+    body.sheet-open { overflow: hidden; }
+
+    /* Ensure SweetAlert covers header/sidebar */
+    .swal2-container{
+      z-index: 1000000 !important;
+    }
+
+
+    @media(max-width:900px) {
+      .app-shell { padding: 0 16px 28px; }
+      .menu-toggle { display: inline-flex; }
+      .header-user { display: none; }
+      .page-title { font-size: 28px; }
+      .page-sub { font-size: 14px; }
+      .section-title { font-size: 15px; }
+      .section-sub { font-size: 11px; }
+
+      .driver-main { margin-left: 0; width: 100%; }
+      .schedule-card { padding: 14px 14px 16px; }
+      .shell-loader {
+        left: 0 !important;
+        right: 0 !important;
+        top: var(--header-h);
+        width: 100vw;
+        height: calc(100vh - var(--header-h));
+      }
+
+      .sidebar {
+        top: var(--header-h);
+        height: calc(100vh - var(--header-h));
+        transform: translateX(-105%);
+        transition: transform .25s ease;
+        z-index: 1100;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .18);
+        border-right: 1px solid rgba(230, 235, 243, .95);
+      }
+
+      .sidebar.show { transform: translateX(0); }
+      .sidebar-user { display: flex; }
+
+      .brand-mark { display: none; }
+      .brand-name {
+        display: block !important;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: -0.2px;
+        white-space: nowrap;
+      }
+
+      .calendar-nav { width: 100%; justify-content: space-between; }
+      .calendar-month { min-width: 0; flex: 1; }
+      .calendar-weekdays { gap: 4px; font-size: 11px; }
+      .calendar-grid { gap: 4px; }
+      .calendar-day { font-size: 12px; }
+      .calendar-cell { min-height: 84px; padding: 6px; }
+      .calendar-chip,
+      .calendar-meta { display: none; }
+      .calendar-bars { display: flex; }
+      .calendar-cell.has-work {
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(14, 165, 233, 0.12);
+      }
+      .calendar-cell.has-work:active { transform: scale(0.98); }
+
+      .footer-actions { flex-direction: column; align-items: stretch; }
+      .footer-actions .btn,
+      .footer-actions .logout-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media(max-width:640px) {
+      .calendar-weekdays { font-size: 10px; }
+      .calendar-cell { min-height: 76px; }
+    }
+
+    @media(max-width:480px) {
+      .app-shell { padding: 0 12px 24px; }
+      .page-title { font-size: 24px; }
+      .page-sub { font-size: 13px; }
+      .brand-name { font-size: 16px; }
+      .icon-btn.sm { width: 32px; height: 32px; min-height: 32px; border-radius: 9px; }
+      .icon-btn.sm i { font-size: 18px; }
+      .calendar-month { font-size: 12px; }
+      .calendar-weekdays { gap: 3px; font-size: 9px; }
+      .calendar-cell { min-height: 68px; padding: 5px; border-radius: 12px; }
+      .calendar-day { font-size: 11px; }
+    }
+
+    .day-sheet {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2100;
+      padding: 16px;
+    }
+    .day-sheet.hidden { display: none; }
+    .day-sheet-card {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px 18px 18px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+      animation: sheetUp 0.2s ease;
+    }
+    .day-sheet-handle {
+      display: none;
+    }
+    .day-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .day-sheet-date {
+      font-weight: 900;
+      font-size: 16px;
+      color: #0f172a;
+    }
+    .day-sheet-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 6px;
+      color: #334155;
+    }
+    .day-sheet-status .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #cbd5e1;
+    }
+    .day-sheet-status .status-dot.status-today { background: #0ea5e9; }
+    .day-sheet-status .status-dot.status-pending { background: #ef4444; }
+    .day-sheet-status .status-dot.status-late { background: #f59e0b; }
+    .day-sheet-status .status-dot.status-done { background: #10b981; }
+    .day-sheet-status .status-dot.status-future { background: #94a3b8; }
+    .day-sheet-meta {
+      margin-top: 10px;
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: #475569;
+      font-weight: 700;
+    }
+    .day-sheet-actions {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .day-sheet-actions .btn { min-width: 96px; }
+    @keyframes sheetUp {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+
+<body data-active-nav="schedule">
+  <header class="top-header">
+    <div class="brand-left">
+      <button class="menu-toggle" id="menuToggleBtn" type="button" aria-label="เมนู">
+        <i class="ri-menu-fill"></i>
+      </button>
+      <div class="brand-mark"><i class="ri-recycle-line"></i></div>
+      <div class="brand-name">Smart Waste</div>
+      <div class="header-hidden">
+        <div id="pageTitle" class="page-title"></div>
+        <div id="brandPill" class="brand-pill"></div>
+        <div id="pageSub" class="page-sub"></div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="lang-switcher">
+        <button class="icon-btn" id="langIconBtn" type="button" aria-label="Change language">
+          <i class="ri-global-line"></i>
+        </button>
+        <div class="lang-menu" id="langMenu">
+          <button type="button" data-lang="th">ไทย</button>
+          <button type="button" data-lang="en">English</button>
+          <button type="button" data-lang="ms">Bahasa Melayu</button>
+        </div>
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
+      <div class="header-user">
+        <div class="user-avatar" id="driverAvatar">D</div>
+        <div class="user-meta">
+          <div class="user-name" id="driverName"></div>
+          <div class="user-role" id="driverRoleLabel"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="drawerOverlay" class="drawer-overlay"></div>
+  <aside class="sidebar" id="driverSidebar" aria-label="เมนูคนขับ">
+    <div class="sidebar-user" id="profileBoxSide">
+      <div class="user-avatar" id="driverAvatarSide">D</div>
+      <div class="user-meta">
+        <div class="user-name" id="driverNameSide"></div>
+        <div class="user-role" id="driverRoleSide"></div>
+      </div>
+    </div>
+    <nav class="menu" data-driver-menu></nav>
+    <div class="sidebar-logout">
+      <button id="btnLogout" class="logout-btn" type="button"></button>
+    </div>
+  </aside>
+
+  <main class="driver-main">
+    <div class="app-shell">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" id="mainTitle"></h1>
+          <p class="page-sub" id="mainSubtitle"></p>
+        </div>
+      </div>
+
+      <section class="card schedule-card">
+        <div class="section-title-row">
+          <div>
+            <h2 id="scheduleTitle" class="section-title"></h2>
+            <p id="scheduleSubtitle" class="section-sub"></p>
+          </div>
+          <div class="calendar-nav">
+            <button class="icon-btn sm" type="button" id="calendarPrev" aria-label="Previous month">
+              <i class="ri-arrow-left-s-line"></i>
+            </button>
+            <div class="calendar-month" id="calendarMonth">-</div>
+            <button class="icon-btn sm" type="button" id="calendarNext" aria-label="Next month">
+              <i class="ri-arrow-right-s-line"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="calendar-weekdays" id="calendarWeekdays"></div>
+        <div class="calendar-grid" id="scheduleCalendar"></div>
+        <div class="calendar-legend" id="calendarLegend"></div>
+        <div class="empty-state" id="scheduleEmpty"></div>
+      </section>
+
+      <section class="footer-actions"></section>
+
+      <div id="pageLoader" class="shell-loader show">
+        <div class="loader-box">
+          <div class="loader-spinner"></div>
+          <div class="loader-text" id="loaderText">กำลังโหลด...</div>
+        </div>
+      </div>
+
+      <div id="daySheet" class="day-sheet hidden" aria-hidden="true">
+        <div class="day-sheet-card" role="dialog" aria-modal="true">
+          <div class="day-sheet-handle"></div>
+          <div class="day-sheet-head">
+            <div class="day-sheet-date" id="daySheetDate">-</div>
+          </div>
+          <div class="day-sheet-status" id="daySheetStatus"></div>
+          <div class="day-sheet-meta" id="daySheetMeta"></div>
+          <div class="day-sheet-actions">
+            <button id="daySheetClose2" class="btn btn-primary" type="button">ปิด</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ===== GLOBAL STATE =====
+    let currentUser = null;
+    let driverId = null;
+    let displayName = null;
+    let globalDriverId = "-";
+
+    // ===== Firebase =====
+    var firebaseConfig = {
+      apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
+      authDomain: "smart-waste2568.firebaseapp.com",
+      projectId: "smart-waste2568",
+      storageBucket: "smart-waste2568.firebasestorage.app",
+      messagingSenderId: "122699752010",
+      appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
+      databaseURL: "https://smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+
+    // ===== DOM refs =====
+    const driverNameEl = document.getElementById("driverName");
+    const driverAvatarEl = document.getElementById("driverAvatar");
+    const driverRoleLbl = document.getElementById("driverRoleLabel");
+    const mainTitle = document.getElementById("mainTitle");
+    const mainSubtitle = document.getElementById("mainSubtitle");
+    const scheduleTitle = document.getElementById("scheduleTitle");
+    const scheduleSubtitle = document.getElementById("scheduleSubtitle");
+    const calendarMonth = document.getElementById("calendarMonth");
+    const calendarWeekdays = document.getElementById("calendarWeekdays");
+    const scheduleCalendar = document.getElementById("scheduleCalendar");
+    const calendarLegend = document.getElementById("calendarLegend");
+    const calendarPrev = document.getElementById("calendarPrev");
+    const calendarNext = document.getElementById("calendarNext");
+    const scheduleEmptyEl = document.getElementById("scheduleEmpty");
+    const driverNameSideEl = document.getElementById("driverNameSide");
+    const driverAvatarSideEl = document.getElementById("driverAvatarSide");
+    const driverRoleSideEl = document.getElementById("driverRoleSide");
+    const menuToggleBtn = document.getElementById("menuToggleBtn");
+    const sidebar = document.getElementById("driverSidebar");
+    const drawerOverlay = document.getElementById("drawerOverlay");
+    const driverMenu = document.querySelector("[data-driver-menu]");
+    const pageLoader = document.getElementById("pageLoader");
+    const loaderTextEl = document.getElementById("loaderText");
+
+    const btnLogout = document.getElementById("btnLogout");
+    const langSelect = document.getElementById("langSelect");
+    const langIconBtn = document.getElementById("langIconBtn");
+    const langMenu = document.getElementById("langMenu");
+    const daySheet = document.getElementById("daySheet");
+    const daySheetDate = document.getElementById("daySheetDate");
+    const daySheetStatus = document.getElementById("daySheetStatus");
+    const daySheetMeta = document.getElementById("daySheetMeta");
+    const daySheetClose2 = document.getElementById("daySheetClose2");
+
+
+    function getTodayId() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function toYMD(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function fillDriverProfile() {
+      displayName = currentUser.fullName || currentUser.username || "-";
+      driverId = currentUser.driverId;
+      globalDriverId = driverId;
+
+      driverNameEl.textContent = displayName;
+      driverAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+      if (driverNameSideEl) driverNameSideEl.textContent = displayName;
+      if (driverAvatarSideEl) driverAvatarSideEl.textContent = displayName.charAt(0).toUpperCase();
+    }
+
+    function applyTranslations() {
+      document.title = tr("pageTitle_driverSchedule");
+      if (mainTitle) mainTitle.textContent = tr("mainTitle_driverSchedule");
+      if (mainSubtitle) mainSubtitle.textContent = tr("mainSubtitle_driverSchedule");
+      if (scheduleTitle) scheduleTitle.textContent = tr("scheduleTitle");
+      if (scheduleSubtitle) scheduleSubtitle.textContent = tr("scheduleSubtitle");
+      if (driverRoleLbl) driverRoleLbl.textContent = tr("driverRole");
+      if (driverRoleSideEl) driverRoleSideEl.textContent = tr("driverRole");
+      if (btnLogout) btnLogout.textContent = tr("logout");
+      if (loaderTextEl) loaderTextEl.textContent = tr("loading");
+      buildDriverMenu();
+      renderCalendarLegend();
+    }
+
+    const DRIVER_MENU_ITEMS = [
+      { id: "dashboard", href: "Driver.html", icon: "ri-dashboard-2-line", labelKey: "navDashboard" },
+      { id: "schedule", href: "driver-schedule.html", icon: "ri-calendar-event-line", labelKey: "navSchedule" }
+    ];
+
+    function buildDriverMenu() {
+      if (!driverMenu) return;
+      const active = document.body.dataset.activeNav || "schedule";
+      driverMenu.innerHTML = DRIVER_MENU_ITEMS.map(item => {
+        const cls = item.id === active ? "active" : "";
+        return `<a href="${item.href}" data-nav="${item.id}" class="${cls}">
+                  <i class="${item.icon}" aria-hidden="true"></i>
+                  <span class="menu-text"></span>
+                </a>`;
+      }).join("");
+      applyDriverMenuLabels();
+    }
+
+    function applyDriverMenuLabels() {
+      if (!driverMenu) return;
+      driverMenu.querySelectorAll("a[data-nav]").forEach(link => {
+        const key = link.dataset.nav;
+        const item = DRIVER_MENU_ITEMS.find(it => it.id === key);
+        const label = item ? tr(item.labelKey) : key;
+        const textEl = link.querySelector(".menu-text");
+        if (textEl) textEl.textContent = label;
+        else link.textContent = label;
+      });
+    }
+
+    function isMobileMenu() { return window.innerWidth <= 900; }
+
+    function openDrawer() {
+      if (!isMobileMenu() || !sidebar || !drawerOverlay) return;
+      sidebar.classList.add("show");
+      drawerOverlay.classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeDrawer() {
+      if (!sidebar || !drawerOverlay) return;
+      sidebar.classList.remove("show");
+      drawerOverlay.classList.remove("show");
+      document.body.style.overflow = "";
+    }
+
+    if (menuToggleBtn) {
+      menuToggleBtn.addEventListener("click", () => {
+        if (!sidebar) return;
+        if (sidebar.classList.contains("show")) closeDrawer();
+        else openDrawer();
+      });
+    }
+
+    if (drawerOverlay) drawerOverlay.addEventListener("click", closeDrawer);
+
+    document.addEventListener("click", e => {
+      if (!isMobileMenu()) return;
+      const link = e.target.closest(".menu a");
+      if (link) closeDrawer();
+    });
+
+    window.addEventListener("resize", () => {
+      if (!isMobileMenu()) closeDrawer();
+    });
+
+    async function handleLogoutConfirm() {
+      try { await window.SWAuth.logout(); } catch (_) {}
+      window.location.href = "../Login/login.html";
+    }
+
+    btnLogout.addEventListener("click", () => {
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          title: tr("logoutTitle"),
+          text: tr("logoutText"),
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: tr("logoutConfirm"),
+          cancelButtonText: tr("logoutCancel"),
+          confirmButtonColor: "#dc2626",
+          cancelButtonColor: "#94a3b8",
+          reverseButtons: true
+        }).then(r => {
+          if (r.isConfirmed) handleLogoutConfirm();
+        });
+      } else {
+        const ok = window.confirm(tr("logoutText"));
+        if (ok) handleLogoutConfirm();
+      }
+    });
+
+
+    // ===== Calendar state =====
+    let scheduleItems = [];
+    let scheduleByDate = {};
+    let calendarCursor = new Date();
+    let calendarLoaded = false;
+    let calendarManualNav = false;
+
+    function getWeekdayLabels() {
+      if (currentLang === "en") return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      if (currentLang === "ms") return ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"];
+      return ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+    }
+
+    function getStatusInfo(dateStr, item, todayId) {
+      const hasWork = !!item;
+      const isToday = dateStr === todayId;
+      const isDone = item?.isFinished === true;
+      const isLate = item?.isLate === true;
+      const isFuture = hasWork && dateStr > todayId;
+      const isPending = hasWork && !isDone && dateStr < todayId;
+
+      let statusKey = "";
+      let statusLabel = "";
+      if (hasWork) {
+        if (isLate) { statusKey = "late"; statusLabel = tr("scheduleStatusLate"); }
+        else if (isDone) { statusKey = "done"; statusLabel = tr("scheduleStatusDone"); }
+        else if (isToday) { statusKey = "today"; statusLabel = tr("scheduleStatusToday"); }
+        else if (isPending) { statusKey = "pending"; statusLabel = tr("scheduleStatusPending"); }
+        else if (isFuture) { statusKey = "future"; statusLabel = tr("scheduleStatusFuture"); }
+      }
+
+      return { hasWork, isToday, isDone, isLate, isFuture, isPending, statusKey, statusLabel };
+    }
+
+    function getScheduleMetaLines(item) {
+      const truckLabel = item?.truckName || item?.truckId || "";
+      const areaList = Array.isArray(item?.areas)
+        ? item.areas.map(a => {
+            if (typeof a === "string") return a;
+            if (a && typeof a === "object") return a.areaName || a.areaId || a.name || "";
+            return "";
+          }).filter(Boolean)
+        : [];
+
+      const zoneText = item?.zoneName || item?.zoneId || "";
+      const metaLines = [];
+
+      if (truckLabel) metaLines.push(`${tr("pendingTruck")}: ${truckLabel}`);
+
+      if (zoneText) {
+        const areaSuffix = areaList.map(a => `(${a})`).join("");
+        metaLines.push(`${zoneText}${areaSuffix}`);
+      } else if (areaList.length) {
+        metaLines.push(areaList.map(a => `(${a})`).join(""));
+      }
+
+      return metaLines;
+    }
+
+    function formatDateLabel(dateStr) {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      if (!y || !m || !d) return dateStr || "-";
+      const localeMap = { th: "th-TH", en: "en-US", ms: "ms-MY" };
+      const locale = localeMap[currentLang] || "th-TH";
+      return new Date(y, m - 1, d).toLocaleDateString(locale, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    }
+
+    function renderCalendarLegend() {
+      if (!calendarLegend) return;
+      calendarLegend.innerHTML = `
+        <span class="legend-item"><span class="legend-dot" style="background:#0ea5e9"></span>${escapeHtml(tr("scheduleLegendToday"))}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>${escapeHtml(tr("scheduleLegendPending"))}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>${escapeHtml(tr("scheduleLegendLate"))}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#10b981"></span>${escapeHtml(tr("scheduleLegendDone"))}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span>${escapeHtml(tr("scheduleLegendFuture"))}</span>
+      `;
+    }
+
+    function renderCalendarGrid() {
+      if (!scheduleCalendar || !calendarMonth) return;
+      const year = calendarCursor.getFullYear();
+      const month = calendarCursor.getMonth();
+
+      const localeMap = { th: "th-TH", en: "en-US", ms: "ms-MY" };
+      const locale = localeMap[currentLang] || "th-TH";
+      calendarMonth.textContent = new Date(year, month, 1).toLocaleDateString(locale, {
+        year: "numeric",
+        month: "long"
+      });
+
+      if (calendarWeekdays) {
+        calendarWeekdays.innerHTML = getWeekdayLabels().map(d => `<div>${escapeHtml(d)}</div>`).join("");
+      }
+
+      const firstDay = new Date(year, month, 1);
+      const startDay = firstDay.getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayId = getTodayId();
+
+      const cells = [];
+      for (let i = 0; i < startDay; i++) {
+        cells.push(`<div class="calendar-cell is-empty"></div>`);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const item = scheduleByDate[dateStr];
+          const statusInfo = getStatusInfo(dateStr, item, todayId);
+          const metaLines = getScheduleMetaLines(item);
+          const metaLine = metaLines.map(line => `<div class="calendar-meta">${escapeHtml(line)}</div>`).join("");
+
+          cells.push(`
+            <div class="calendar-cell ${statusInfo.hasWork ? "has-work" : ""} ${statusInfo.isToday ? "is-today" : ""} ${statusInfo.isLate ? "is-late" : (statusInfo.isDone ? "is-done" : "")} ${statusInfo.isPending ? "is-pending" : ""} ${statusInfo.isFuture ? "is-future" : ""}"
+              data-date="${dateStr}">
+              <div class="calendar-day">${day}</div>
+              ${statusInfo.hasWork ? `<div class="calendar-chip">${escapeHtml(statusInfo.statusLabel)}</div>` : ""}
+              ${statusInfo.hasWork ? `<div class="calendar-bars"><span class="calendar-bar status-${statusInfo.statusKey}"></span></div>` : `<div class="calendar-bars"></div>`}
+              ${metaLine}
+            </div>
+          `);
+        }
+
+      scheduleCalendar.innerHTML = cells.join("");
+
+      if (scheduleEmptyEl) {
+        scheduleEmptyEl.textContent = scheduleItems.length ? "" : tr("scheduleEmpty");
+      }
+    }
+
+    async function loadScheduleCalendar(zoneId, force = false) {
+      if (!scheduleCalendar) return;
+      if (pageLoader) pageLoader.classList.add("show");
+      document.body.classList.add("loader-lock");
+      if (calendarLoaded && !force) {
+        renderCalendarGrid();
+        if (pageLoader) pageLoader.classList.remove("show");
+        document.body.classList.remove("loader-lock");
+        return;
+      }
+      scheduleCalendar.innerHTML = `<div class="muted">${escapeHtml(tr("loading"))}</div>`;
+
+      try {
+        const daysSnap = await fs
+          .collection("truck_schedule")
+          .doc(zoneId)
+          .collection("days")
+          .orderBy("workDate", "asc")
+          .get();
+
+        const driverSchedules = daysSnap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(s => s.driverId === driverId);
+
+        const results = await Promise.all(
+          driverSchedules.map(async s => {
+            const workDate = s.workDate || s.id;
+            const truckId = s.truckId;
+            let isFinished = false;
+            let isLate = false;
+
+            if (truckId && workDate) {
+              try {
+                const runSnap = await fs
+                  .collection("trucks")
+                  .doc(zoneId)
+                  .collection("vehicles")
+                  .doc(truckId)
+                  .collection("truck_operating_time")
+                  .doc(workDate)
+                  .get();
+
+                if (runSnap.exists) {
+                  const runData = runSnap.data();
+                  isFinished = runData?.isFinished === true;
+                  if (isFinished) {
+                    const ts = runData.finishedAt || runData.endAt;
+                    if (ts && typeof ts.toDate === "function") {
+                      const finishedDateStr = toYMD(ts.toDate());
+                      isLate = finishedDateStr !== workDate;
+                    } else {
+                      isLate = true;
+                    }
+                  }
+                }
+              } catch (e) {
+                console.warn("Schedule status read failed", e);
+              }
+            }
+
+            return { ...s, workDate, isFinished, isLate, zoneId };
+          })
+        );
+
+        scheduleItems = results;
+        scheduleByDate = results.reduce((acc, item) => {
+          if (item.workDate) acc[item.workDate] = item;
+          return acc;
+        }, {});
+
+        calendarLoaded = true;
+        renderCalendarGrid();
+      } catch (e) {
+        console.error("Load schedule failed", e);
+        scheduleItems = [];
+        scheduleByDate = {};
+        if (scheduleEmptyEl) scheduleEmptyEl.textContent = tr("scheduleEmpty");
+      } finally {
+        if (pageLoader) pageLoader.classList.remove("show");
+        document.body.classList.remove("loader-lock");
+      }
+    }
+
+      if (calendarPrev && calendarNext) {
+        calendarPrev.addEventListener("click", () => {
+          calendarManualNav = true;
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+        renderCalendarGrid();
+      });
+
+      calendarNext.addEventListener("click", () => {
+        calendarManualNav = true;
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+        renderCalendarGrid();
+        });
+      }
+
+      function isMobileCalendar() {
+        return window.innerWidth <= 900;
+      }
+
+      function openDaySheet(dateStr, item) {
+        if (!daySheet || !item) return;
+        const todayId = getTodayId();
+        const statusInfo = getStatusInfo(dateStr, item, todayId);
+        const metaLines = getScheduleMetaLines(item);
+
+        if (daySheetDate) daySheetDate.textContent = formatDateLabel(dateStr);
+        if (daySheetStatus) {
+          daySheetStatus.innerHTML = `
+            <span class="status-dot status-${statusInfo.statusKey}"></span>
+            <span>${escapeHtml(statusInfo.statusLabel || "")}</span>
+          `;
+        }
+        if (daySheetMeta) {
+          daySheetMeta.innerHTML = metaLines.length
+            ? metaLines.map(line => `<div>${escapeHtml(line)}</div>`).join("")
+            : `<div>${escapeHtml(tr("scheduleEmpty"))}</div>`;
+        }
+
+        daySheet.classList.remove("hidden");
+        daySheet.setAttribute("aria-hidden", "false");
+        document.body.classList.add("sheet-open");
+      }
+
+      function closeDaySheet() {
+        if (!daySheet) return;
+        daySheet.classList.add("hidden");
+        daySheet.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("sheet-open");
+      }
+
+      if (scheduleCalendar) {
+        scheduleCalendar.addEventListener("click", e => {
+          if (!isMobileCalendar()) return;
+          const cell = e.target.closest(".calendar-cell.has-work");
+          if (!cell || cell.classList.contains("is-empty")) return;
+          const dateStr = cell.dataset.date;
+          const item = dateStr ? scheduleByDate[dateStr] : null;
+          if (item) openDaySheet(dateStr, item);
+        });
+      }
+
+      if (daySheet) {
+        daySheet.addEventListener("click", e => {
+          if (e.target === daySheet) closeDaySheet();
+        });
+      }
+      if (daySheetClose2) daySheetClose2.addEventListener("click", closeDaySheet);
+
+    // ===== i18n SAFE FALLBACK =====
+    if (typeof window.currentLang === "undefined") {
+      window.currentLang = localStorage.getItem("sw_lang") || "th";
+    }
+
+    if (typeof window.tr !== "function") {
+      window.tr = function (key) {
+        const dict = window.SW_Translations && window.SW_Translations[window.currentLang];
+        return (dict && dict[key]) || key;
+      };
+    }
+
+    function syncLangMenu(lang) {
+      if (!langMenu) return;
+      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === lang);
+      });
+    }
+
+    langSelect.value = currentLang;
+    syncLangMenu(currentLang);
+
+    if (langIconBtn && langMenu) {
+      langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
+
+      langMenu.addEventListener("click", e => {
+        const btn = e.target.closest("button[data-lang]");
+        if (!btn) return;
+        langSelect.value = btn.dataset.lang;
+        syncLangMenu(langSelect.value);
+        langSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        langMenu.classList.remove("show");
+      });
+
+      document.addEventListener("click", e => {
+        const inMenu = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+        if (!inMenu) langMenu.classList.remove("show");
+      });
+    }
+
+    langSelect.addEventListener("change", e => {
+      currentLang = e.target.value;
+      localStorage.setItem("sw_lang", currentLang);
+      location.reload();
+    });
+
+    document.addEventListener("driver-auth-ready", () => {
+      const driver = window.DRIVER_AUTH;
+      if (!driver) return;
+      currentUser = driver;
+      fillDriverProfile();
+      applyTranslations();
+
+      const zoneId = currentUser.zoneId;
+      if (!zoneId) {
+        if (scheduleEmptyEl) scheduleEmptyEl.textContent = tr("errNoZoneAssigned");
+        if (pageLoader) pageLoader.classList.remove("show");
+        document.body.classList.remove("loader-lock");
+        return;
+      }
+
+      if (!calendarLoaded) calendarCursor = new Date();
+      loadScheduleCalendar(zoneId);
+    });
+  </script>
+</body>
+
+</html>

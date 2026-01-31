@@ -5,6 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Waste - แดชบอร์ดคนขับ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -19,312 +21,528 @@
   <script src="../i18n/en.js"></script>
   <script src="../i18n/ms.js"></script>
   <script src="driver-auth-bootstrap.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --primary: #10b981;
+      --primary-dark: #047857;
+      --accent: #0ea5e9;
+      --primary-soft: rgba(16, 185, 129, .12);
+      --accent-soft: rgba(14, 165, 233, .12);
+      --border: #e6ebf3;
+      --shadow: 0 10px 24px rgba(17, 24, 39, .08);
+      --header-h: 72px;
+      --sidebar-w: 260px;
+      --side-pad-x: 6px;
+      --btn-min-h: 44px;
+      --btn-pad-x: 16px;
+      --btn-pad-y: 10px;
+      --btn-radius: 12px;
+      --btn-font: 15px;
+      --card-radius: 18px;
+      --muted: var(--text-muted);
+      --brand: var(--primary);
+      --pill-bg: var(--accent-soft);
+      --pill-text: #0ea5e9;
+      --danger: #dc2626;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif
+      font-family: "Prompt", "Segoe UI", sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       min-height: 100vh;
-      background: #f5f6fa;
-      display: flex;
-      flex-direction: column;
+      background: var(--bg);
+      color: var(--text-main);
+      display: block;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    :root {
-      --btn-min-h: 44px;
-      --btn-pad-x: 16px;
-      --btn-pad-y: 10px;
-      --btn-radius: 999px;
-      --btn-font: 15px;
-      --card-radius: 18px;
-      --card-bg: #ffffff;
-      --card-shadow: 0 10px 30px rgba(15, 23, 42, .08);
-      --muted: #6b7280;
-      --brand: #2563eb;
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
     }
 
     .app-shell {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 18px 18px 26px;
+      max-width: 100%;
+      margin: 0;
+      padding: 0 28px 30px;
+      position: relative;
+      z-index: 2;
     }
 
-    /* Header */
-    .topbar {
+    .page-head {
       display: flex;
+      align-items: flex-end;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .brand-area {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .brand-pill {
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #e5f0ff;
-      color: #1e40af;
-      font-weight: 600;
-    }
-
-    .page-title-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+      gap: 16px;
+      margin: 0 0 18px;
+      flex-wrap: wrap;
     }
 
     .page-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: #111827;
+      margin: 0;
+      font-size: 38px;
+      font-weight: 900;
+      color: #1f2937;
+      letter-spacing: -0.4px;
     }
 
     .page-sub {
-      font-size: 13px;
-      color: var(--muted);
+      margin: 6px 0 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #6b7280;
     }
 
-    .topbar-right {
+    .top-header {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 6px 18px rgba(17, 24, 39, .08);
+      z-index: 1200;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
+      padding: 0 18px;
+      gap: 12px;
+      transform: translateZ(0);
+      pointer-events: auto;
     }
 
-    .lang-switcher select {
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 13px;
-      background: #fff;
+    .brand-left { display: flex; align-items: center; gap: 10px; min-width: 220px; }
+
+    .brand-mark {
+      width: 40px; height: 40px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(16,185,129,.18), rgba(14,165,233,.18));
+      border: 1px solid rgba(16,185,129,.22);
+      display: grid; place-items: center;
+      color: var(--primary-dark); font-size: 18px; font-weight: 900;
     }
 
-    .user-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #fff;
-      border-radius: 999px;
-      border: 1px solid #e5e7eb;
-      padding: 8px 12px;
-      box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    .brand-name {
+      font-size: 22px; font-weight: 900; letter-spacing: -0.2px; white-space: nowrap;
+      background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      display: block;
     }
 
-    .user-chip .avatar {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
-      color: #0f172a;
+    .brand-mark i { font-size: 20px; line-height: 1; }
+
+    .header-hidden {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .menu-toggle {
+      display: none;
+      width: 48px; height: 48px; border-radius: 16px;
+      border: 1px solid var(--border); background: #fff;
+      align-items: center; justify-content: center; cursor: pointer;
+      box-shadow: 0 10px 22px rgba(17,24,39,.06);
+      transition: transform .2s;
+    }
+    .menu-toggle:active { transform: scale(.96); }
+    .menu-toggle i { font-size: 22px; color: #000; }
+
+    .lang-switcher { position: relative; }
+    .lang-switcher select { display: none; }
+
+    .icon-btn {
+      width: 58px; height: 58px; min-height: 58px;
+      border-radius: 18px; border: 1px solid var(--border);
+      background: #fff; display: inline-flex;
+      align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 10px 22px rgba(17,24,39,.06);
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+    }
+    .icon-btn:active { transform: scale(.96); }
+    .icon-btn:hover { border-color: rgba(0,0,0,.22); box-shadow: 0 14px 28px rgba(17,24,39,.09); }
+    .icon-btn i { font-size: 28px; color: #000; opacity: 1; }
+
+    .lang-menu {
+      position: absolute; right: 0; top: 60px;
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 14px; box-shadow: var(--shadow);
+      display: none; overflow: hidden; min-width: 120px; z-index: 1500;
+    }
+    .lang-menu.show { display: block; }
+    .lang-menu button {
+      width: 100%; border: none; background: transparent;
+      padding: 12px 14px; text-align: left; cursor: pointer;
+      font-weight: 800; color: var(--text-main); white-space: nowrap;
+    }
+    .lang-menu button:hover { background: #f8fafc; }
+    .lang-menu button.active { background: #e0edff; }
+
+    .header-user {
+      display: flex; align-items: center; gap: 8px;
+      background: #fff; border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 10px 14px; height: 52px; min-height: 52px;
+      box-shadow: 0 10px 22px rgba(17,24,39,.06);
+      user-select: none;
+    }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 14px;
+      background: #f8fafc; color: #111827;
+      border: 1px solid var(--border);
       font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: grid; place-items: center;
+    }
+    .user-meta { line-height: 1.1; }
+    .user-name { font-weight: 900; font-size: 13px; }
+    .user-role { font-weight: 800; font-size: 12px; color: var(--muted); }
+
+    .drawer-overlay {
+      position: fixed; left: 0; right: 0;
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      background: rgba(15,23,42,.35);
+      backdrop-filter: blur(2px);
+      z-index: 1050;
+      display: none;
+    }
+    .drawer-overlay.show { display: block; }
+
+    .sidebar {
+      position: fixed;
+      top: var(--header-h); left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      background: var(--surface);
+      color: var(--text-main);
+      border-right: 1px solid var(--border);
+      padding: 14px 14px 16px;
+      display: flex; flex-direction: column;
+      z-index: 1100;
     }
 
-    .user-chip__label {
+    .sidebar-user {
+      display: none;
+      gap: 10px; align-items: center;
+      padding: 12px 12px;
+      margin: 4px var(--side-pad-x) 10px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(17,24,39,.06);
+    }
+    .sidebar-user .user-avatar { width: 42px; height: 42px; border-radius: 16px; }
+    .sidebar-user .user-name { font-size: 14px; color: var(--text-main); }
+    .sidebar-user .user-role { font-size: 12px; }
+
+    .menu {
+      display: flex; flex-direction: column;
+      gap: 10px;
+      padding: 10px var(--side-pad-x);
       margin: 0;
-      font-size: 11px;
-      color: var(--muted);
+      flex: 1;
+      overflow: auto;
+    }
+    .menu a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 14px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: #111827;
+      font-weight: 900;
+      font-size: 16px;
+      transition: all .16s ease;
+      border: 1px solid transparent;
+      background: transparent;
+    }
+    .menu a i { font-size: 20px; }
+    .menu a .menu-text { flex: 1; display: inline-block; }
+    .menu a:hover { background: #f4f7ff; border-color: #e8efff; }
+    .menu a.active {
+      background: #10b981; color: #fff;
+      box-shadow: 0 10px 20px rgba(16,185,129,.18);
+      border: 1px solid rgba(16,185,129,.26);
+    }
+    .menu a.active i { color: #fff; }
+
+    .sidebar-logout { padding: 0 var(--side-pad-x) 6px; margin-top: auto; }
+    .sidebar-logout .logout-btn { width: 100%; min-width: 220px; max-width: 245px; }
+
+    .driver-main {
+      margin-left: var(--sidebar-w);
+      width: calc(100% - var(--sidebar-w));
+      min-height: 100vh;
+      padding-top: calc(var(--header-h) + 26px);
+      position: relative;
     }
 
     .logout-btn {
-      min-height: var(--btn-min-h);
-      padding: var(--btn-pad-y) 18px;
+      min-height: 52px;
+      padding: 0 18px;
       border-radius: var(--btn-radius);
       border: none;
-      background: #ef4444;
+      background: #dc2626;
       color: #fff;
       font-size: var(--btn-font);
+      font-weight: 800;
       cursor: pointer;
+      box-shadow: 0 10px 18px rgba(220,38,38,.16);
     }
+    .logout-btn:hover { background: #b91c1c; }
+    .logout-btn:active { transform: translateY(1px); }
 
-    .logout-btn:hover {
-      filter: brightness(1.03);
-    }
-
-    .logout-btn:active {
-      transform: translateY(1px);
-    }
-
-    /* Cards section */
-    .card-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items: start;
       margin-bottom: 18px;
     }
 
+    .card-row { display: grid; gap: 12px; }
     .card {
-      background: var(--card-bg);
+      background: var(--surface);
       border-radius: var(--card-radius);
-      box-shadow: var(--card-shadow);
+      box-shadow: var(--shadow);
       padding: 16px 18px;
+      border: 1px solid var(--border);
+      animation: fadeUp 0.55s ease both;
     }
-
-    .card-small {
-      flex: 1 1 220px;
-      min-width: 0;
-    }
-
-    .card-large {
-      margin-top: 14px;
-    }
-
-    .card-label {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-
-    .card-main {
-      font-size: 18px;
-      font-weight: 700;
-      color: #111827;
-      margin-bottom: 4px;
-    }
-
-    .badge {
+    .summary-stack .card { padding: 14px 16px; }
+    .card-small { min-width: 0; width: 100%; }
+    .card-large { margin-top: 16px; animation-delay: 0.18s; }
+    .map-card { position: relative; overflow: hidden; padding: 18px 20px 20px; margin-top: 0; }
+    .map-fab {
+      position: absolute;
+      right: 38px;
+      bottom: 70px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: var(--shadow);
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      z-index: 5;
+    }
+    .map-fab i { font-size: 22px; color: #111827; }
+    .map-fab:hover { border-color: rgba(0,0,0,.22); box-shadow: 0 14px 28px rgba(17,24,39,.12); }
+    .map-fab:active { transform: scale(.96); }
+    .map-fab.is-active {
+      background: #0ea5e9;
+      border-color: rgba(14,165,233,.55);
+      box-shadow: 0 16px 32px rgba(14,165,233,.22);
+    }
+    .map-fab.is-active i { color: #fff; }
+
+    .summary-stack {
+      position: relative;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
+    }
+
+    .card-driver, .card-route, .card-status { position: relative; overflow: hidden; }
+    .card-route .card-main.is-empty { display: none; }
+    .card-driver { display: none; }
+
+    .card-row .card:nth-child(1) { animation-delay: 0.05s; }
+    .card-row .card:nth-child(2) { animation-delay: 0.1s; }
+    .card-row .card:nth-child(3) { animation-delay: 0.15s; }
+
+    .card-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+    .card-main { font-size: 17px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+
+    .badge {
+      display: inline-flex; align-items: center;
       padding: 4px 10px;
       border-radius: 999px;
       font-size: 11px;
       font-weight: 600;
+      border: 1px solid transparent;
     }
+    .badge-status-work { background: rgba(59,130,246,0.14); color: #1d4ed8; border-color: rgba(59,130,246,0.28); }
+    .badge-status-off { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+    .badge-status-done { background: var(--primary-soft); color: var(--primary-dark); border-color: rgba(16,185,129,0.25); }
+    .badge-status-late { background: rgba(245,158,11,0.14); color: #92400e; border-color: rgba(245,158,11,0.30); }
 
-    .badge-pill {
-      background: #e5f0ff;
-      color: #1e40af;
-    }
+    .card-status .badge { margin-top: 6px; margin-bottom: 6px; }
 
-    .badge-status-work {
-      background: #dcfce7;
-      color: #15803d;
-    }
+    .muted { font-size: 12px; color: var(--muted); }
+    .muted-strong { font-size: 12px; color: #475569; }
 
-    .badge-status-off {
-      background: #fee2e2;
-      color: #b91c1c;
-    }
-
-    .muted {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .muted-strong {
-      font-size: 12px;
-      color: #4b5563;
-    }
-
-    /* Filter radio summary */
-    .status-options {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
+    .route-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 18px;
+      row-gap: 6px;
       margin-top: 6px;
     }
 
+    .detail-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .detail-label { color: var(--muted); font-weight: 700; white-space: nowrap; }
+    .detail-value { color: var(--text-main); font-weight: 700; text-align: right; justify-self: end; }
+
+    .status-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
     .status-options label {
       font-size: 13px;
       display: flex;
       align-items: center;
       gap: 6px;
       cursor: pointer;
+      color: var(--text-main);
+      font-weight: 500;
+      padding: 6px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+      justify-content: center;
     }
+    .status-options input[type="radio"] {
+      -webkit-appearance: none; appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 2px solid #cbd5e1;
+      background: #fff;
+      display: inline-grid;
+      place-content: center;
+      margin: 0;
+    }
+    .status-options input[type="radio"]::before {
+      content: "";
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      transform: scale(0);
+      transition: transform 0.12s ease;
+      background: var(--primary);
+    }
+    .status-options input[type="radio"]:checked { border-color: var(--primary); }
+    .status-options input[type="radio"]:checked::before { transform: scale(1); }
+    .status-options label:has(input:checked) { border-color: rgba(16,185,129,0.45); box-shadow: 0 6px 16px rgba(16,185,129,0.12); }
+    .status-options label:has(input:checked) span { font-weight: 700; }
 
-    /* Map and route */
     .section-title-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       margin-bottom: 10px;
-    }
-
-    .section-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .section-sub {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .pill-tabs {
-      display: flex;
       flex-wrap: wrap;
-      gap: 8px;
     }
+    .section-title { font-size: 17px; font-weight: 700; color: var(--text-main); letter-spacing: -0.2px; }
+    .section-sub { font-size: 12px; color: var(--muted); }
 
+    .pill-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
     .pill-tabs button {
       min-height: var(--btn-min-h);
       padding: 6px 14px;
-      border-radius: 999px;
-      border: none;
+      border-radius: 12px;
+      border: 1px solid var(--border);
       font-size: 13px;
       cursor: pointer;
-      background: #f4f4f5;
-      color: #111827;
+      background: #fff;
+      color: var(--text-main);
+      box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
     }
-
     .pill-tabs button.active {
-      background: var(--brand);
+      background: var(--primary);
       color: #fff;
+      border-color: rgba(16,185,129,0.35);
+      box-shadow: 0 10px 20px rgba(16,185,129,0.18);
+    }
+    .pill-tabs button.is-ready {
+      background: var(--primary);
+      color: #fff;
+      border-color: rgba(16,185,129,0.35);
+      box-shadow: 0 10px 20px rgba(16,185,129,0.18);
+    }
+    .pill-tabs button.is-loading {
+      background: #e2e8f0;
+      color: #94a3b8;
+      border-color: #e2e8f0;
+      box-shadow: none;
+      cursor: wait;
+      position: relative;
+      padding-right: 32px;
+    }
+    .pill-tabs button.is-loading::after {
+      content: "";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid rgba(148, 163, 184, 0.5);
+      border-top-color: #94a3b8;
+      transform: translateY(-50%);
+      animation: spin 0.8s linear infinite;
+    }
+    .pill-tabs button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.02); }
+    .pill-tabs button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: grayscale(0.4);
+      background: #e2e8f0;
+      color: #94a3b8;
+      border-color: #e2e8f0;
+      box-shadow: none;
     }
 
     #map {
       width: 100%;
-      height: 380px;
+      height: 420px;
       border-radius: 16px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--border);
       margin-top: 10px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.6s ease 0.08s both;
     }
 
-    .route-legend {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 11px;
-      margin-top: 8px;
-    }
-
-    .legend-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .legend-color {
-      width: 16px;
-      height: 6px;
-      border-radius: 999px;
-      background: #2563eb;
-    }
-
-    /* Bin pins */
+    /* Leaflet bin icon (match admin truck page) */
     .leaflet-marker-icon.bin-icon {
       background: transparent;
       border: none;
     }
-
     .bin-pin {
       --pin-color: #16a34a;
       position: relative;
@@ -334,9 +552,7 @@
       gap: 4px;
       filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
     }
-
     .bin-pin__bubble {
-      position: relative;
       width: 46px;
       height: 46px;
       border-radius: 16px 16px 12px 12px;
@@ -348,7 +564,6 @@
       font-size: 20px;
       color: #0f172a;
     }
-
     .bin-pin__pointer {
       width: 0;
       height: 0;
@@ -357,7 +572,6 @@
       margin-top: -6px;
       filter: brightness(.9);
     }
-
     .bin-pin__label {
       font-size: 12px;
       font-weight: 600;
@@ -369,312 +583,541 @@
       line-height: 1;
       box-shadow: 0 4px 10px rgba(15, 23, 42, .12);
     }
-
     .bin-pin__label.is-unknown {
       color: #475569;
       background: #f8fafc;
     }
 
-    /* Footer buttons */
-    .footer-actions {
+    /* Truck radar icon (match user map) */
+    .leaflet-marker-icon.truck-icon {
+      background: transparent;
+      border: none;
+    }
+    .truck-pin {
+      --pin-color: #f43f5e;
+      position: relative;
       display: flex;
-      justify-content: flex-end;
-      margin-top: 18px;
-      gap: 10px;
+      flex-direction: column;
+      align-items: center;
+      filter: drop-shadow(0 8px 15px rgba(244, 63, 94, 0.4));
+    }
+    .truck-pin__bubble {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--pin-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .truck-pulse {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      background: var(--pin-color);
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: pulse-ring 4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+      z-index: -1;
+    }
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
     }
 
+    .route-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+      margin-top: 8px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px 10px;
+      width: fit-content;
+      box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+      margin-left: auto;
+    }
+    .route-legend:empty { display: flex; }
+    .legend-row { display: flex; align-items: center; gap: 8px; }
+    .legend-color { width: 16px; height: 6px; border-radius: 999px; background: var(--primary); }
+
+    .footer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 18px;
+      gap: 10px;
+      animation: fadeUp 0.5s ease 0.15s both;
+      flex-wrap: wrap;
+    }
     .btn {
       min-height: var(--btn-min-h);
       padding: var(--btn-pad-y) var(--btn-pad-x);
       border-radius: var(--btn-radius);
-      border: none;
+      border: 1px solid transparent;
       font-size: var(--btn-font);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: transform .06s ease, filter .2s ease;
+      transition: transform 0.12s ease, filter 0.2s ease, box-shadow 0.2s ease;
     }
-
     .btn-primary {
-      background: var(--brand);
+      background: var(--primary);
       color: #fff;
+      border-color: rgba(16,185,129,0.35);
+      box-shadow: 0 10px 20px rgba(16,185,129,0.18);
     }
-
     .btn-ghost {
-      background: #f4f4f5;
-      color: #111827;
+      background: #fff;
+      color: var(--text-main);
+      border-color: var(--border);
+      box-shadow: 0 6px 18px rgba(15,23,42,0.06);
     }
-
-    .btn:hover {
-      filter: brightness(1.03);
-    }
-
-    .btn:active {
-      transform: translateY(1px);
-    }
+    .footer-actions .logout-btn { min-height: 52px; padding: 0 22px; border-radius: 14px; font-weight: 800; }
+    .btn:hover { filter: brightness(1.03); }
+    .btn:active { transform: translateY(1px); }
 
     @media(max-width:900px) {
-      .app-shell {
-        padding: 14px 12px 20px;
+      .app-shell { padding: 0 16px 28px; }
+      .menu-toggle { display: inline-flex; }
+      .header-user { display: none; }
+      .driver-main { margin-left: 0; width: 100%; }
+      .sidebar {
+        top: var(--header-h);
+        height: calc(100vh - var(--header-h));
+        transform: translateX(-105%);
+        transition: transform .25s ease;
+        z-index: 1100;
+        box-shadow: 0 18px 50px rgba(0,0,0,.18);
+        border-right: 1px solid rgba(230,235,243,.95);
       }
+      .sidebar.show { transform: translateX(0); }
+      .sidebar-user { display: flex; }
+      .brand-mark { display: none; }
+      .brand-name { display: block !important; font-size: 18px; font-weight: 900; letter-spacing: -0.2px; white-space: nowrap; }
+      .dashboard-grid { grid-template-columns: 1fr; gap: 14px; }
+      .card-row { grid-template-columns: 1fr; }
+      .summary-stack { grid-template-columns: 1fr; }
+      .status-options { grid-template-columns: 1fr; }
+      .route-details { grid-template-columns: 1fr; column-gap: 0; }
+      #map { height: 320px; }
+      .pill-tabs { width: 100%; justify-content: flex-start; }
+      .pill-tabs button { flex: 1 1 120px; }
+      .footer-actions { justify-content: center; flex-direction: column; }
+      .shell-loader { left: 0; top: var(--header-h); }
+    }
 
-      .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .card-row {
-        flex-direction: column;
-      }
-
-      #map {
-        height: 320px;
-      }
-
-      .footer-actions {
-        justify-content: center;
-      }
+    @media (min-width: 1100px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      #map { height: 520px; }
     }
 
     .scan-popup {
       position: fixed;
-      top: 20px;
-      right: 20px;
-
-      /* 🔥 สำคัญที่สุด: ต้องสูงกว่า Leaflet */
+      top: var(--header-h);
+      left: var(--sidebar-w);
+      right: 0;
+      bottom: 0;
       z-index: 999999 !important;
-
-      pointer-events: auto;
-      animation: slideIn 0.3s ease;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(243,246,251,.65);
+      backdrop-filter: blur(6px);
+      animation: popIn 0.2s ease-out;
     }
-
-
-    .scan-popup.hidden {
-      display: none;
-    }
-
+    .scan-popup.hidden { display: none; }
     .scan-card {
-      background: #ffffff;
-      border-radius: 16px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px;
       padding: 16px 20px;
       width: 320px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
-      border-left: 6px solid #22c55e;
-    }
-
-    .scan-card h3 {
-      margin-bottom: 8px;
-      color: #15803d;
-    }
-
-    @keyframes slideIn {
-      from {
-        transform: translateX(120%);
-        opacity: 0;
-      }
-
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-
-    @keyframes fadeOut {
-      to {
-        opacity: 0;
-        transform: translateX(120%);
-      }
-    }
-
-    /* 🔒 ป้องกัน Leaflet บัง UI */
-    .leaflet-container {
-      z-index: 1;
-    }
-
-    .app-shell {
-      position: relative;
-      z-index: 2;
-    }
-
-    .pill-tabs button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .pill-tabs button:not(:disabled) {
-      cursor: pointer;
-    }
-
-    .topbar {
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
       pointer-events: auto;
     }
+    .scan-card h3 { margin-bottom: 8px; color: var(--primary-dark); }
 
-    /* 🔥 FIX Leaflet กิน click บนมือถือ */
-    .leaflet-pane,
-    .leaflet-top,
-    .leaflet-bottom {
-      pointer-events: none !important;
+    .modal-popup {
+      position: fixed;
+      top: var(--header-h);
+      left: var(--sidebar-w);
+      right: 0;
+      bottom: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(2px);
+      padding: 20px;
+    }
+    .modal-popup.hidden { display: none; }
+    .modal-card {
+      width: min(380px, 92vw);
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px 22px;
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+      animation: fadeUp 0.2s ease;
+    }
+    .modal-card h3 { margin-bottom: 8px; color: var(--primary-dark); }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+    .modal-actions .btn {
+      min-width: 120px;
     }
 
-    .topbar,
-    .topbar *,
-    .footer-actions,
-    .footer-actions * {
+    /* Page loader (admin-like) */
+    .shell-loader{
+      position: fixed;
+      top: var(--header-h);
+      left: var(--sidebar-w);
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(243,246,251,.65);
+      backdrop-filter: blur(6px);
+      z-index: 1080;
+    }
+    .shell-loader.show{ display:flex; }
+    .shell-loader .loader-box{
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 160px;
+      text-align: center;
+      border-radius: 16px;
+    }
+    .shell-loader .loader-spinner{
+      position: relative;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: conic-gradient(#0ea5e9 0deg, #0ea5e9 120deg, #10b981 240deg, rgba(14,165,233,.1) 320deg, rgba(14,165,233,.08) 360deg);
+      mask: radial-gradient(farthest-side, transparent calc(50% - 7px), #000 calc(50% - 6px));
+      animation: loaderSpin 1s linear infinite;
+      box-shadow: 0 12px 26px rgba(14,165,233,.16);
+    }
+    .shell-loader .loader-spinner::after{
+      content:"";
+      position:absolute;
+      inset:16px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow: inset 0 0 0 2px rgba(14,165,233,.08);
+    }
+    @keyframes loaderSpin{
+      100%{ transform: rotate(360deg); }
+    }
+    .shell-loader .loader-text{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      line-height:1.2;
+      color:#0f172a;
+      font-weight: 800;
+    }
+    body.loader-lock { overflow: hidden; }
+
+    @media (max-width:900px) {
+      .shell-loader {
+        left: 0 !important;
+        right: 0 !important;
+        top: var(--header-h);
+        width: 100vw;
+        height: calc(100vh - var(--header-h));
+      }
+      .scan-popup {
+        left: 0 !important;
+        right: 0 !important;
+        top: var(--header-h);
+        width: 100vw;
+        height: calc(100vh - var(--header-h));
+      }
+      .modal-popup {
+        left: 0;
+        right: 0;
+        top: var(--header-h);
+        bottom: 0;
+      }
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes spin {
+      to { transform: translateY(-50%) rotate(360deg); }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(120%); }
+    }
+
+    .leaflet-container { z-index: 1; }
+    .leaflet-pane, .leaflet-top, .leaflet-bottom { pointer-events: none !important; }
+    .leaflet-control-attribution { display: block !important; }
+
+    .top-header {
       pointer-events: auto !important;
       position: relative;
       z-index: 999999 !important;
     }
+    .top-header * { pointer-events: auto !important; }
+
+    /* Ensure SweetAlert covers header/sidebar */
+    .swal2-container{
+      z-index: 1000000 !important;
+    }
+
   </style>
 </head>
 
-<body>
-  <div class="app-shell">
-    <!-- Topbar -->
-    <header class="topbar">
-      <div class="brand-area">
+<body data-active-nav="dashboard">
+
+  <header class="top-header">
+    <div class="brand-left">
+      <button class="menu-toggle" id="menuToggleBtn" type="button" aria-label="เมนู">
+        <i class="ri-menu-fill"></i>
+      </button>
+      <div class="brand-mark"><i class="ri-recycle-line"></i></div>
+      <div class="brand-name">Smart Waste</div>
+      <div class="header-hidden">
+        <div id="pageTitle" class="page-title"></div>
         <div id="brandPill" class="brand-pill"></div>
-        <div class="page-title-wrap">
-          <div id="pageTitle" class="page-title"></div>
-          <div id="pageSub" class="page-sub"></div>
+        <div id="pageSub" class="page-sub"></div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="lang-switcher">
+        <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+          <i class="ri-global-line"></i>
+        </button>
+        <div class="lang-menu" id="langMenu">
+          <button type="button" data-lang="th">ไทย</button>
+          <button type="button" data-lang="en">English</button>
+          <button type="button" data-lang="ms">Bahasa Melayu</button>
+        </div>
+        <select id="langSelect">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
+
+      <div class="header-user">
+        <div class="user-avatar" id="driverAvatar">D</div>
+        <div class="user-meta">
+          <div class="user-name" id="driverName"></div>
+          <div class="user-role" id="driverRoleLabel"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="drawerOverlay" class="drawer-overlay"></div>
+  <aside class="sidebar" id="driverSidebar" aria-label="เมนูคนขับ">
+    <div class="sidebar-user" id="profileBoxSide">
+      <div class="user-avatar" id="driverAvatarSide">D</div>
+      <div class="user-meta">
+        <div class="user-name" id="driverNameSide"></div>
+        <div class="user-role" id="driverRoleSide"></div>
+      </div>
+    </div>
+
+    <nav class="menu" data-driver-menu></nav>
+
+    <div class="sidebar-logout">
+      <button id="btnLogout" class="logout-btn" type="button"></button>
+    </div>
+  </aside>
+
+  <main class="driver-main">
+    <div class="app-shell">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" id="mainTitle"></h1>
+          <p class="page-sub" id="mainSubtitle"></p>
         </div>
       </div>
 
-      <div class="topbar-right">
-        <div class="lang-switcher">
-          <select id="langSelect">
-            <option value="th">ไทย</option>
-            <option value="en">English</option>
-            <option value="ms">Bahasa Melayu</option>
-          </select>
+      <div class="dashboard-grid">
+        <section class="card-row summary-stack">
+          <div class="card card-small card-driver">
+            <div class="card-label" id="cardDriverLabel"></div>
+            <div class="card-main" id="cardDriverName"></div>
+            <div class="muted" id="cardDriverInfo"></div>
+            <div class="muted" id="cardTruckInfo"></div>
+          </div>
+
+          <div class="card card-small card-route">
+            <div class="card-label" id="cardTodayRouteLabel"></div>
+            <div class="card-main" id="cardTodayRoute"></div>
+            <div class="route-details">
+              <div class="detail-row">
+                <span class="detail-label" id="routeDateLabel"></span>
+                <span class="detail-value" id="routeDateValue">-</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label" id="routeZoneLabel"></span>
+                <span class="detail-value" id="routeZoneValue">-</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label" id="routeTruckLabel"></span>
+                <span class="detail-value" id="routeTruckValue">-</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label" id="routeAreasLabel"></span>
+                <span class="detail-value" id="routeAreasValue">-</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label" id="routeDriverLabel"></span>
+                <span class="detail-value" id="routeDriverValue">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-small card-status">
+            <div class="card-label" id="cardWorkStatusLabel"></div>
+            <div id="cardWorkStatusBadge" class="badge badge-status-off"></div>
+
+            <div class="status-options">
+              <label><input type="radio" name="routeStatus" value="notstart" checked>
+                <span id="statusOptionNotStart"></span>
+              </label>
+              <label><input type="radio" name="routeStatus" value="working">
+                <span id="statusOptionWorking"></span>
+              </label>
+              <label><input type="radio" name="routeStatus" value="done">
+                <span id="statusOptionDone"></span>
+              </label>
+            </div>
+
+            <div class="muted-strong" style="margin-top:6px;">
+              <span id="workTimeLabel"></span>:
+              <span id="workTimer"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card-large map-card">
+          <div class="section-title-row">
+            <div>
+              <h2 id="mapSectionTitle" class="section-title"></h2>
+              <p id="mapSectionSub" class="section-sub"></p>
+            </div>
+            <div class="pill-tabs">
+              <button id="tabLive" class="active" type="button"></button>
+              <button id="tabBreak" type="button"></button>
+            </div>
+          </div>
+
+          <div id="map"></div>
+          <button id="btnFocusTruck" class="map-fab" type="button" aria-label="โฟกัสรถ">
+            <i class="ri-truck-fill" aria-hidden="true"></i>
+          </button>
+
+          <div class="route-legend"></div>
+        </section>
+      </div>
+
+      <section class="footer-actions"></section>
+
+      <div id="pageLoader" class="shell-loader show">
+        <div class="loader-box">
+          <div class="loader-spinner"></div>
+          <div class="loader-text" id="loaderText">กำลังโหลด...</div>
         </div>
-        <div class="user-chip">
-          <span class="avatar" id="driverAvatar">D</span>
-          <div>
-            <p class="user-chip__label" id="driverRoleLabel"></p>
-            <strong id="driverName"></strong>
+      </div>
+
+      <div id="scanPopup" class="scan-popup hidden">
+        <div class="scan-card">
+          <h3 id="scanTitle"></h3>
+          <p id="scanBinId"></p>
+          <p id="scanDriver"></p>
+          <p id="scanTime"></p>
+          <p id="scanFill"></p>
+          <p id="scanWeight"></p>
+        </div>
+      </div>
+
+        <div id="startPopup" class="modal-popup hidden">
+          <div class="modal-card">
+            <h3 id="startTitle"></h3>
+            <p id="startDesc" style="margin:8px 0"></p>
+            <div class="modal-actions">
+              <button id="btnStartCancel" class="btn btn-ghost"></button>
+              <button id="btnStartConfirm" class="btn btn-primary"></button>
+            </div>
           </div>
         </div>
-        <button id="btnLogout" class="logout-btn"></button>
-      </div>
-    </header>
 
-    <!-- Summary cards -->
-    <section class="card-row">
-      <div class="card card-small">
-        <div class="card-label" id="cardDriverLabel"></div>
-        <div class="card-main" id="cardDriverName"></div>
-        <div class="muted" id="cardDriverInfo"></div>
-        <div class="muted" id="cardTruckInfo"></div>
-
-      </div>
-
-      <div class="card card-small">
-        <div class="card-label" id="cardTodayRouteLabel"></div>
-        <div class="card-main" id="cardTodayRoute"></div>
-        <div class="muted" id="cardTodayRouteSub">-</div>
-      </div>
-
-      <div class="card card-small">
-        <div class="card-label" id="cardWorkStatusLabel"></div>
-        <div id="cardWorkStatusBadge" class="badge badge-status-off"></div>
-        <div class="status-options">
-          <label><input type="radio" name="routeStatus" value="notstart" checked> <span
-              id="statusOptionNotStart"></span></label>
-          <label><input type="radio" name="routeStatus" value="working"> <span id="statusOptionWorking"></span></label>
-          <label><input type="radio" name="routeStatus" value="done"> <span id="statusOptionDone"></span></label>
+        <div id="finishPopup" class="modal-popup hidden">
+          <div class="modal-card">
+            <h3 id="finishTitle"></h3>
+            <p id="finishDesc" style="margin:8px 0"></p>
+            <div class="modal-actions">
+              <button id="btnFinishNo" class="btn btn-ghost"></button>
+              <button id="btnFinishYes" class="btn btn-primary"></button>
+            </div>
+          </div>
         </div>
 
-        <!-- แสดงเวลางานวันนี้ -->
-        <div class="muted-strong" style="margin-top:6px;">
-          <span id="workTimeLabel"></span>:
-          <span id="workTimer"></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Map + route card -->
-    <section class="card card-large">
-      <div class="section-title-row">
-        <div>
-          <h2 id="mapSectionTitle" class="section-title"></h2>
-          <p id="mapSectionSub" class="section-sub"></p>
-        </div>
-        <div class="pill-tabs">
-          <button id="tabLive" class="active" type="button"></button>
-          <button id="tabBreak" type="button"></button>
-        </div>
-
-      </div>
-
-      <div id="map"></div>
-
-      <!-- ลบ legend สีเส้นทาง เหลือเฉพาะสถานะ GPS -->
-      <div class="route-legend">
-        <div class="legend-row">
-          <span class="legend-color"></span>
-          <span id="gpsStatus"></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="footer-actions">
-      <button id="btnBackLogin" class="btn btn-ghost" type="button"></button>
-    </section>
-    <!-- Scan Result Popup -->
-    <div id="scanPopup" class="scan-popup hidden">
-      <div class="scan-card">
-        <h3 id="scanTitle"></h3>
-        <p id="scanBinId"></p>
-        <p id="scanDriver"></p>
-        <p id="scanTime"></p>
-        <p id="scanFill"></p>
-        <p id="scanWeight"></p>
-      </div>
     </div>
-
-    <!-- Finish Work Popup -->
-    <div id="finishPopup" class="scan-popup hidden">
-      <div class="scan-card" style="border-left-color:#ef4444">
-        <h3 id="finishTitle"></h3>
-        <p id="finishDesc" style="margin:8px 0"></p>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
-          <button id="btnFinishNo" class="btn btn-ghost"></button>
-          <button id="btnFinishYes" class="btn btn-primary"></button>
-        </div>
-      </div>
-    </div>
-    <!-- Logout Confirm Popup -->
-    <div id="logoutPopup" class="scan-popup hidden">
-      <div class="scan-card" style="border-left-color:#ef4444">
-        <h3 id="logoutTitle"></h3>
-        <p id="logoutDesc" style="margin:8px 0"></p>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
-          <button id="btnLogoutCancel" class="btn btn-ghost"></button>
-          <button id="btnLogoutConfirm" class="btn btn-primary" style="background:#ef4444"></button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </main>
 
   <script>
     // ===== DEBUG MODE =====
     const DEBUG_BINS = true;
-    function dbg(...args) {
-      if (DEBUG_BINS) console.log("[BIN-DEBUG]", ...args);
-    }
+    function dbg(...args) { if (DEBUG_BINS) console.log("[BIN-DEBUG]", ...args); }
 
-    // ===== GLOBAL STATE (ต้องอยู่บนสุดของ script) =====
+    // ===== GLOBAL STATE =====
     let currentUser = null;
     let driverId = null;
     let displayName = null;
     let globalDriverId = "-";
-    let isStartingWork = false; // 🔒 กันกดเริ่มงานซ้ำ
-    let lastRfidTime = 0;
-    let lastRfidMap = {};
+    let isStartingWork = false;
+    let rfidStartTime = Date.now();
+
+    // ✅ เลือกงานแบบอัตโนมัติเท่านั้น (ห้ามเลือกเอง)
+    let activeWorkDate = "";      // วันที่งานที่ระบบเลือกให้ (YYYY-MM-DD)
+    let zoneTodayId = null;
+    let currentTruckId = null;
+    let truckDocRef = null;
+    let activeRunRef = null;
+    let lat = null;
+    let lng = null;
 
     function driverLiveRef() {
       if (!driverId) return null;
@@ -690,226 +1133,316 @@
       messagingSenderId: "122699752010",
       appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3",
       databaseURL: "https://smart-waste2568-default-rtdb.asia-southeast1.firebasedatabase.app"
-
     };
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const fs = firebase.firestore();
     const rtdb = firebase.database();
-
-    function initAfterAuth() {
-  loadTodaySchedule();
-  listenLiveTimeFromRTDB();
-
-  // ✅ ฟัง RFID จากทุกเครื่องใน /rfid_events/*
-  listenAllDeviceRfid();
-  console.log("👂 LISTEN RFID FROM ALL DEVICES under /rfid_events");
-}
-
-    function fillDriverProfile() {
-      displayName = currentUser.fullName || currentUser.username || "-";
-      driverId = currentUser.driverId; // ต้องตรงกับ Firestore 100%
-
-      globalDriverId = driverId;
-
-      driverNameEl.textContent = displayName;
-      driverAvatarEl.textContent = displayName.charAt(0).toUpperCase();
-      cardDriverName.textContent = displayName;
-      updateDriverInfoTexts();
-    }
-
-    function afterDriverReady() {
-      const ref = driverLiveRef();
-      if (!ref) return;
-
-      ref.once("value").then(snap => {
-        const d = snap.val();
-        if (!d) return;
-
-        const today = new Date().toISOString().slice(0, 10);
-
-        if (d.isWorking && d.day === today) {
-          setTabMode("live");
-          setWorkStatus("working");
-
-          // ✅ ใช้ค่าจริงจาก RTDB
-          localTimerBase = d.baseElapsedSec || 0;
-          localTimerStartAt = d.lastStartAt || 0;
-
-          startLocalTimer();
-        }
-        else if (d.day === today && d.isFinished) {
-          setTabMode("break");
-          setWorkStatus("done");
-
-          localTimerBase = d.baseElapsedSec || 0;
-          localTimerStartAt = 0;
-          stopLocalTimer();
-
-          workTimerEl.textContent = formatHMS(localTimerBase * 1000);
-        }
-        else {
-          setWorkStatus("notstart");
-          stopLocalTimer();
-          workTimerEl.textContent = "00:00:00";
-        }
-      });
-    }
-
-    const trucksCol = fs.collection("trucks");
-    // โครงสร้าง:
-    // Firestore: smartbins/{zone}/bin_data/{BINID}
-    // RTDB: /esp32_devices/{mac}/fillLevel
-    const smartbinsCol = fs.collection("smartbins");
 
     // ===== DOM refs =====
     const driverNameEl = document.getElementById("driverName");
     const driverAvatarEl = document.getElementById("driverAvatar");
     const driverRoleLbl = document.getElementById("driverRoleLabel");
+
+    const driverNameSideEl = document.getElementById("driverNameSide");
+    const driverAvatarSideEl = document.getElementById("driverAvatarSide");
+    const driverRoleSideEl = document.getElementById("driverRoleSide");
+
+    const driverMenu = document.querySelector("[data-driver-menu]");
+    const menuToggleBtn = document.getElementById("menuToggleBtn");
+    const sidebar = document.getElementById("driverSidebar");
+    const drawerOverlay = document.getElementById("drawerOverlay");
+
+    const btnLogout = document.getElementById("btnLogout");
+
+    const mainTitle = document.getElementById("mainTitle");
+    const mainSubtitle = document.getElementById("mainSubtitle");
+
     const cardDriverName = document.getElementById("cardDriverName");
     const cardDriverInfo = document.getElementById("cardDriverInfo");
     const cardTruckInfo = document.getElementById("cardTruckInfo");
+
     const cardTodayRoute = document.getElementById("cardTodayRoute");
-    const cardTodayRouteSub = document.getElementById("cardTodayRouteSub");
+    const routeDateLabel = document.getElementById("routeDateLabel");
+    const routeDateValue = document.getElementById("routeDateValue");
+    const routeZoneLabel = document.getElementById("routeZoneLabel");
+    const routeZoneValue = document.getElementById("routeZoneValue");
+    const routeTruckLabel = document.getElementById("routeTruckLabel");
+    const routeTruckValue = document.getElementById("routeTruckValue");
+    const routeAreasLabel = document.getElementById("routeAreasLabel");
+    const routeAreasValue = document.getElementById("routeAreasValue");
+    const routeDriverLabel = document.getElementById("routeDriverLabel");
+    const routeDriverValue = document.getElementById("routeDriverValue");
+
     const cardWorkStatusBadge = document.getElementById("cardWorkStatusBadge");
-
-    const mapEl = document.getElementById("map");
-    const btnLogout = document.getElementById("btnLogout");
-    const btnBackLogin = document.getElementById("btnBackLogin");
-
-    const langSelect = document.getElementById("langSelect");
-    const tabLive = document.getElementById("tabLive");
-    tabLive.disabled = true;
-    const tabBreak = document.getElementById("tabBreak");
-    const gpsStatusEl = document.getElementById("gpsStatus");
     const workTimerEl = document.getElementById("workTimer");
+    const gpsStatusEl = document.getElementById("gpsStatus");
+    const btnBackLogin = document.getElementById("btnBackLogin");
+    const pageLoader = document.getElementById("pageLoader");
+    const loaderTextEl = document.getElementById("loaderText");
+
+    const tabLive = document.getElementById("tabLive");
+    const tabBreak = document.getElementById("tabBreak");
+
+    const startPopup = document.getElementById("startPopup");
+    const startTitle = document.getElementById("startTitle");
+    const startDesc = document.getElementById("startDesc");
+    const btnStartConfirm = document.getElementById("btnStartConfirm");
+    const btnStartCancel = document.getElementById("btnStartCancel");
+
     const finishPopup = document.getElementById("finishPopup");
     const btnFinishYes = document.getElementById("btnFinishYes");
     const btnFinishNo = document.getElementById("btnFinishNo");
     const finishTitle = document.getElementById("finishTitle");
     const finishDesc = document.getElementById("finishDesc");
 
+
+    const langSelect = document.getElementById("langSelect");
+    const langIconBtn = document.getElementById("langIconBtn");
+    const langMenu = document.getElementById("langMenu");
+
+    // ===== i18n SAFE FALLBACK =====
+    if (typeof window.currentLang === "undefined") {
+      window.currentLang = localStorage.getItem("sw_lang") || "th";
+    }
+    if (typeof window.tr !== "function") {
+      window.tr = function (key) {
+        const dict = window.SW_Translations && window.SW_Translations[window.currentLang];
+        return (dict && dict[key]) || key;
+      };
+    }
+
+    function showLoader(text) {
+      if (loaderTextEl && text) loaderTextEl.textContent = text;
+      if (pageLoader) pageLoader.classList.add("show");
+      document.body.classList.add("loader-lock");
+    }
+    function hideLoader() {
+      if (pageLoader) pageLoader.classList.remove("show");
+      document.body.classList.remove("loader-lock");
+    }
+
+    // ===== Utils =====
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function getTodayId() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+    function isValidDateId(value) {
+      if (!value || typeof value !== "string") return false;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const dt = new Date(`${value}T00:00:00`);
+      return !Number.isNaN(dt.getTime());
+    }
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+    function formatWorkDate(ymd) {
+      if (!ymd) return "-";
+      const localeMap = { th: "th-TH", en: "en-US", ms: "ms-MY" };
+      const locale = localeMap[currentLang] || "th-TH";
+      const dt = new Date(`${ymd}T00:00:00`);
+      if (Number.isNaN(dt.getTime())) return ymd;
+      return dt.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+    }
+    function isLateWorkDate(workDate) {
+      const todayId = getTodayId();
+      return !!workDate && workDate < todayId;
+    }
+
+    // ===== UI: drawer =====
+    function isMobileMenu() { return window.innerWidth <= 900; }
+    function openDrawer() {
+      if (!isMobileMenu() || !sidebar || !drawerOverlay) return;
+      sidebar.classList.add("show");
+      drawerOverlay.classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+    function closeDrawer() {
+      if (!sidebar || !drawerOverlay) return;
+      sidebar.classList.remove("show");
+      drawerOverlay.classList.remove("show");
+      document.body.style.overflow = "";
+    }
+    if (menuToggleBtn) {
+      menuToggleBtn.addEventListener("click", () => {
+        if (!sidebar) return;
+        if (sidebar.classList.contains("show")) closeDrawer();
+        else openDrawer();
+      });
+    }
+    if (drawerOverlay) drawerOverlay.addEventListener("click", closeDrawer);
+    document.addEventListener("click", e => {
+      if (!isMobileMenu()) return;
+      const link = e.target.closest(".menu a");
+      if (link) closeDrawer();
+    });
+    window.addEventListener("resize", () => { if (!isMobileMenu()) closeDrawer(); });
+
+    // ===== Menu =====
+    const DRIVER_MENU_ITEMS = [
+      { id: "dashboard", href: "Driver.html", icon: "ri-dashboard-2-line", labelKey: "navDashboard" },
+      { id: "schedule", href: "driver-schedule.html", icon: "ri-calendar-event-line", labelKey: "navSchedule" }
+    ];
+    function buildDriverMenu() {
+      if (!driverMenu) return;
+      const active = document.body.dataset.activeNav || "dashboard";
+      driverMenu.innerHTML = DRIVER_MENU_ITEMS.map(item => {
+        const cls = item.id === active ? "active" : "";
+        return `<a href="${item.href}" data-nav="${item.id}" class="${cls}">
+                  <i class="${item.icon}" aria-hidden="true"></i>
+                  <span class="menu-text"></span>
+                </a>`;
+      }).join("");
+      applyDriverMenuLabels();
+    }
+    function applyDriverMenuLabels() {
+      if (!driverMenu) return;
+      driverMenu.querySelectorAll("a[data-nav]").forEach(link => {
+        const key = link.dataset.nav;
+        const item = DRIVER_MENU_ITEMS.find(it => it.id === key);
+        const label = item ? tr(item.labelKey) : key;
+        const textEl = link.querySelector(".menu-text");
+        if (textEl) textEl.textContent = label;
+        else link.textContent = label;
+      });
+    }
+
+    // ===== Profile =====
+    function fillDriverProfile() {
+      displayName = currentUser.fullName || currentUser.username || "-";
+      driverId = currentUser.driverId;
+      globalDriverId = driverId;
+
+      driverNameEl.textContent = displayName;
+      driverAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+
+      if (driverNameSideEl) driverNameSideEl.textContent = displayName;
+      if (driverAvatarSideEl) driverAvatarSideEl.textContent = displayName.charAt(0).toUpperCase();
+
+      cardDriverName.textContent = displayName;
+      updateDriverInfoTexts();
+    }
+    function updateDriverInfoTexts() {
+      const prefix = tr("driverCodePrefix");
+      cardDriverInfo.textContent = prefix + (globalDriverId || "-");
+    }
+
+    // ===== Translations =====
     function applyTranslations() {
       brandPill.textContent = tr("brandDriver");
       pageTitle.textContent = tr("pageTitle_driverDashboard");
       pageSub.textContent = tr("pageSub_driverDashboard");
 
+      if (mainTitle) mainTitle.textContent = tr("mainTitle_driverDashboard");
+      if (mainSubtitle) mainSubtitle.textContent = tr("mainSubtitle_driverDashboard");
+
       driverRoleLbl.textContent = tr("driverRole");
+      if (driverRoleSideEl) driverRoleSideEl.textContent = tr("driverRole");
+
       btnLogout.textContent = tr("logout");
+      buildDriverMenu();
 
       cardDriverLabel.textContent = tr("cardDriverLabel");
       cardTodayRouteLabel.textContent = tr("cardTodayRouteLabel");
       cardWorkStatusLabel.textContent = tr("cardWorkStatusLabel");
+
+      if (routeDateLabel) routeDateLabel.textContent = tr("routeDetailDate");
+      if (routeZoneLabel) routeZoneLabel.textContent = tr("routeDetailZone");
+      if (routeTruckLabel) routeTruckLabel.textContent = tr("routeDetailTruck");
+      if (routeAreasLabel) routeAreasLabel.textContent = tr("routeDetailAreas");
+      if (routeDriverLabel) routeDriverLabel.textContent = tr("routeDetailDriver");
 
       statusOptionNotStart.textContent = tr("statusOptionNotStart");
       statusOptionWorking.textContent = tr("statusOptionWorking");
       statusOptionDone.textContent = tr("statusOptionDone");
 
       workTimeLabel.textContent = tr("workTimeLabel");
-
       mapSectionTitle.textContent = tr("mapSectionTitle");
       mapSectionSub.textContent = tr("mapSectionSub");
 
       tabLive.textContent = tr("tabLive");
       tabBreak.textContent = tr("tabBreak");
-
-      btnBackLogin.textContent = tr("btnBackLogin");
+      if (btnBackLogin) btnBackLogin.textContent = tr("btnBackLogin");
+      if (loaderTextEl) loaderTextEl.textContent = tr("loading");
     }
 
-    const logoutPopup = document.getElementById("logoutPopup");
-    const logoutTitle = document.getElementById("logoutTitle");
-    const logoutDesc = document.getElementById("logoutDesc");
-    const btnLogoutCancel = document.getElementById("btnLogoutCancel");
-    const btnLogoutConfirm = document.getElementById("btnLogoutConfirm");
+    // ===== Work status badge =====
+    let currentWorkStatus = "notstart";
+    function updateStatusBadge(status, opts = {}) {
+      const late = !!opts.late;
 
-    function showLogoutPopup() {
-      logoutTitle.textContent = tr("logoutTitle");
-      logoutDesc.textContent = tr("logoutText");
-      btnLogoutCancel.textContent = tr("btnCancel");
-      btnLogoutConfirm.textContent = tr("logout");
-
-      logoutPopup.classList.remove("hidden");
-    }
-
-    function hideLogoutPopup() {
-      logoutPopup.classList.add("hidden");
-    }
-
-    function showFinishPopup() {
-      finishTitle.textContent = tr("confirmFinishTitle");
-      finishDesc.textContent = tr("confirmFinishDesc");
-      btnFinishYes.textContent = tr("confirmYes");
-      btnFinishNo.textContent = tr("confirmNo");
-      finishPopup.classList.remove("hidden");
-    }
-
-    function hideFinishPopup() {
-      finishPopup.classList.add("hidden");
-    }
-
-    function updateDriverInfoTexts() {
-      const prefix = tr("driverCodePrefix");
-      cardDriverInfo.textContent = prefix + (globalDriverId || "-");
-    }
-
-    // ===== i18n SAFE FALLBACK (แก้เฉพาะหน้านี้) =====
-    if (typeof window.currentLang === "undefined") {
-      window.currentLang = localStorage.getItem("sw_lang") || "th";
-    }
-
-    if (typeof window.tr !== "function") {
-      window.tr = function (key) {
-        const dict =
-          window.SW_Translations &&
-          window.SW_Translations[window.currentLang];
-        return (dict && dict[key]) || key;
-      };
-    }
-
-    langSelect.value = currentLang;
-
-    langSelect.addEventListener("change", e => {
-      currentLang = e.target.value;
-      localStorage.setItem("sw_lang", currentLang);
-      location.reload(); // ง่าย + ชัวร์ สำหรับหน้านี้
-    });
-
-    function pad2(n) { return String(n).padStart(2, "0"); }
-    function stampLocal(now = new Date()) {
-      return `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
-    }
-
-    // ===== Work status radio -> badge text =====
-    function updateStatusBadge(status) {
       if (status === "working") {
         cardWorkStatusBadge.textContent = tr("workStatusOn");
         cardWorkStatusBadge.className = "badge badge-status-work";
-      } else if (status === "done") {
-        cardWorkStatusBadge.textContent = tr("workStatusDone");
-        cardWorkStatusBadge.className = "badge badge-status-off";
+        return;
+      }
+      if (status === "done") {
+        if (late) {
+          cardWorkStatusBadge.textContent = tr("workStatusLate") || "เสร็จนอกเวลา";
+          cardWorkStatusBadge.className = "badge badge-status-late";
+        } else {
+          cardWorkStatusBadge.textContent = tr("workStatusDone");
+          cardWorkStatusBadge.className = "badge badge-status-done";
+        }
+        return;
+      }
+      cardWorkStatusBadge.textContent = tr("workStatusOff");
+      cardWorkStatusBadge.className = "badge badge-status-off";
+    }
+    function setWorkStatus(status, opts = {}) {
+      const radio = document.querySelector(`input[name="routeStatus"][value="${status}"]`);
+      if (radio) radio.checked = true;
+      currentWorkStatus = status;
+      updateStatusBadge(status, opts);
+      refreshTruckIcon();
+      if (tabBreak) {
+        tabBreak.classList.toggle("is-ready", status === "working");
+        tabBreak.disabled = status !== "working";
+      }
+      updateStartButtonState();
+    }
+
+    function setStartLoading(isLoading) {
+      if (!tabLive) return;
+      if (isLoading) {
+        if (!tabLive.dataset.originalText) {
+          tabLive.dataset.originalText = tabLive.textContent || "";
+        }
+        tabLive.classList.add("is-loading");
+        tabLive.disabled = true;
+        tabLive.textContent = tr("startingWork");
       } else {
-        cardWorkStatusBadge.textContent = tr("workStatusOff");
-        cardWorkStatusBadge.className = "badge badge-status-off";
+        tabLive.classList.remove("is-loading");
+        if (tabLive.dataset.originalText) {
+          tabLive.textContent = tabLive.dataset.originalText;
+        }
+        updateStartButtonState();
       }
     }
-
-    function setWorkStatus(status) {
-      // 1) ตั้ง radio
-      const radio = document.querySelector(
-        `input[name="routeStatus"][value="${status}"]`
-      );
-      if (radio) radio.checked = true;
-
-      // 2) อัปเดต badge
-      updateStatusBadge(status);
+    function updateStartButtonState() {
+      const hasSchedule = cardTodayRoute?.dataset?.hasSchedule === "1";
+      const workDate = activeWorkDate || getTodayId();
+      const todayId = getTodayId();
+      const isFuture = workDate > todayId;
+      const shouldDisable = !hasSchedule || isFuture || currentWorkStatus === "working" || currentWorkStatus === "done";
+      tabLive.disabled = shouldDisable;
     }
-
     document.querySelectorAll('input[name="routeStatus"]').forEach(r => {
       r.addEventListener("change", e => updateStatusBadge(e.target.value));
     });
 
-    // ===== Map (Leaflet) + marker รถ =====
+    // ✅ ล็อค radio ทั้งหมด (ให้แสดงอย่างเดียว)
+    document.querySelectorAll('input[name="routeStatus"]').forEach(r => r.disabled = true);
+
+    // ===== Map =====
+    const mapEl = document.getElementById("map");
+    const btnFocusTruck = document.getElementById("btnFocusTruck");
     const defaultCenter = [6.46007, 100.35933];
     const map = L.map(mapEl).setView(defaultCenter, 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -918,15 +1451,11 @@
     }).addTo(map);
 
     function clampFillValue(value) {
-      if (typeof value !== "number" || Number.isNaN(value)) {
-        return null;
-      }
+      if (typeof value !== "number" || Number.isNaN(value)) return null;
       return Math.max(0, Math.min(100, Math.round(value)));
     }
     function getFillColor(value) {
-      if (value === null) {
-        return "#94a3b8";
-      }
+      if (value === null) return "#94a3b8";
       if (value >= 80) return "#dc2626";
       if (value >= 50) return "#f97316";
       return "#16a34a";
@@ -953,68 +1482,94 @@
 
     function attachBinRtdbListener(binId, macAddress, marker) {
       if (!macAddress) return;
-
       const ref = rtdb.ref(`/esp32_devices/${macAddress}`);
+      const updateMarker = (fill) => {
+        if (fill === null || fill < 80) {
+          if (map.hasLayer(marker)) map.removeLayer(marker);
+          return;
+        }
+        if (!map.hasLayer(marker)) marker.addTo(map);
+        marker.setIcon(buildBinIcon({ fillLevel: fill }));
+      };
+
+      ref.once("value").then(snap => {
+        const d = snap.val();
+        const fill = d && typeof d.fillLevel === "number" ? d.fillLevel : null;
+        updateMarker(fill);
+      });
 
       const cb = ref.on("value", snap => {
         const d = snap.val();
         if (!d) return;
-
         const fill = typeof d.fillLevel === "number" ? d.fillLevel : null;
-
-        // 🔥 แสดงเฉพาะถังที่ >= 80%
-        if (fill === null || fill < 80) {
-          if (map.hasLayer(marker)) {
-            map.removeLayer(marker);
-          }
-          return;
-        }
-
-        // ถังที่ผ่านเงื่อนไข
-        if (!map.hasLayer(marker)) {
-          marker.addTo(map);
-        }
-
-        marker.setIcon(buildBinIcon({ fillLevel: fill }));
-
+        updateMarker(fill);
       });
-
-      // เก็บไว้เพื่อ unsubscribe ตอนลบ marker
       marker._rtdbUnsub = () => ref.off("value", cb);
     }
 
-    function buildTruckIcon() {
+    function buildTruckIcon(isWorking) {
+      const pulse = isWorking ? `<div class="truck-pulse"></div>` : "";
       return L.divIcon({
         className: "truck-icon",
         html: `
-      <div style="
-        font-size: 32px;
-        transform: translate(-50%, -50%);
-        filter: drop-shadow(0 6px 12px rgba(0,0,0,.35));
-      ">
-        🚚
-      </div>
-    `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16] // ให้ศูนย์กลางตรงพิกัด
+          <div class="truck-pin">
+            ${pulse}
+            <div class="truck-pin__bubble">🚛</div>
+          </div>
+        `,
+        iconSize: [50, 50],
+        iconAnchor: [25, 25],
+        popupAnchor: [0, -30]
       });
     }
 
-    let truckMarker = L.marker(defaultCenter, {
-      icon: buildTruckIcon()
-    })
+    function refreshTruckIcon() {
+      if (!truckMarker) return;
+      truckMarker.setIcon(buildTruckIcon(currentWorkStatus === "working"));
+    }
+
+    let truckMarker = L.marker(defaultCenter, { icon: buildTruckIcon(currentWorkStatus === "working") })
       .addTo(map)
       .bindPopup(tr("truckLocationPopup"));
+    let isAutoRecenter = false;
+    function focusTruckOnMap(pos) {
+      if (!pos) return;
+      isAutoRecenter = true;
+      map.setView(pos, map.getZoom(), { animate: true });
+    }
+    let isTruckFocus = false;
+    if (btnFocusTruck) {
+      btnFocusTruck.addEventListener("click", () => {
+        if (!truckMarker) return;
+        isTruckFocus = !isTruckFocus;
+        btnFocusTruck.classList.toggle("is-active", isTruckFocus);
+        const pos = truckMarker.getLatLng();
+        if (!pos) return;
+        if (isTruckFocus) {
+          focusTruckOnMap([pos.lat, pos.lng]);
+          truckMarker.openPopup();
+        }
+      });
+    }
+    map.on("moveend", () => {
+      if (isAutoRecenter) {
+        isAutoRecenter = false;
+        return;
+      }
+      if (!isTruckFocus || !truckMarker) return;
+      const pos = truckMarker.getLatLng();
+      if (!pos) return;
+      focusTruckOnMap([pos.lat, pos.lng]);
+    });
 
     let truckUnsub = null;
-    let truckFirstUpdate = true; // panTo ครั้งแรกครั้งเดียว
+    let truckFirstUpdate = true;
 
     function attachTruckListener() {
       if (truckUnsub) { truckUnsub(); truckUnsub = null; }
       if (!truckDocRef) return;
 
       truckFirstUpdate = true;
-
       truckUnsub = truckDocRef.onSnapshot(doc => {
         if (!doc.exists) return;
         const d = doc.data() || {};
@@ -1022,321 +1577,222 @@
           const pos = [d.lat, d.lng];
           truckMarker.setLatLng(pos);
           if (truckFirstUpdate) {
-            map.panTo(pos, { animate: true });
             truckFirstUpdate = false;
-
-            // ✅ FIX แผนที่แสดงไม่เต็ม
-            setTimeout(() => {
-              map.invalidateSize();
-            }, 300);
+            setTimeout(() => map.invalidateSize(), 300);
+          }
+          if (isTruckFocus) {
+            focusTruckOnMap(pos);
           }
         }
       });
     }
 
-    // ===== แสดงถังในเขตของคนขับที่ fillLevel >= 80% =====
-    let zoneTodayId = null;
+    // ===== Bins by zone =====
+    const smartbinsCol = fs.collection("smartbins");
     let binsUnsub = null;
     let binMarkers = {};
-    let binZoneNote = null;
-
+    let currentAreaSet = new Set();
     function clearBinMarkers() {
       Object.keys(binMarkers).forEach(id => {
-        if (binMarkers[id]._rtdbUnsub) {
-          binMarkers[id]._rtdbUnsub();
-        }
+        if (binMarkers[id]._rtdbUnsub) binMarkers[id]._rtdbUnsub();
         map.removeLayer(binMarkers[id]);
-
       });
       binMarkers = {};
     }
 
-    function listenBinsForZone(zoneId) {
+    function normalizeArea(value) {
+      if (!value) return "";
+      return String(value).trim().toLowerCase();
+    }
 
+    function isBinInCurrentAreas(areaValue) {
+      if (!currentAreaSet || currentAreaSet.size === 0) return false;
+      const key = normalizeArea(areaValue);
+      return key ? currentAreaSet.has(key) : false;
+    }
+
+    function listenBinsForZone(zoneId) {
       if (binsUnsub) { binsUnsub(); binsUnsub = null; }
       clearBinMarkers();
       if (!zoneId) return;
 
-      console.log("listenBinsForZone zoneId =", zoneId);
-
-      binsUnsub = smartbinsCol
-        .doc(zoneId)
-        .collection("bin_data")
+      binsUnsub = smartbinsCol.doc(zoneId).collection("bin_data")
         .onSnapshot(async sn => {
-          dbg("Firestore snapshot", {
-            zoneId,
-            size: sn.size
-          });
+          dbg("Firestore snapshot", { zoneId, size: sn.size });
           const seen = {};
-          binZoneNote = zoneId;
-
           const tasks = sn.docs.map(async doc => {
             const d = doc.data() || {};
             const id = doc.id;
-            dbg("BIN DOC", id, d);
-
             const lat = d.lat ?? d.regLat;
             const lng = d.lng ?? d.regLng;
-            if (typeof lat !== "number" || typeof lng !== "number") {
-              dbg("❌ BIN NO LAT/LNG", id, { lat, lng });
+            if (typeof lat !== "number" || typeof lng !== "number") return;
+            const binArea = d.area || d.areaName || d.areaId || "";
+            if (!isBinInCurrentAreas(binArea)) {
+              if (binMarkers[id]) {
+                if (map.hasLayer(binMarkers[id])) map.removeLayer(binMarkers[id]);
+                delete binMarkers[id];
+              }
               return;
             }
-
-            const pos = { lat, lng };
+            if (!d.macAddress) return;
 
             if (!binMarkers[id]) {
-              const marker = L.marker([pos.lat, pos.lng], {
-                icon: buildBinIcon({ fillLevel: null })
-              }).addTo(map);
+              let fillHint = null;
+              try {
+                const rtdbSnap = await rtdb.ref(`/esp32_devices/${d.macAddress}`).once("value");
+                const rtdbData = rtdbSnap.val();
+                fillHint = typeof rtdbData?.fillLevel === "number" ? rtdbData.fillLevel : null;
+              } catch (e) {
+                console.warn("RTDB read failed", e);
+              }
+              if (fillHint === null || fillHint < 80) return;
 
+              const marker = L.marker([lat, lng], { icon: buildBinIcon({ fillLevel: fillHint }) });
+              marker.bindPopup(`<b>${escapeHtml(d.binId || id)}</b>`);
+              marker.addTo(map);
               binMarkers[id] = marker;
-
-              // 🔥 ตรงนี้สำคัญที่สุด
-              attachBinRtdbListener(
-                id,
-                d.macAddress,   // ← ต้องมี field นี้ใน Firestore
-                marker
-              );
+              attachBinRtdbListener(id, d.macAddress, marker);
             }
-
             seen[id] = true;
           });
-
           await Promise.all(tasks);
 
-          // ลบ marker ที่ไม่อยู่ใน snapshot แล้ว
           Object.keys(binMarkers).forEach(id => {
             if (!seen[id]) {
               map.removeLayer(binMarkers[id]);
               delete binMarkers[id];
             }
           });
-
-          // pan ไปที่ถังแรก (ถ้ามี)
-          // const ids = Object.keys(binMarkers);
-          // if (ids.length) {
-          //   const first = binMarkers[ids[0]];
-          //   if (first && first.getLatLng) {
-          //     map.panTo(first.getLatLng(), { animate: true });
-          //   }
-          // }
-        }, err => {
-          console.error("listenBinsForZone error", err);
-        });
+        }, err => console.error("listenBinsForZone error", err));
     }
 
-    function showScanPopup({
-      binId,
-      driverName,
-      savedAt,
-      fillLevel,
-      weight
-    }) {
-      const now = Date.now();
-
-      // 🔒 กัน popup ซ้อนใน 3 วินาที
-      const rfidKey = `${binId}`;
-      if (lastRfidMap[rfidKey] && now - lastRfidMap[rfidKey] < 60000) return;
-      lastRfidMap[rfidKey] = now;
-
+    // ===== Scan popup =====
+    function showScanPopup({ binId, driverName, savedAt, fillLevel, weight }) {
       const popup = document.getElementById("scanPopup");
-
-      document.getElementById("scanBinId").textContent =
-        tr("scanBinId") + ": " + binId;
-
-      document.getElementById("scanDriver").textContent =
-        tr("scanDriver") + ": " + driverName;
-
-      document.getElementById("scanTime").textContent =
-        tr("scanSavedAt") + ": " + savedAt;
-
-      document.getElementById("scanFill").textContent =
-        tr("scanFill") + ": " + fillLevel + "%";
-
-      document.getElementById("scanWeight").textContent =
-        tr("scanWeight") + ": " + weight + " g";
+      document.getElementById("scanBinId").textContent = tr("scanBinId") + ": " + binId;
+      document.getElementById("scanDriver").textContent = "";
+      document.getElementById("scanTime").textContent = tr("scanSavedAt") + ": " + savedAt;
+      document.getElementById("scanFill").textContent = tr("scanFillBefore") + ": " + fillLevel + "%";
+      document.getElementById("scanWeight").textContent = tr("scanWeightBefore") + ": " + weight + " g";
 
       popup.classList.remove("hidden");
-
       setTimeout(() => {
-        popup.style.animation = "fadeOut 0.5s ease forwards";
-        setTimeout(() => {
-          popup.classList.add("hidden");
-          popup.style.animation = "";
-        }, 500);
-      }, 4000);
+        popup.classList.add("hidden");
+      }, 5000);
     }
 
     async function handleRfidFromDevice(ev) {
-      // ev = { rfid, mac, truckId, driverId, timestamp }
-
+      if (!zoneTodayId && currentUser?.zoneId) zoneTodayId = currentUser.zoneId;
       if (!zoneTodayId) return;
       if (!ev || !ev.rfid) return;
 
       try {
-        // 🔍 หา bin จาก RFID
-        const snap = await smartbinsCol
-          .doc(zoneTodayId)
-          .collection("bin_data")
-          .where("RFID", "==", ev.rfid)
-          .limit(1)
-          .get();
-
-        console.log("🔎 FIND BIN BY RFID", {
-          rfid: ev.rfid,
-          zone: zoneTodayId
-        });
-
-        if (snap.empty) {
-          console.warn("❌ RFID SCAN BUT BIN NOT FOUND", {
-            rfid: ev.rfid,
-            zone: zoneTodayId,
-            truck: currentTruckId
-          });
-          return;
+        const rfidRaw = String(ev.rfid).trim();
+        const rfidUpper = rfidRaw.toUpperCase();
+        let snap = await smartbinsCol.doc(zoneTodayId).collection("bin_data")
+          .where("rfid", "==", rfidUpper).limit(1).get();
+        if (snap.empty && rfidUpper !== rfidRaw) {
+          snap = await smartbinsCol.doc(zoneTodayId).collection("bin_data")
+            .where("rfid", "==", rfidRaw).limit(1).get();
         }
+        if (snap.empty) {
+          snap = await smartbinsCol.doc(zoneTodayId).collection("bin_data")
+            .where("RFID", "==", rfidUpper).limit(1).get();
+        }
+        if (snap.empty && rfidUpper !== rfidRaw) {
+          snap = await smartbinsCol.doc(zoneTodayId).collection("bin_data")
+            .where("RFID", "==", rfidRaw).limit(1).get();
+        }
+
+        if (snap.empty) return;
 
         const binDoc = snap.docs[0];
         const binRef = binDoc.ref;
         const binData = binDoc.data() || {};
 
-        // ✅ อ่านค่าจริงจาก RTDB (/esp32_devices)
         let levelBefore = 0;
         let weightBefore = 0;
 
-        if (binData.macAddress) {
-          const snap = await rtdb
-            .ref(`/esp32_devices/${binData.macAddress}`)
-            .once("value");
-
-          const d = snap.val();
+        const macAddress = binData.macAddress || binData.mac || binData.MAC || "";
+        if (macAddress) {
+          const s2 = await rtdb.ref(`/esp32_devices/${macAddress}`).once("value");
+          const d = s2.val();
           if (d) {
-            levelBefore =
-              typeof d.fillLevel === "number" ? d.fillLevel : 0;
-
-            weightBefore =
-              typeof d.weightGram === "number"
-                ? d.weightGram
-                : 0;
+            levelBefore = typeof d.fillLevel === "number" ? d.fillLevel : 0;
+            weightBefore = typeof d.weightGram === "number" ? d.weightGram : 0;
           }
         }
 
-        const today = new Date().toISOString().slice(0, 10);
+        const today = getTodayId();
 
-        // 🚚 อ่านตำแหน่งรถล่าสุด
-        if (truckDocRef) {
-          const tSnap = await truckDocRef.get();
-          if (tSnap.exists) {
-            const t = tSnap.data() || {};
-            lat = t.lat ?? null;
-            lng = t.lng ?? null;
-          }
-        }
+        await binRef.collection("emptying_trash").doc(today).set({
+          binId: binData.binId || binDoc.id,
+          driverId: driverId,
+          driverName: displayName,
+          truckId: currentTruckId,
+          levelBefore: levelBefore,
+          weightBefore: weightBefore,
+          emptiedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-        // ✅ บันทึก Firestore
-        await binRef
-          .collection("emptying_trash")
-          .doc(today)
-          .set({
-            binId: binData.binId || binDoc.id,
-            driverId: driverId,
-            driverName: displayName,
-            truckId: currentTruckId,
-            levelBefore: levelBefore,
-            weightBefore: weightBefore, // ✅ gram
-            emptiedAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-
-        // ✅ SHOW POPUP (ตรงนี้เท่านั้น)
         showScanPopup({
           binId: binData.binId || binDoc.id,
           driverName: displayName,
-          savedAt: new Date().toLocaleString(),
+          savedAt: Number.isFinite(Number(ev.timestamp))
+            ? new Date(Number(ev.timestamp)).toLocaleString()
+            : new Date().toLocaleString(),
           fillLevel: levelBefore,
           weight: weightBefore.toFixed(4)
         });
-
 
       } catch (e) {
         console.error("handleRfidFromDevice error", e);
       }
     }
 
-    // ===== LISTEN RFID FROM DEVICE STYLE (esp32) =====
-
     function listenAllDeviceRfid() {
-  const ref = rtdb.ref(`/rfid_events`);
+      const ref = rtdb.ref(`/rfid_events/esp32_01`);
+      ref.child("time").on("value", async snap => {
+        const timeVal = snap.val();
+        if (!timeVal) return;
+        if (Number(timeVal) <= rfidStartTime) return;
 
-  ref.on("child_changed", async snap => {
-    const deviceKey = snap.key;   // เช่น esp32_01 หรือ MAC จริง
-    const d = snap.val();
+        const dataSnap = await ref.once("value");
+        const d = dataSnap.val();
+        if (!d || !d.rfid) return;
 
-    if (!d || !d.rfid || !d.time) return;
-
-    // 🔒 กันสแกนซ้ำจากเวลาซ้ำ
-    if (lastRfidTime === d.time) return;
-    lastRfidTime = d.time;
-
-    console.log("📌 RFID SCAN EVENT", {
-      deviceKey,
-      rfid: d.rfid,
-      time: d.time
-    });
-
-    await handleRfidFromDevice({
-      rfid: String(d.rfid).trim(),
-      mac: deviceKey,
-      truckId: currentTruckId,
-      driverId: driverId,
-      timestamp: d.time
-    });
-  });
-
-  // เผื่อบางกรณี RTDB ใช้ set เดิมซ้ำ (ไม่ trigger child_changed)
-  // ให้ฟัง child_added ด้วย (กรณีเพิ่งสร้าง key ใหม่)
-  ref.on("child_added", async snap => {
-    const deviceKey = snap.key;
-    const d = snap.val();
-
-    if (!d || !d.rfid || !d.time) return;
-
-    if (lastRfidTime === d.time) return;
-    lastRfidTime = d.time;
-
-    console.log("📌 RFID SCAN EVENT (child_added)", {
-      deviceKey,
-      rfid: d.rfid,
-      time: d.time
-    });
-
-    await handleRfidFromDevice({
-      rfid: String(d.rfid).trim(),
-      mac: deviceKey,
-      truckId: currentTruckId,
-      driverId: driverId,
-      timestamp: d.time
-    });
-  });
-}
-
-    // ===== ตัวแปร GPS =====
-    let currentTruckId = null;
-    let truckDocRef = null;
-    let posWatcherId = null;
-    let activeRunRef = null;
-    let lat = null;
-    let lng = null;
-
-    function setGpsStatus(msgKeyOrText) {
-      const fromDict = tr(msgKeyOrText);
-      if (fromDict && fromDict !== msgKeyOrText) {
-        gpsStatusEl.textContent = fromDict;
-      } else {
-        gpsStatusEl.textContent = msgKeyOrText;
-      }
+        await handleRfidFromDevice({
+          rfid: String(d.rfid).trim(),
+          mac: "esp32_01",
+          truckId: currentTruckId,
+          driverId: driverId,
+          timestamp: timeVal
+        });
+      });
     }
 
-    // ขออนุญาตตำแหน่งทุกครั้งที่เปิดหน้า
+    // ===== GPS =====
+    let posWatcherId = null;
+    let lastGpsUpdateAt = 0;
+    let lastGpsPromptAt = 0;
+    let gpsResumePromptOpen = false;
+    let gpsStateReady = false;
+    let gpsHadUpdate = false;
+    const GPS_STALE_MS = 60 * 1000;
+    const GPS_PROMPT_COOLDOWN_MS = 60 * 1000;
+    const GPS_POLL_MS = 15000;
+    const GPS_RESUME_GRACE_MS = 15000;
+    const GPS_RESUME_SILENT = true;
+    let gpsPollTimer = null;
+    let gpsGraceUntil = 0;
+
+    function setGpsStatus(msgKeyOrText) {
+      if (!gpsStatusEl) return;
+      const fromDict = tr(msgKeyOrText);
+      if (fromDict && fromDict !== msgKeyOrText) gpsStatusEl.textContent = fromDict;
+      else gpsStatusEl.textContent = msgKeyOrText;
+    }
+
     function requestLocationPermission() {
       return new Promise(resolve => {
         if (!navigator.geolocation) {
@@ -1344,72 +1800,49 @@
           resolve(false);
           return;
         }
-
         navigator.geolocation.getCurrentPosition(
-          () => {
-            setGpsStatus("gpsIdle");
-            resolve(true);   // ✅ อนุญาต
-          },
-          err => {
-            setGpsStatus(tr("gpsErrorPrefix") + err.message);
-            resolve(false);  // ❌ ไม่อนุญาต
-          },
+          () => { setGpsStatus("gpsIdle"); resolve(true); },
+          err => { setGpsStatus(tr("gpsErrorPrefix") + err.message); resolve(false); },
           { enableHighAccuracy: true }
         );
       });
     }
 
     async function startGpsTracking() {
-      console.log("🚦 startGpsTracking()", {
-        currentTruckId,
-        truckDocReady: !!truckDocRef,
-        hasWatcher: !!posWatcherId
-      });
-
       if (posWatcherId) return;
+      if (!currentTruckId || !truckDocRef) return;
 
-      if (!currentTruckId || !truckDocRef) {
-        console.warn("❌ GPS BLOCKED: truck not ready");
-        return;
-      }
-
-      // ✅ เริ่ม watch GPS จริง
       posWatcherId = navigator.geolocation.watchPosition(
         async pos => {
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
           const now = Date.now();
+          lastGpsUpdateAt = now;
+          gpsHadUpdate = true;
+          gpsStateReady = true;
 
-          console.log("📍 GPS UPDATE", { lat, lng });
-
-          // 🔵 Firestore (ตำแหน่งรถ)
           await truckDocRef.set({
-            lat,
-            lng,
+            lat, lng,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
 
-          // 🔴 RTDB (ตำแหน่ง + heartbeat คนขับ)
           const liveRef = driverLiveRef();
           if (liveRef) {
-            await liveRef.update({
-              lat,
-              lng,
-              lastUpdate: now
-            });
+            await liveRef.update({ lat, lng, lastUpdate: now });
           }
 
           setGpsStatus("gpsSending");
         },
         err => {
-          console.error("❌ GPS ERROR", err);
-          setGpsStatus(tr("gpsErrorPrefix") + err.message);
+          console.error("GPS ERROR", err);
+          if (err && err.code === 1) {
+            setGpsStatus("gpsPermissionRequired");
+          } else {
+            setGpsStatus(tr("gpsErrorPrefix") + err.message);
+          }
+          maybePromptResumeGps("error");
         },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        }
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
       );
     }
 
@@ -1418,14 +1851,103 @@
         navigator.geolocation.clearWatch(posWatcherId);
         posWatcherId = null;
       }
+      lastGpsUpdateAt = 0;
+      gpsHadUpdate = false;
+      if (truckDocRef) await truckDocRef.set({ isTracking: false }, { merge: true });
+      activeRunRef = null;
+      setGpsStatus("gpsStopped");
+    }
 
-      if (truckDocRef) {
-        await truckDocRef.set({ isTracking: false }, { merge: true });
+    function startGpsPoll() {
+      if (gpsPollTimer) return;
+      gpsPollTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          maybePromptResumeGps("poll");
+        }
+      }, GPS_POLL_MS);
+    }
+    function stopGpsPoll() {
+      if (!gpsPollTimer) return;
+      clearInterval(gpsPollTimer);
+      gpsPollTimer = null;
+    }
+
+    function shouldPromptResumeGps() {
+      if (gpsResumePromptOpen) return false;
+      if (document.visibilityState === "hidden") return false;
+      if (Date.now() < gpsGraceUntil) return false;
+      if (currentWorkStatus !== "working") return false;
+      if (!gpsStateReady) return false;
+      if (!gpsHadUpdate) return false;
+      if (!navigator.geolocation) {
+        setGpsStatus("gpsNotSupported");
+        return false;
+      }
+      const stale = !lastGpsUpdateAt || (Date.now() - lastGpsUpdateAt > GPS_STALE_MS);
+      if (!stale && posWatcherId) return false;
+      if (Date.now() - lastGpsPromptAt < GPS_PROMPT_COOLDOWN_MS) return false;
+      return true;
+    }
+
+    async function maybePromptResumeGps(reason) {
+      if (!shouldPromptResumeGps()) return;
+      lastGpsPromptAt = Date.now();
+      gpsResumePromptOpen = true;
+
+      if (GPS_RESUME_SILENT) {
+        const allowed = await requestLocationPermission();
+        if (allowed) {
+          if (posWatcherId) {
+            navigator.geolocation.clearWatch(posWatcherId);
+            posWatcherId = null;
+          }
+          await startGpsTracking();
+        } else {
+          setGpsStatus("gpsPermissionRequired");
+        }
+        gpsResumePromptOpen = false;
+        return;
       }
 
-      activeRunRef = null;
+      const title = tr("gpsResumeTitle");
+      const desc = tr("gpsResumeDesc");
+      const confirmText = tr("gpsResumeConfirm");
+      let proceed = false;
+      if (typeof Swal !== "undefined") {
+        const result = await Swal.fire({
+          title,
+          text: desc,
+          icon: "warning",
+          showCancelButton: false,
+          confirmButtonText: confirmText,
+          confirmButtonColor: "#10b981",
+          allowOutsideClick: false,
+          allowEscapeKey: false
+        });
+        proceed = result.isConfirmed;
+      } else {
+        window.alert(desc);
+        proceed = true;
+      }
 
-      setGpsStatus("gpsStopped");
+      if (proceed) {
+        const allowed = await requestLocationPermission();
+        if (allowed) {
+          if (posWatcherId) {
+            navigator.geolocation.clearWatch(posWatcherId);
+            posWatcherId = null;
+          }
+          await startGpsTracking();
+        } else {
+          setGpsStatus("gpsPermissionRequired");
+        }
+      }
+
+      gpsResumePromptOpen = false;
+    }
+
+    function setGpsGrace() {
+      gpsGraceUntil = Date.now() + GPS_RESUME_GRACE_MS;
     }
 
     function setTabMode(mode) {
@@ -1438,96 +1960,468 @@
       }
     }
 
-    // flag สำหรับ “จบงานวันนี้แล้ว” ให้หยุดเวลาแม้ Firestore ยัง sync
+    // ===== Timer (RTDB) =====
+    let localTimerInterval = null;
+    let localTimerBase = 0;
+    let localTimerStartAt = 0;
+    let liveTimeListening = false;
 
-    tabLive.addEventListener("click", async () => {
-      if (isStartingWork) return;
-      isStartingWork = true;
+    function formatHMS(ms) {
+      const totalSec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function startLocalTimer() {
+      if (localTimerInterval) return;
+      localTimerInterval = setInterval(() => {
+        if (!localTimerStartAt) return;
+        const elapsedSec = localTimerBase + Math.floor((Date.now() - localTimerStartAt) / 1000);
+        workTimerEl.textContent = formatHMS(elapsedSec * 1000);
+      }, 1000);
+    }
+
+    function stopLocalTimer() {
+      if (localTimerInterval) {
+        clearInterval(localTimerInterval);
+        localTimerInterval = null;
+      }
+    }
+
+    function listenLiveTimeFromRTDB() {
+      if (liveTimeListening) return;
+      liveTimeListening = true;
+
+      const ref = driverLiveRef();
+      if (!ref) return;
+
+      ref.on("value", snap => {
+        const d = snap.val();
+        if (!d) return;
+
+        if (d.day && d.day !== activeWorkDate) {
+          activeWorkDate = d.day;
+          writeStoredWorkDate(d.day);
+          loadAutoSchedule();
+          return;
+        }
+
+        localTimerBase = d.baseElapsedSec || 0;
+        localTimerStartAt = d.isWorking ? d.lastStartAt : 0;
+        if (typeof d.lastUpdate === "number") {
+          lastGpsUpdateAt = d.lastUpdate;
+          if (d.lastUpdate > 0) gpsHadUpdate = true;
+        }
+        gpsStateReady = true;
+
+        if (d.isWorking && d.lastStartAt) {
+          startLocalTimer();
+        } else {
+          stopLocalTimer();
+          workTimerEl.textContent = formatHMS(localTimerBase * 1000);
+        }
+
+        if (d.isWorking) {
+          maybePromptResumeGps("rtdb");
+        }
+      });
+    }
+
+    async function syncLiveStateFromRTDB() {
+      const ref = driverLiveRef();
+      if (!ref) return;
+      try {
+        const snap = await ref.once("value");
+        if (!snap.exists()) return;
+        const d = snap.val();
+        if (!d || !d.day || d.day !== activeWorkDate) return;
+
+        let elapsed = d.baseElapsedSec || 0;
+        if (d.isWorking && d.lastStartAt) {
+          elapsed += Math.floor((Date.now() - d.lastStartAt) / 1000);
+        }
+
+        if (d.isFinished) {
+          stopLocalTimer();
+          workTimerEl.textContent = formatHMS(elapsed * 1000);
+          setTabMode("break");
+          setWorkStatus("done");
+          return;
+        }
+
+        if (d.hasStarted) {
+          setTabMode("live");
+          setWorkStatus("working");
+          localTimerBase = d.baseElapsedSec || 0;
+          localTimerStartAt = d.isWorking ? d.lastStartAt : 0;
+          if (typeof d.lastUpdate === "number") {
+            lastGpsUpdateAt = d.lastUpdate;
+            if (d.lastUpdate > 0) gpsHadUpdate = true;
+          }
+          gpsStateReady = true;
+          if (d.isWorking && d.lastStartAt) {
+            startLocalTimer();
+          } else {
+            stopLocalTimer();
+            workTimerEl.textContent = formatHMS(localTimerBase * 1000);
+          }
+
+          if (d.isWorking) {
+            maybePromptResumeGps("sync");
+          }
+        }
+      } catch (e) {
+        console.warn("Sync live state failed", e);
+      }
+    }
+
+    // ===== ✅ เลือกงานอัตโนมัติ: วันนี้ก่อน -> ถ้าไม่มีค่อยเอางานที่ผ่านมา ล่าสุด =====
+    async function resolveAutoWorkDate(zoneId) {
+      const todayId = getTodayId();
+      const daysRef = fs.collection("truck_schedule").doc(zoneId).collection("days");
+
+      // เลือก "เวรวันนี้" ก่อน ถ้าไม่มีจะใช้ "เวรย้อนหลังล่าสุด"
+      const snap = await daysRef.where("driverId", "==", driverId).get();
+      if (snap.empty) return "";
+
+      const items = snap.docs
+        .map(doc => {
+          const data = doc.data() || {};
+          const w = data.workDate || doc.id;
+          return {
+            workDate: isValidDateId(w) ? w : "",
+            truckId: data.truckId || "",
+            docId: doc.id
+          };
+        })
+        .filter(item => item.workDate);
+
+      if (!items.length) return "";
+
+      if (items.some(item => item.workDate === todayId)) return todayId;
+
+      const latestPast = items
+        .filter(item => item.workDate < todayId)
+        .sort((a, b) => (a.workDate || "").localeCompare(b.workDate || ""))
+        .pop();
+
+      if (!latestPast || !latestPast.truckId) return "";
 
       try {
-        if (!driverId || !currentTruckId || !truckDocRef) {
-          alert(tr("errDriverOrTruckMissing"));
-          isStartingWork = false; // 🔥 ปลดล็อก
-          return;
-        }
-
-        // 1️⃣ ขอ permission GPS
-        const allowed = await requestLocationPermission();
-        if (!allowed) {
-          setGpsStatus("gpsPermissionRequired");
-          isStartingWork = false;
-          return;
-        }
-
-        const today = new Date().toISOString().slice(0, 10);
-
-        // 2️⃣ Firestore: start work (single session / once per day)
-        activeRunRef = truckDocRef
+        const runSnap = await fs
+          .collection("trucks")
+          .doc(zoneId)
+          .collection("vehicles")
+          .doc(latestPast.truckId)
           .collection("truck_operating_time")
-          .doc(today);
+          .doc(latestPast.workDate)
+          .get();
 
-        const fsSnap = await activeRunRef.get();
-        if (fsSnap.exists) {
-          const d = fsSnap.data();
+        if (runSnap.exists) {
+          const runData = runSnap.data() || {};
+          if (runData.isFinished === true) {
+            return "";
+          }
+        }
+      } catch (e) {
+        console.warn("Check schedule status failed", e);
+      }
 
-          // 🔒 เริ่มไปแล้ววันนี้ ไม่ว่าจบหรือยัง
-          if (d.startAt) {
-            isStartingWork = false;
+      return latestPast.workDate;
+    }
+
+    // ===== ✅ loadTodaySchedule (ปรับเป็น loadAutoSchedule) =====
+    async function loadAutoSchedule() {
+      showLoader(tr("loading"));
+      if (!currentUser || !currentUser.driverId) {
+        hideLoader();
+        return;
+      }
+
+      // โหลด user profile เพื่อเอา zoneId ที่ถูกต้อง
+      const userSnap = await fs.collection("users").doc(currentUser.driverId).get();
+      if (!userSnap.exists) {
+        console.error("ไม่พบข้อมูลผู้ใช้ในระบบ");
+        return;
+      }
+
+      const userData = userSnap.data() || {};
+      const zoneId = userData.zoneId;
+      if (!zoneId) {
+        alert(tr("errNoZoneAssigned"));
+        hideLoader();
+        return;
+      }
+
+      zoneTodayId = zoneId;
+
+      // ✅ เลือกวันงานให้อัตโนมัติ
+      const selected = await resolveAutoWorkDate(zoneId);
+      activeWorkDate = selected || getTodayId(); // ไว้ผูกกับ RTDB timer
+
+      const daysRef = fs.collection("truck_schedule").doc(zoneId).collection("days");
+
+      // ถ้า selected ว่าง (ไม่มีงานค้างและไม่มีงานวันนี้) -> แสดงไม่มีตาราง
+      if (!selected) {
+        cardTodayRoute.textContent = "";
+        cardTodayRoute.dataset.hasSchedule = "0";
+        cardTodayRoute.classList.remove("is-empty");
+
+        routeDateValue.textContent = "-";
+        routeZoneValue.textContent = "-";
+        routeTruckValue.textContent = "-";
+        routeAreasValue.textContent = "-";
+        routeDriverValue.textContent = "-";
+
+        tabLive.disabled = true;
+        tabBreak.disabled = true;
+
+        setWorkStatus("notstart");
+        workTimerEl.textContent = "00:00:00";
+        setGpsStatus("gpsIdle");
+        hideLoader();
+        return;
+      }
+
+      // ดึงเอกสารเวรของวันที่ถูกเลือก (วันนี้หรือเวรค้างล่าสุด)
+      const snap = await daysRef.doc(selected).get();
+      if (!snap.exists) {
+        // กันพลาด
+        cardTodayRoute.textContent = tr("noScheduleToday");
+        cardTodayRoute.dataset.hasSchedule = "0";
+        tabLive.disabled = true;
+        tabBreak.disabled = true;
+        setWorkStatus("notstart");
+        hideLoader();
+        return;
+      }
+
+      const data = snap.data() || {};
+
+      // ตรวจสอบว่าเป็นเวรของคนขับจริง
+      if (data.driverId !== driverId) {
+        cardTodayRoute.textContent = tr("noScheduleForDriver");
+        cardTodayRoute.dataset.hasSchedule = "0";
+        tabLive.disabled = true;
+        tabBreak.disabled = true;
+        setWorkStatus("notstart");
+        hideLoader();
+        return;
+      }
+
+      if (!data.truckId) {
+        alert(tr("errNoTruckAssigned"));
+        hideLoader();
+        return;
+      }
+
+      currentTruckId = data.truckId;
+      truckDocRef = fs.collection("trucks").doc(zoneId).collection("vehicles").doc(currentTruckId);
+      const late = isLateWorkDate(selected);
+
+      // แสดงข้อมูลตารางงานเสมอ (แม้งานเสร็จแล้ว)
+      cardTruckInfo.textContent = tr("truckCodePrefix") + " " + currentTruckId;
+
+      const zoneLabel = data.zoneName || zoneId;
+      const truckLabel = data.truckName || data.truckId || "-";
+      const rawAreas = Array.isArray(data.areas) ? data.areas : [];
+      const areaNames = rawAreas
+        .map(a => (typeof a === "string" ? a : (a?.areaName || a?.areaId || a?.name || "")))
+        .filter(Boolean);
+      const areasLabel = areaNames.length ? areaNames.join(", ") : "-";
+      const driverLabel = data.driverName || displayName || "-";
+      currentAreaSet = new Set(areaNames.map(normalizeArea).filter(Boolean));
+
+      cardTodayRoute.textContent = tr("cardTodayRouteLabel");
+      cardTodayRoute.classList.add("is-empty");
+
+      routeDateValue.textContent = formatWorkDate(selected);
+      routeZoneValue.textContent = zoneLabel;
+      routeTruckValue.textContent = truckLabel;
+      routeAreasValue.textContent = areasLabel;
+      routeDriverValue.textContent = driverLabel;
+
+      cardTodayRoute.dataset.hasSchedule = "1";
+
+      // เช็คสถานะงานจาก Firestore (ตัวตัดสิน)
+      const runRef = truckDocRef.collection("truck_operating_time").doc(selected);
+      activeRunRef = runRef;
+
+      const runSnap = await runRef.get();
+
+      if (runSnap.exists) {
+        const run = runSnap.data() || {};
+        if (run.isFinished === true) {
+          tabLive.disabled = true;
+          tabBreak.disabled = true;
+          setTabMode("break");
+          setWorkStatus("done", { late: !!(run.isLate || late) });
+
+            if (typeof run.totalSeconds === "number") {
+              workTimerEl.textContent = formatHMS(run.totalSeconds * 1000);
+            }
+            hideLoader();
             return;
           }
         }
 
-        await activeRunRef.set({
-          driverId,
-          driverName: displayName,
-          startAt: firebase.firestore.FieldValue.serverTimestamp(),
-          isFinished: false,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+      // เปิดเริ่มงานได้ (แม้เป็นงานย้อนหลัง ก็ทำได้ถ้ายังไม่มีเวรวันนี้มาชน — ซึ่ง resolveAutoWorkDate จัดการแล้ว)
+      tabBreak.disabled = false;
+      tabLive.disabled = false;
+      /*
 
-        // 3️⃣ RTDB: เริ่มจับเวลาแบบสะสม
-        // 3️⃣ RTDB: เริ่มจับเวลาแบบสะสม
+      // แสดงข้อมูลรถ/งาน
+      cardTruckInfo.textContent = tr("truckCodePrefix") + " " + currentTruckId;
+
+      const zoneLabel = data.zoneName || zoneId;
+      const truckLabel = data.truckName || data.truckId || "-";
+      const areasLabel = Array.isArray(data.areas) && data.areas.length
+        ? data.areas.map(a => a.areaName || a.areaId || "").filter(Boolean).join(", ")
+        : "-";
+      const driverLabel = data.driverName || displayName || "-";
+
+      cardTodayRoute.textContent = tr("cardTodayRouteLabel");
+      cardTodayRoute.classList.add("is-empty");
+
+      routeDateValue.textContent = formatWorkDate(selected);
+      routeZoneValue.textContent = zoneLabel;
+      routeTruckValue.textContent = truckLabel;
+      routeAreasValue.textContent = areasLabel;
+      routeDriverValue.textContent = driverLabel;
+
+      cardTodayRoute.dataset.hasSchedule = "1";
+      */
+      setWorkStatus("notstart");
+      updateStartButtonState();
+
+      // map + bins
+      attachTruckListener();
+      listenBinsForZone(zoneTodayId);
+      await syncLiveStateFromRTDB();
+      hideLoader();
+    }
+
+    function initAfterAuth() {
+      setGpsGrace();
+      loadAutoSchedule();
+      listenLiveTimeFromRTDB();
+      listenAllDeviceRfid();
+      startGpsPoll();
+    }
+
+    // ===== Finish & Logout popups =====
+    async function handleLogoutConfirm() {
+      try { await window.SWAuth.logout(); } catch (e) { }
+      window.location.href = "../Login/login.html";
+    }
+
+    function showFinishPopup() {
+      finishTitle.textContent = tr("confirmFinishTitle");
+      finishDesc.textContent = tr("confirmFinishDesc");
+      btnFinishYes.textContent = tr("confirmYes");
+      btnFinishNo.textContent = tr("confirmNo");
+      finishPopup.classList.remove("hidden");
+    }
+    function hideFinishPopup() { finishPopup.classList.add("hidden"); }
+
+    function showStartPopup() {
+      if (!startPopup) return;
+      startTitle.textContent = tr("confirmStartTitle");
+      startDesc.textContent = tr("confirmStartDesc");
+      btnStartConfirm.textContent = tr("confirmYes");
+      btnStartCancel.textContent = tr("confirmNo");
+      startPopup.classList.remove("hidden");
+    }
+    function hideStartPopup() {
+      if (!startPopup) return;
+      startPopup.classList.add("hidden");
+    }
+
+    // ===== Tabs =====
+    tabLive.disabled = true;
+
+    async function handleStartWork() {
+      if (isStartingWork) return;
+      isStartingWork = true;
+      setStartLoading(true);
+
+      try {
+        if (!driverId || !currentTruckId || !truckDocRef || !activeWorkDate) {
+          alert(tr("errDriverOrTruckMissing"));
+          return;
+        }
+
+          const allowed = await requestLocationPermission();
+          if (!allowed) {
+            setGpsStatus("gpsPermissionRequired");
+            alert(tr("gpsPermissionRequired"));
+            return;
+          }
+
+        const workDate = activeWorkDate;
+        const todayId = getTodayId();
+        const late = workDate < todayId;
+
+        activeRunRef = truckDocRef.collection("truck_operating_time").doc(workDate);
+
+        // ✅ อนุญาต “เริ่ม/ต่อ” ได้ ถ้ายังไม่ finished
+          const fsSnap = await activeRunRef.get();
+          if (fsSnap.exists) {
+            const d = fsSnap.data() || {};
+            if (d.isFinished === true) {
+              // จบแล้ว ห้ามเริ่ม
+              alert(tr("errWorkAlreadyFinished"));
+              return;
+            }
+          // ถ้ามี startAt อยู่แล้วและยังไม่จบ -> ถือว่าเป็นการ "ต่อ"
+        } else {
+          // ยังไม่เคยเริ่ม -> set startAt
+          await activeRunRef.set({
+            driverId,
+            driverName: displayName,
+            startAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isFinished: false,
+            isLate: late, // ✅ งานย้อนหลัง
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+
+        // RTDB timer: ป้องกันทำพร้อมกันหลายเครื่อง
         const liveRef = driverLiveRef();
         if (!liveRef) {
           alert(tr("errSystemNotReady"));
-          isStartingWork = false;
           return;
         }
 
         const liveSnap = await liveRef.once("value");
-        if (liveSnap.exists()) {
-          const d = liveSnap.val();
-
-          if (d.day === today && d.isFinished) {
-            isStartingWork = false;
-            return;
+          if (liveSnap.exists()) {
+            const d = liveSnap.val();
+            if (d.isWorking && d.day === workDate) {
+              // ยังทำอยู่ -> โชว์สถานะเลย
+              setTabMode("live");
+              setWorkStatus("working");
+              return;
+            }
+            if (d.isWorking && d.day !== workDate) {
+              alert(tr("errAlreadyWorkingOtherDevice"));
+              return;
+            }
+            if (d.day === workDate && d.isFinished) {
+              alert(tr("errWorkAlreadyFinished"));
+              return;
+            }
           }
-
-          if (d.day === today && d.hasStarted) {
-            isStartingWork = false;
-            return;
-          }
-        }
 
         let baseElapsed = 0;
         if (liveSnap.exists()) {
           const d = liveSnap.val();
-          if (d.day === today && typeof d.baseElapsedSec === "number") {
-            baseElapsed = d.baseElapsedSec;
-          }
-        }
-        if (
-          liveSnap.exists() &&
-          liveSnap.val().isWorking &&
-          liveSnap.val().day === today
-        ) {
-          alert(tr("errAlreadyWorkingOtherDevice"));
-          isStartingWork = false; // 🔥 เพิ่ม
-          return;
+          if (d.day === workDate && typeof d.baseElapsedSec === "number") baseElapsed = d.baseElapsedSec;
         }
 
         await liveRef.set({
-          day: today,
+          day: workDate,
           hasStarted: true,
           isFinished: false,
           isWorking: true,
@@ -1540,46 +2434,61 @@
           zoneId: zoneTodayId
         });
 
-        // 4️⃣ เริ่มส่ง GPS
         await startGpsTracking();
-
         setTabMode("live");
         setWorkStatus("working");
+
       } catch (e) {
-        console.error("❌ START WORK ERROR", e);
+        console.error("START WORK ERROR", e);
         alert(tr("errStartWorkFailed"));
       } finally {
         isStartingWork = false;
+        setStartLoading(false);
       }
+    }
+
+    tabLive.addEventListener("click", () => {
+      showStartPopup();
     });
 
+    if (btnStartCancel) {
+      btnStartCancel.addEventListener("click", () => {
+        hideStartPopup();
+      });
+    }
+    if (btnStartConfirm) {
+      btnStartConfirm.addEventListener("click", async () => {
+        hideStartPopup();
+        await handleStartWork();
+      });
+    }
+
     tabBreak.addEventListener("click", async () => {
-      if (!truckDocRef) return;
+      if (!truckDocRef || !activeWorkDate) return;
 
-      const today = new Date().toISOString().slice(0, 10);
-      const snap = await truckDocRef
-        .collection("truck_operating_time")
-        .doc(today)
-        .get();
-
-      if (snap.exists && snap.data().isFinished === true) {
-        console.log("⛔ งานวันนี้จบแล้ว ไม่เปิด popup");
-        return;
-      }
+      const snap = await truckDocRef.collection("truck_operating_time").doc(activeWorkDate).get();
+      if (snap.exists && snap.data().isFinished === true) return;
 
       showFinishPopup();
     });
 
     btnFinishNo.addEventListener("click", () => {
       hideFinishPopup();
-      setTabMode("live");
-      setWorkStatus("working");
+      if (currentWorkStatus === "done") {
+        setTabMode("break");
+        return;
+      }
+      if (currentWorkStatus === "working") {
+        setTabMode("live");
+      }
     });
 
     btnFinishYes.addEventListener("click", async () => {
       hideFinishPopup();
 
-      const today = new Date().toISOString().slice(0, 10);
+      const workDate = activeWorkDate;
+      const todayId = getTodayId();
+      const late = workDate < todayId;
 
       // RTDB
       const liveRef = driverLiveRef();
@@ -1606,256 +2515,110 @@
 
       // Firestore
       if (activeRunRef) {
-        await activeRunRef.update({
+        await activeRunRef.set({
           endAt: firebase.firestore.FieldValue.serverTimestamp(),
           totalSeconds: elapsed,
           isFinished: true,
-          finishedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+          isLate: late, // ✅ เสร็จนอกเวลา ถ้าเป็นงานย้อนหลัง
+          finishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
       }
 
       await stopGpsTracking();
 
-      tabLive.classList.remove("active");
-      tabBreak.classList.add("active");
-      setWorkStatus("done");
+      setTabMode("break");
+      setWorkStatus("done", { late });
     });
-    document
-      .querySelectorAll('input[name="routeStatus"]')
-      .forEach(r => r.disabled = true);
 
-    // ===== ตัวจับเวลา "เวลางานวันนี้" =====
-    let localTimerInterval = null;
-    let localTimerBase = 0;     // baseElapsedSec จาก RTDB
-    let localTimerStartAt = 0;  // lastStartAt จาก RTDB
-
-    function formatHMS(ms) {
-      const totalSec = Math.max(0, Math.floor(ms / 1000));
-      const h = Math.floor(totalSec / 3600);
-      const m = Math.floor((totalSec % 3600) / 60);
-      const s = totalSec % 60;
-      return (
-        String(h).padStart(2, "0") + ":" +
-        String(m).padStart(2, "0") + ":" +
-        String(s).padStart(2, "0")
-      );
-    }
-
-    function startLocalTimer() {
-      if (localTimerInterval) return;
-
-      localTimerInterval = setInterval(() => {
-        if (!localTimerStartAt) return;
-
-        const elapsedSec =
-          localTimerBase +
-          Math.floor((Date.now() - localTimerStartAt) / 1000);
-
-        workTimerEl.textContent = formatHMS(elapsedSec * 1000);
-      }, 1000);
-    }
-
-    function stopLocalTimer() {
-      if (localTimerInterval) {
-        clearInterval(localTimerInterval);
-        localTimerInterval = null;
-      }
-    }
-
-    let liveTimeListening = false;
-
-    function listenLiveTimeFromRTDB() {
-      if (liveTimeListening) return;
-      liveTimeListening = true;
-      const ref = driverLiveRef();
-      if (!ref) return;
-
-      ref.on("value", snap => {
-        const d = snap.val();
-        if (!d) return;
-
-        const today = new Date().toISOString().slice(0, 10);
-        if (d.day !== today) {
-          workTimerEl.textContent = "00:00:00";
-          stopLocalTimer();
-          return;
-        }
-
-        localTimerBase = d.baseElapsedSec || 0;
-        localTimerStartAt = d.isWorking ? d.lastStartAt : 0;
-
-        if (d.isWorking && d.lastStartAt) {
-          startLocalTimer();
-        } else {
-          stopLocalTimer();
-          workTimerEl.textContent = formatHMS(localTimerBase * 1000);
-        }
-      });
-    }
-
-    // ค้นหาฟังก์ชัน loadTodaySchedule() และแทนที่ด้วยโค้ดนี้
-    async function loadTodaySchedule() {
-      // 1. ดึงข้อมูล Profile สดๆ จาก Firestore โดยใช้ ID จาก session ปัจจุบัน
-      // วิธีนี้จะชัวร์กว่าการดึงจาก LocalStorage อย่างเดียว
-      const userSnap = await fs
-        .collection("users")
-        .doc(currentUser.driverId)
-        .get();
-
-      if (!userSnap.exists) {
-        console.error("ไม่พบข้อมูลผู้ใช้ในระบบ");
-        return;
-      }
-
-      const userData = userSnap.data();
-      const zoneId = userData.zoneId; // ดึงค่า "Yala" หรือเขตที่ถูกต้องจาก DB
-
-      if (!zoneId) {
-        alert(tr("errNoZoneAssigned"));
-        return;
-      }
-
-      // 2. ดึงวันที่ปัจจุบัน (รูปแบบ YYYY-MM-DD)
-      const todayId = new Date().toISOString().slice(0, 10);
-
-      const docRef = fs
-        .collection("truck_schedule")
-        .doc(zoneId)
-        .collection("days")
-        .doc(todayId);
-
-      const snap = await docRef.get();
-
-      if (!snap.exists) {
-        cardTodayRoute.textContent = tr("noScheduleToday");
-        cardTodayRouteSub.textContent = tr("noScheduleSub");
-        return;
-      }
-
-      const data = snap.data();
-
-      // 3. ตรวจสอบสิทธิ์ว่าคนขับคนนี้มีเวรจริงหรือไม่
-      if (data.driverId !== driverId) {
-        cardTodayRoute.textContent = tr("noScheduleForDriver");
-        console.log("❌ มีเวรในระบบ แต่เป็นของคนขับรหัส: " + data.driverId);
-        return;
-      }
-
-      // 4. ตั้งค่าระบบเมื่อยืนยันว่ามีเวรถูกต้อง
-      console.log("✅ ยืนยันตารางเวรสำเร็จ", data);
-      zoneTodayId = zoneId;
-      if (!data.truckId) {
-        alert(tr("errNoTruckAssigned"));
-        return;
-      }
-      currentTruckId = data.truckId;
-
-      truckDocRef = fs
-        .collection("trucks")
-        .doc(zoneId)
-        .collection("vehicles")
-        .doc(currentTruckId);
-      // 🔒 ตรวจสอบว่าวันนี้จบงานไปแล้วหรือยัง (Firestore = ตัวตัดสิน)
-      const today = new Date().toISOString().slice(0, 10);
-      const runRef = truckDocRef
-        .collection("truck_operating_time")
-        .doc(today);
-
-      const runSnap = await runRef.get();
-
-      if (runSnap.exists) {
-        const run = runSnap.data();
-
-        if (run.isFinished === true) {
-          console.log("🔒 งานวันนี้จบแล้ว (Firestore)");
-
-          // ❌ ปิดทุก action
-          tabLive.disabled = true;
-          tabBreak.disabled = true;
-
-          // ✅ ตั้งสถานะ UI
-          setTabMode("break");
-          setWorkStatus("done");
-
-          // ✅ แสดงเวลาจาก Firestore
-          if (typeof run.totalSeconds === "number") {
-            workTimerEl.textContent = formatHMS(run.totalSeconds * 1000);
-          }
-
-          // 🔒 กัน popup จบงาน
-          tabBreak.onclick = null;
-
-          return; // ⛔ หยุดตรงนี้ ไม่ให้ logic อื่นทำงานต่อ
-        }
-      }
-
-      // 🚚 แสดงรถที่ขับวันนี้
-      if (cardTruckInfo) {
-        cardTruckInfo.textContent =
-          tr("truckCodePrefix") + " " + currentTruckId;
-      }
-
-      // ✅ เปิดปุ่มเริ่มงานได้แล้ว (รถ + schedule พร้อม)
-      tabLive.disabled = false;
-
-      console.log("✅ READY TO START WORK", {
-        driverId,
-        zoneTodayId,
-        currentTruckId,
-        truckDocReady: !!truckDocRef
-      });
-
-      // อัปเดต UI
-      cardTodayRoute.textContent = zoneId;
-      cardTodayRouteSub.textContent = todayId;
-      cardTodayRoute.dataset.hasSchedule = "1";
-
-      // เริ่มทำงานระบบแผนที่และ GPS
-      attachTruckListener();
-      listenBinsForZone(zoneTodayId);
-      tabLive.disabled = false;
-    }
-
-    // ===== Buttons =====
+    // ===== Logout =====
     btnLogout.addEventListener("click", () => {
-      showLogoutPopup();
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          title: tr("logoutTitle"),
+          text: tr("logoutText"),
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: tr("logoutConfirm"),
+          cancelButtonText: tr("logoutCancel"),
+          confirmButtonColor: "#dc2626",
+          cancelButtonColor: "#94a3b8",
+          reverseButtons: true
+        }).then(r => {
+          if (r.isConfirmed) handleLogoutConfirm();
+        });
+      } else {
+        const ok = window.confirm(tr("logoutText"));
+        if (ok) handleLogoutConfirm();
+      }
     });
 
-    btnLogoutCancel.addEventListener("click", () => {
-      hideLogoutPopup();
+    // ===== Lang menu =====
+    function syncLangMenu(lang) {
+      if (!langMenu) return;
+      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === lang);
+      });
+    }
+    langSelect.value = currentLang;
+    syncLangMenu(currentLang);
+
+    if (langIconBtn && langMenu) {
+      langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
+      langMenu.addEventListener("click", e => {
+        const btn = e.target.closest("button[data-lang]");
+        if (!btn) return;
+        langSelect.value = btn.dataset.lang;
+        syncLangMenu(langSelect.value);
+        langSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        langMenu.classList.remove("show");
+      });
+      document.addEventListener("click", e => {
+        const inMenu = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+        if (!inMenu) langMenu.classList.remove("show");
+      });
+    }
+    langSelect.addEventListener("change", e => {
+      currentLang = e.target.value;
+      localStorage.setItem("sw_lang", currentLang);
+      location.reload();
     });
 
-    btnLogoutConfirm.addEventListener("click", async () => {
-      hideLogoutPopup();
-
-      try {
-        await window.SWAuth.logout();
-      } catch (e) { }
-
-      window.location.href = "../Login/login.html";
+    // ===== GPS Resume on Return / Reconnect =====
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        setGpsGrace();
+        maybePromptResumeGps("visible");
+      }
+    });
+    window.addEventListener("pageshow", () => {
+      setGpsGrace();
+      maybePromptResumeGps("pageshow");
+    });
+    window.addEventListener("online", () => {
+      if (document.visibilityState === "visible") {
+        setGpsGrace();
+        maybePromptResumeGps("online");
+      }
     });
 
     // ===== Init =====
-    // updateStatusBadge("notstart");
     setGpsStatus("gpsIdle");
     if (workTimerEl) workTimerEl.textContent = "00:00:00";
+    setWorkStatus("notstart");
+    updateStartButtonState();
 
     document.addEventListener("driver-auth-ready", () => {
       const driver = window.DRIVER_AUTH;
       if (!driver) return;
 
       currentUser = driver;
-
       fillDriverProfile();
-
       applyTranslations();
 
-      afterDriverReady();
       initAfterAuth();
     });
-
   </script>
 
 </body>
-
 </html>

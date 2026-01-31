@@ -1,10 +1,12 @@
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", system-ui, Roboto, Arial, sans-serif;
-    }
+@import url("https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Prompt", "Segoe UI", system-ui, sans-serif;
+}
 
     body {
       display: flex;
@@ -68,26 +70,25 @@
     }
 
     .sidebar .sw-logout-slot {
-      margin-top: 0 !important;
-      margin-left: 18px;
-      margin-right: 18px;
-      margin-bottom: 24px;
+      margin: 12px 0 24px !important;
       padding: 0;
+      width: 100%;
     }
 
     .sidebar .sw-logout-slot .sw-logout-btn {
       display: block;
       width: 100%;
-      text-align: left;
-      padding: 14px 20px;
-      margin-top: 6px;
+      text-align: center;
+      padding: 14px 22px;
+      margin: 0;
       border: none;
-      border-radius: 10px;
+      border-radius: 14px;
       background: #dc2626;
       color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      box-shadow: none !important;
+      font-size: 16px;
+      font-weight: 800;
+      min-height: 48px;
+      box-shadow: 0 10px 18px rgba(220,38,38,.16);
       transform: none !important;
     }
 
@@ -160,6 +161,11 @@
       display: flex;
       align-items: center;
       gap: 12px;
+    }
+
+    /* Hide in-page language/profile controls (handled by top shell already) */
+    .topbar-right {
+      display: none !important;
     }
 
         /* ---------- ไอคอนภาษา + โปรไฟล์ ---------- */
@@ -392,11 +398,12 @@
       transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, filter .2s;
     }
 
+    /* ปุ่มบันทึก */
     .primary {
-      background: #2563eb;
+      background: #10b981;
       color: #fff;
     }
-
+/* ปุ่มยกเลิก */
     .ghost {
       background: #f4f4f5;
       color: #111827;

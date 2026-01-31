@@ -78,7 +78,7 @@
       if (!user.zoneId || !user.driverId) {
         clearSession();
         redirect("login");
-        throw new Error("Driver profile incomplete");
+        throw new Error("Driver staff profile incomplete");
       }
     }
 
@@ -94,19 +94,42 @@
   }
 
   function logout() {
+    const t = (key, fallback) => {
+      try {
+        if (typeof window.tr === "function") {
+          const v = window.tr(key);
+          if (v && v !== key) return v;
+        }
+        if (window.T && window.T[key]) return window.T[key];
+        const lang = localStorage.getItem("sw_lang") || document.documentElement.getAttribute("lang") || "th";
+        const dict = window.SW_Translations && window.SW_Translations[lang];
+        if (dict && dict[key]) return dict[key];
+      } catch (_) {
+        /* ignore */
+      }
+      return fallback;
+    };
+
+    const logoutTitle = t("logoutTitle", "ออกจากระบบ?");
+    const logoutText = t("logoutText", "คุณต้องการออกจากระบบใช่หรือไม่");
+    const logoutConfirm = t("logoutConfirm", "ออกจากระบบ");
+    const logoutCancel = t("logoutCancel", "ยกเลิก");
+
     if (typeof Swal === "undefined") {
+      const ok = window.confirm(logoutText);
+      if (!ok) return;
       localStorage.removeItem("sw_user");
       window.location.href = "../Login/login.html";
       return;
     }
 
     Swal.fire({
-      title: "ออกจากระบบ?",
-      text: "คุณต้องการออกจากระบบใช่หรือไม่",
+      title: logoutTitle,
+      text: logoutText,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "ออกจากระบบ",
-      cancelButtonText: "ยกเลิก",
+      confirmButtonText: logoutConfirm,
+      cancelButtonText: logoutCancel,
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#94a3b8",
       reverseButtons: true
@@ -148,10 +171,27 @@
 
   function createLogoutButton(text) {
     ensureLogoutStyles();
+    const t = (key, fallback) => {
+      try {
+        if (typeof window.tr === "function") {
+          const v = window.tr(key);
+          if (v && v !== key) return v;
+        }
+        if (window.T && window.T[key]) return window.T[key];
+        const lang = localStorage.getItem("sw_lang") || document.documentElement.getAttribute("lang") || "th";
+        const dict = window.SW_Translations && window.SW_Translations[lang];
+        if (dict && dict[key]) return dict[key];
+      } catch (_) {
+        /* ignore */
+      }
+      return fallback;
+    };
+
+    const fallbackLabel = t("menuLogout", t("btnLogout", t("logout", "Logout")));
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "sw-logout-btn";
-    btn.textContent = text || "ออกจากระบบ";
+    btn.textContent = text || fallbackLabel;
     btn.addEventListener("click", logout);
     return btn;
   }

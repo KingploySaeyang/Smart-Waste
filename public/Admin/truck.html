@@ -5,7 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title></title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link rel="stylesheet" href="a_style.css">
+  <link rel="stylesheet" href="admin-shell.css">
   <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -32,6 +35,7 @@
   </script>
   <script src="../Login/auth.js"></script>
   <script src="admin-lang.js"></script>
+  <script src="admin-shell.js" defer></script>
   <script src="../i18n/lang.js"></script>
   <script src="../i18n/th.js"></script>
   <script src="../i18n/en.js"></script>
@@ -54,59 +58,272 @@
     /* ================================
    การ์ดสรุป (หน้า dashboard / home)
    ================================ */
-    .cards {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin: 4px 0 8px;
+    .truck-page{
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 10px 12px 0;
     }
-
-    .cards .card {
-      flex: 1 1 220px;
-      background: #f9fafb;
-      padding: 18px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
-      transition: .2s;
+    .page-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin: 8px 0 18px;
+    }
+    .page-title{
+      margin:0;
+      font-size:38px;
+      font-weight:900;
+      color:#1f2937;
+      letter-spacing:-0.4px;
+    }
+    .page-sub{
+      margin:6px 0 0;
+      font-size:18px;
+      font-weight:800;
+      color:#6b7280;
+    }
+    .card-surface{
+      background:#fff;
+      border:1px solid #e6ebf3;
+      border-radius:18px;
+      box-shadow: 0 12px 26px rgba(17,24,39,.08);
+      padding:18px;
+    }
+    .truck-page .content{
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
       margin: 0;
     }
 
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin: 4px 0 16px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .cards .card {
+      background: #fff;
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px solid #e6ebf3;
+      text-align: center;
+      box-shadow: 0 6px 16px rgba(17, 24, 39, .08);
+      transition: .2s;
+      margin: 0;
+      min-width: 0;
+    }
+
     .cards .card:hover {
-      background: #e0f2fe;
       transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(17,24,39,.12);
     }
 
     .cards .card h3 {
-      font-size: 17px;
-      color: #2f3640;
+      font-size: 18px;
+      color: #1f2937;
       margin: 0 0 6px;
     }
 
     .cards .card p {
-      font-size: 21px;
-      font-weight: bold;
-      color: #00a8ff;
+      font-size: 24px;
+      font-weight: 900;
+      color: #0284c7;
       margin: 0;
+      letter-spacing: 0.2px;
     }
 
     /* ================================
    แผนที่
    ================================ */
+    .filter-row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .filter-row select{
+      flex:1 1 260px;
+      min-width: 220px;
+      min-height: 44px;
+      padding: 10px 12px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      box-shadow: 0 10px 18px rgba(17, 24, 39, .02);
+    }
+    .filter-row select:focus{
+      outline: 2px solid rgba(14,165,233,.25);
+      border-color: rgba(14,165,233,.55);
+      outline-offset: 2px;
+    }
+    .filter-row button{
+      min-height: 52px;
+      padding: 0 18px;
+      white-space: nowrap;
+      align-self: stretch;
+    }
+    /* ปุ่มเพิ่มรถ ให้โทนเดียวกับ action menu */
+    #btnCreate{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding: 0 18px;
+      min-height:52px;
+      background: #10b981; /* สีทึบ ไม่ใช้ gradient */
+      color:#fff;
+      border:1px solid rgba(16,185,129,.32);
+      border-radius:14px;
+      font-weight:900;
+      letter-spacing: -0.1px;
+      box-shadow: 0 12px 24px rgba(16,185,129,.22);
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    }
+    #btnCreate:hover{
+      box-shadow: 0 14px 28px rgba(16,185,129,.26);
+      filter: brightness(1.03);
+    }
+    #btnCreate:active{ transform: translateY(1px) scale(.99); }
+    #btnCreate .btnCreateLabel{
+      font-size:18px;
+      line-height:1;
+      display:inline-block;
+      transform: translateY(-1px);
+    }
     #map {
       width: 100%;
       height: 460px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
+      border-radius: 0;
+      border: none;
+      display:block;
+    }
+    .map-wrapper{
+      margin-top: 14px;
+      border-radius: 16px;
+      overflow: hidden;
+      border:1px solid #e6ebf3;
+      box-shadow: 0 10px 22px rgba(17,24,39,.08);
+      background:#f8fafc;
     }
 
-    /* wrapper ตารางเลื่อนแนวนอน */
-    .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-      margin-top: 8px;
+/* ตารางสไตล์เดียวกับ report */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0;
+  border-top:1px solid #e6ebf3;
+  border-radius: 0;
+  background:#f8fafc; /* เติมสีเทาให้ชิดขอบบน */
+}
+.table-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  padding: 18px 18px 12px 18px;
+  background:#fff;
+  border-bottom:1px solid #e6ebf3;
+}
+.search-box{ margin-left:auto; width: 280px; max-width: 100%; }
+.search-box input{
+  width:100%;
+  height:44px;
+  min-height:44px;
+  border-radius:16px;
+  font-size:13px;
+  font-weight:800;
+  padding:10px 12px;
+  border: 1px solid #e2e8f0;
+  background:#fff;
+  box-shadow: 0 10px 18px rgba(17,24,39,.02);
+}
+.search-box input:focus{
+  outline: 2px solid rgba(14,165,233,.25);
+  border-color: rgba(14,165,233,.55);
+  outline-offset: 2px;
+}
+.usage-table{
+  width:100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size:14px;
+  margin-top: -1px; /* ดึงหัวตารางชิดขอบบนเหมือน report */
+}
+.usage-table th,
+.usage-table td{
+  text-align: center;
+  vertical-align: middle;
+  padding: 12px 12px;
+  border-bottom:1px solid #e6ebf3;
+  color:#0f172a;
+}
+.usage-table thead th{
+  background:#f8fafc;
+  color:#374151;
+  font-weight: 800;
+  font-size: 13px;
+  line-height:1.2;
+  padding-top:14px;
+  padding-bottom:14px;
+  position: sticky;
+  top:0;
+  z-index: 2;
+}
+    .usage-table td.date,
+    .usage-table th.date{
+      text-align: left;
     }
+    .usage-table td.truck,
+    .usage-table th.truck{
+      text-align: left;
+      font-weight: 800;
+    }
+    .usage-table td.driver,
+    .usage-table th.driver{
+      text-align: left;
+      font-weight: 600;
+    }
+    .usage-table tbody tr[data-truck]{
+      cursor: pointer;
+    }
+.usage-table tbody tr:hover{
+  background:#f8fafc;
+}
+    .usage-table tbody tr:last-child td{
+      border-bottom: none;
+    }
+.usage-table td{
+  background:#fff;
+}
+.usage-table td.zone{
+  padding: 12px 12px;
+}
+.badge-zone{
+  padding:6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(16,185,129,.18), rgba(14,165,233,.18));
+  color: #0f172a;
+  font-weight: 900;
+  font-size: 13px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 90px;
+  border: 1px solid rgba(16,185,129,.14);
+}
+    .left{ text-align:left; }
+    .center{ text-align:center; }
 
     .swal2-container {
       z-index: 2000 !important;
@@ -120,21 +337,163 @@
       inset: 0;
       background: rgba(15, 23, 42, 0.45);
       display: flex;
-      align-items: center;
+      align-items: center;  /* จัดกลางแนวตั้ง */
       justify-content: center;
-      z-index: 1100;
+      padding: 16px 12px;
+      z-index: 1500; /* สูงกว่าเมนู/เฮดเดอร์ */
     }
 
     .overlay-card {
-      width: min(520px, 92vw);
+      width: min(460px, 92vw);
       max-width: 520px;
       background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.38);
-      padding: 20px 18px 16px;
-      transform: translateY(8px) scale(.97);
+      border-radius: 12px;
+      border-top: 4px solid #10b981;
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
+      padding: 16px 18px 16px !important;
+      transform: translateY(0);
       opacity: 0;
       animation: overlayIn .18s ease-out forwards;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      height: auto;
+      max-height: 90vh;
+    }
+    /* ฟอร์มเพิ่มรถ: รีเซ็ตระยะห่างใหม่ */
+    #createPanel h3{
+      margin: 0 0 6px;
+      padding: 0;
+      font-size: 20px;
+      font-weight: 900;
+    }
+    #createPanel .form-row{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    #createPanel .form-row label{
+      display:block;
+      font-weight:800;
+      color:#0f172a;
+      margin-bottom:4px;
+      font-size:14px;
+    }
+    #createPanel .form-row select,
+    #createPanel .form-row input{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #e2e8f0;
+      background:#fff;
+      font-weight:700;
+      color:#0f172a;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      height:44px;
+      font-size:14px;
+    }
+    #createPanel select:focus,
+    #createPanel input:focus{
+      outline:2px solid rgba(14,165,233,.25);
+      border-color: rgba(14,165,233,.55);
+      box-shadow: 0 6px 14px rgba(14,165,233,.14);
+      background:#fff;
+    }
+    #createPanel input[readonly]{
+      background:#f1f5f9;
+      color:#475569;
+    }
+    #createPanel .overlay-actions{
+      display:flex;
+      flex-direction:row;
+      justify-content:center; /* จัดปุ่มให้อยู่กลาง */
+      gap:10px;
+      margin-top:12px;
+    }
+    #createPanel .overlay-actions button{
+      min-height:44px;
+      font-weight:800;
+      border-radius:12px;
+      padding:10px 16px;
+      font-size:14px;
+    }
+    /* ปุ่มสีใหม่ */
+    #btnCancelCreate{
+      background:#e5e7eb !important;
+      color:#0f172a !important;
+      border:1px solid #d1d5db !important;
+    }
+    #btnSaveTruck{
+      background:#10b981 !important; /* ให้ตรงกับปุ่มเพิ่มรถ */
+      color:#fff !important;
+      border:1px solid rgba(16,185,129,.35) !important;
+      box-shadow: 0 8px 18px rgba(16,185,129,.18);
+    }
+
+    /* --- Override: compact create truck overlay --- */
+    #createOverlay .overlay-card{
+      width: min(460px, 92vw) !important;
+      max-width: 520px !important;
+      padding: 16px 18px 16px !important;
+      gap: 10px !important;
+    }
+    #createOverlay #createPanel h3{
+      margin: 0 0 6px !important;
+      font-size: 20px !important;
+    }
+    #createOverlay #createPanel .form-row{
+      gap: 6px !important;
+      margin: 0 !important;
+    }
+    #createOverlay #createPanel .form-row label{
+      margin-bottom: 4px !important;
+      font-size: 14px !important;
+    }
+    #createOverlay #createPanel .form-row select,
+    #createOverlay #createPanel .form-row input{
+      padding: 10px 12px !important;
+      border-radius: 12px !important;
+      height: 44px !important;
+      font-size: 14px !important;
+    }
+    #createOverlay #createPanel .overlay-actions{
+      gap: 10px !important;
+      margin-top: 12px !important;
+    }
+    #createOverlay #createPanel .overlay-actions button{
+      min-height: 44px !important;
+      padding: 10px 16px !important;
+      border-radius: 12px !important;
+      font-size: 14px !important;
+    }
+
+    /* 強制ย่อฟอร์มด้วย inline width fallback */
+    #createOverlay .overlay-card.compact{
+      width: 440px !important;
+      max-width: 92vw !important;
+      padding: 16px 18px 16px !important;
+      gap: 8px !important;
+      border-radius: 16px !important;
+      height: auto !important;
+      max-height: 90vh !important;
+    }
+    #createOverlay .overlay-card.compact select,
+    #createOverlay .overlay-card.compact input{
+      height: 44px !important;
+      padding: 10px 12px !important;
+      font-size: 14px !important;
+      border-radius: 12px !important;
+    }
+    body.overlay-open{
+      overflow:hidden;
+    }
+    #createPanel .overlay-actions button{
+      min-height:44px;
+      font-weight:800;
+      border-radius:12px;
+      padding:10px 16px;
+      font-size:14px;
     }
 
     .overlay-actions {
@@ -142,6 +501,7 @@
       flex-direction: column;
       gap: 8px;
       align-items: stretch;
+      justify-content: center;
     }
 
     @keyframes overlayIn {
@@ -159,7 +519,7 @@
     @media (min-width: 640px) {
       .overlay-actions {
         flex-direction: row;
-        justify-content: flex-end;
+        justify-content: center; /* จัดกลางในหน้าจอใหญ่ */
       }
 
       .overlay-actions button {
@@ -177,35 +537,46 @@
 
     .truck-pin {
       --pin-color: #f43f5e;
-      --pin-label: #0f172a;
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      filter: drop-shadow(0 10px 20px rgba(15, 23, 42, .25));
+      filter: drop-shadow(0 8px 15px rgba(244, 63, 94, 0.4));
     }
 
     .truck-pin__bubble {
-      width: 46px;
-      height: 46px;
-      border-radius: 16px 16px 12px 12px;
-      background: linear-gradient(135deg, var(--pin-color), rgba(255, 255, 255, .25));
-      border: 2px solid rgba(255, 255, 255, .9);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--pin-color);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      color: var(--pin-label);
+      font-size: 24px;
+      color: #111827;
     }
 
-    .truck-pin__pointer {
-      width: 0;
-      height: 0;
-      border: 10px solid transparent;
-      border-top-color: var(--pin-color);
-      margin-top: -6px;
-      filter: brightness(.95);
+    .truck-pulse {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      background: var(--pin-color);
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: pulse-ring 4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+      z-index: -1;
+    }
+
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
     }
 
     /* ================================
@@ -274,28 +645,94 @@
       }
 
       .cards {
-        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
       }
 
       .cards .card {
-        flex: 0 0 calc(50% - 8px);
-        max-width: calc(50% - 8px);
-        padding: 10px 8px;
+        padding: 14px 12px;
       }
 
       .cards .card h3 {
-        font-size: 13px;
-        margin-bottom: 3px;
+        font-size: 15px;
+        margin-bottom: 4px;
       }
 
       .cards .card p {
-        font-size: 16px;
+        font-size: 18px;
       }
     }
 
     .sw-popup {
       border-radius: 14px !important;
       font-family: 'Prompt', sans-serif;
+    }
+
+    /* =========================
+   Mobile table scroll (ให้เหมือน report)
+   ========================= */
+    @media(max-width: 720px){
+      .truck-table-card{
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+        border-radius: 16px;
+      }
+      .truck-table-card .table-toolbar{
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        background:#fff;
+        overflow-x: auto;
+      }
+      /* filter + เพิ่มรถ ให้อยู่บรรทัดเดียวบนมือถือ */
+      .filter-row{
+        flex-wrap: nowrap;
+        gap:8px;
+      }
+      .filter-row select{
+        flex:1 1 auto;
+        min-width: 0;
+        height:44px;
+        border-radius:12px;
+      }
+      #btnCreate{
+        min-height:44px;
+        padding: 0 14px;
+        border-radius:12px;
+      }
+      #usageHint{
+        display:none; /* ซ่อนคำอธิบายใต้หัวตารางบนจอมือถือ */
+      }
+      .table-wrapper{
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        border-top: 0;
+      }
+      .usage-table{
+        min-width: 640px;
+      }
+      /* จัด toolbar มือถือให้เรียงบนลงล่างเหมือน report */
+      .table-toolbar{
+        flex-direction: column;
+        align-items: flex-start;
+        gap:8px;
+        padding: 14px 14px 10px 14px;
+      }
+      .table-toolbar h4{
+        margin:0;
+        width:100%;
+      }
+      .table-toolbar .search-box{
+        width:100%;
+        min-width:0;      /* ให้ยืด/หดเท่า report */
+        max-width:100%;
+        margin-left:0;
+      }
+      .table-toolbar .search-box input{
+        width:100%;
+      }
     }
 
     /* =========================
@@ -349,50 +786,30 @@
   </style>
 </head>
 
-<body>
-  <button class="toggle-btn" onclick="toggleMenu()"></button>
-
-  <aside class="sidebar" id="sidebar">
-    <h2 id="sidebarTitle"></h2>
-    <nav class="menu" data-admin-menu data-active="truck"></nav>
-    <div class="sw-logout-slot" data-sw-logout-slot></div>
-  </aside>
+<body data-active-nav="truck">
 
   <main>
-    <div class="topbar">
-      <div>
-        <h1 id="pageTitleHeading"></h1>
-      </div>
-      <div class="topbar-right">
-        <!-- ไอคอนเลือกภาษา -->
-        <div class="lang-switcher">
-          <button class="icon-btn" id="langIconBtn" type="button">
-            <img src="images/lang-icon.png" alt="Language" class="top-icon">
-          </button>
-          <div class="lang-menu" id="langMenu">
-            <button type="button" data-lang="th">ไทย</button>
-            <button type="button" data-lang="en">English</button>
-            <button type="button" data-lang="ms">Bahasa Melayu</button>
-          </div>
-          <select id="langSelect" style="display:none;">
-            <option value="th">ไทย</option>
-            <option value="en">English</option>
-            <option value="ms">Bahasa Melayu</option>
-          </select>
-        </div>
-
-        <!-- โปรไฟล์ผู้ใช้ (ดึงจาก Firestore /users) -->
-        <a href="profile.html" class="user-chip" id="profileBtn">
-          <img src="images/profile-icon.png" alt="Profile" class="top-icon user-avatar">
-          <div class="user-chip-text">
-            <div class="user-chip-name" id="profileName">User Name</div>
-            <div class="user-chip-role" id="profileRole">Role</div>
-          </div>
-        </a>
+    <div id="pageLoader" class="shell-loader">
+      <div class="loader-box">
+        <div class="loader-spinner"></div>
+        <div class="loader-text" id="loaderText">กำลังโหลด...</div>
       </div>
     </div>
 
-    <div class="content">
+    <div class="truck-page">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" id="pageTitleHeading"></h1>
+          <p class="page-sub" id="pageSubtitle"></p>
+        </div>
+        <select id="langSelect" style="display:none;">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+          <option value="ms">Bahasa Melayu</option>
+        </select>
+      </div>
+
+      <div class="content">
       <!-- การ์ดสรุประดับถัง -->
       <div class="cards">
         <div class="card">
@@ -413,48 +830,45 @@
         </div>
       </div>
 
-      <!-- เลือกโซน + ปุ่มสร้างรถ + ปุ่มโฟกัส -->
+      <!-- เลือกโซน + ปุ่มสร้างรถ -->
       <div class="card">
-        <div class="row">
+        <div class="row" style="align-items: flex-end; gap:10px;">
           <div style="flex:1 1 260px">
             <label for="zoneFilter" id="zoneFilterLabel"></label>
-            <div class="row">
+            <div class="filter-row">
               <select id="zoneFilter">
                 <option value=""></option>
               </select>
-              <button id="btnCreate" class="ghost">+ </button>
+              <button id="btnCreate" class="ghost"><span class="btnCreateLabel">+</span></button>
             </div>
             <p id="truckInfo" class="muted" style="margin-top:6px"></p>
           </div>
-
-          <button id="btnCenter" class="ghost"></button>
+        </div>
+        <div class="map-wrapper">
+          <div id="map"></div>
         </div>
       </div>
 
-      <!-- แผนที่ -->
-      <div id="map"></div>
-
       <!-- ตารางเวลาแสดงการวิ่ง -->
-      <div class="card">
-        <div class="row" style="justify-content: space-between; align-items:flex-end; gap:12px;">
+      <div class="card truck-table-card" style="background:#fff; border:1px solid #e6ebf3; box-shadow:0 10px 22px rgba(17,24,39,.06); padding:0; border-radius:18px; overflow:hidden;">
+        <div class="table-toolbar">
           <div>
-            <h3 id="usageTitle"></h3>
-            <p class="muted" id="usageHint"></p>
+            <h4 id="usageTitle" style="margin:0; font-size:18px; font-weight:900;"></h4>
+            <p class="muted" id="usageHint" style="margin:4px 0 0;"></p>
           </div>
         </div>
-        <p class="muted" id="usageStatus" style="margin-top:6px;"></p>
+        <p class="muted" id="usageStatus" style="margin:0; padding:0; height:0; line-height:0; overflow:hidden;"></p>
 
         <div class="table-wrapper">
-          <table>
+          <table class="usage-table">
             <thead>
               <tr>
-                <th id="usageThDate"></th>
-                <th id="usageThZone"></th>
-                <th id="usageThStart"></th>
-                <th id="usageThEnd"></th>
-                <th id="usageThDuration"></th>
-                <th id="usageThLat"></th>
-                <th id="usageThLng"></th>
+                <th class="truck" id="usageThTruck"></th>
+                <th class="driver" id="usageThDriver"></th>
+    <th class="date" id="usageThDate"></th>
+    <th id="usageThZone"></th>
+    <th id="usageThStart"></th>
+    <th id="usageThDuration"></th>
               </tr>
             </thead>
             <tbody id="usageBody"></tbody>
@@ -466,10 +880,10 @@
 
   <!-- การ์ดเด้งเพิ่มรถใหม่ -->
   <div id="createOverlay" class="overlay" style="display:none;">
-    <div id="createPanel" class="card overlay-card">
+    <div id="createPanel" class="card overlay-card compact">
       <h3 id="createPanelTitle"></h3>
 
-      <div class="row">
+      <div class="form-row">
         <div>
           <label id="zoneSelectLabel"></label>
           <select id="truckZoneSelect">
@@ -479,7 +893,7 @@
 
       </div>
 
-      <div class="row" style="margin-top:8px;">
+      <div class="form-row">
         <div>
           <label id="truckIdLabel"></label>
           <input id="truckIdPreview" readonly />
@@ -512,6 +926,7 @@
     const truckDocUnsubMap = {};     // truckId -> unsubscribe truck doc
     const truckRunsUnsubMap = {};    // truckId -> unsubscribe active runs
     const truckActiveMap = {};       // truckId -> bool
+    const truckZoneMap = {};         // truckId -> zoneId
 
     const binMarkers = {};           // zone_binDocId -> marker
     let binsDataUnsub = null;        // listener สำหรับ bin_data
@@ -527,6 +942,16 @@
     const langIconBtn = document.getElementById("langIconBtn");
     const langMenu = document.getElementById("langMenu");
     const langSelect = document.getElementById('langSelect');
+    const pageLoader = document.getElementById("pageLoader");
+    const loaderTextEl = document.getElementById("loaderText");
+
+    function showPageLoader(text){
+      if(text && loaderTextEl) loaderTextEl.textContent = text;
+      if(pageLoader) pageLoader.classList.add("show");
+    }
+    function hidePageLoader(){
+      if(pageLoader) pageLoader.classList.remove("show");
+    }
     const adminNameEl = document.getElementById('adminName');
     const adminAvatarEl = document.getElementById('adminAvatar');
     const adminRoleEl = document.getElementById('adminRole');
@@ -534,7 +959,6 @@
     const zoneFilter = document.getElementById('zoneFilter');
     const truckInfo = document.getElementById('truckInfo');
     const btnCreate = document.getElementById('btnCreate');
-    const btnCenter = document.getElementById('btnCenter');
 
     // การ์ดสรุประดับถัง
     const totalEl = document.getElementById('totalBins');
@@ -643,7 +1067,7 @@
     function showUsageMessage(key) {
       usageBody.innerHTML = `
     <tr>
-      <td colspan="7" class="muted">
+      <td colspan="6" class="muted">
         ${t(key)}
       </td>
     </tr>
@@ -660,31 +1084,34 @@
       hasLiveFromRTDB = false;
     }
 
-    function getBinStatusColor(isOnline) {
-      return isOnline ? "#16a34a" : "#94a3b8"; // เขียว / เทา
+    function getBinStatusColor(isOnline, fillLevel) {
+      if (!isOnline) return "#94a3b8"; // เทา (ออฟไลน์)
+      if (typeof fillLevel === "number" && fillLevel >= 80) return "#dc2626"; // แดง (เต็ม)
+      return "#16a34a"; // เขียว (ปกติ)
     }
 
     /* ===== helper icon รถแบบฝั่งผู้ใช้ ===== */
     function buildTruckIcon(isActive) {
-      const statusEmoji = isActive ? "🚛" : "🚚";
-      const color = isActive ? "#fb7185" : "#94a3b8";
+      const statusEmoji = "🚛";
+      const color = isActive ? "#f43f5e" : "#94a3b8";
+      const pulse = isActive ? `<div class="truck-pulse"></div>` : "";
       return L.divIcon({
         className: "truck-icon",
         html: `
           <div class="truck-pin" style="--pin-color:${color};">
+            ${pulse}
             <div class="truck-pin__bubble">${statusEmoji}</div>
-            <div class="truck-pin__pointer"></div>
           </div>
         `.trim(),
-        iconSize: [50, 70],
-        iconAnchor: [25, 55],
-        popupAnchor: [0, -50]
+        iconSize: [50, 50],
+        iconAnchor: [25, 25],
+        popupAnchor: [0, -30]
       });
     }
 
     /* ===== โหลดโซนสำหรับ filter ===== */
     async function loadZonesForFilter() {
-      zoneFilter.innerHTML = `<option value="">(${t('zoneFilterAll')})</option>`;
+      zoneFilter.innerHTML = `<option value="">${t('zoneFilterAll')}</option>`;
       const snap = await fs.collection('zones').get();
 
       snap.forEach(doc => {
@@ -710,6 +1137,7 @@
     async function loadTrucks() {
       clearTruckListenersAndMarkers();
       trucks = [];
+      for (const k in truckZoneMap) delete truckZoneMap[k];
 
       const zonesSnap = await fs.collection("trucks").get();
 
@@ -733,6 +1161,7 @@
               zone: zoneId // ✅ ชัดเจนว่าอยู่โซนไหน
             }
           });
+          truckZoneMap[truckId] = zoneId;
         });
       }
 
@@ -754,28 +1183,24 @@
         const isActive = !!truckActiveMap[truckId]; // ถ้ายังไม่เคยออนไลน์ = false
         const marker = L.marker([lat, lng], { icon: buildTruckIcon(isActive) }).addTo(map);
         truckMarkers[truckId] = marker;
-
-        marker.bindPopup(`<b>${truckId}</b><br>${t('truckInactiveLabel')}`);
+        const displayName = tr.data.name || tr.data.truckId || truckId;
+        marker.bindPopup(`<b>${displayName}</b><br>${t('truckInactiveLabel')}`);
       });
 
       // ✅ ให้ filter แสดง/ซ่อน marker ทันที
       updateAllTruckMarkersVisibility();
 
-      fitMapToAllMarkers();
       updateTruckInfoPanel();
     }
 
     function updateAllTruckMarkersVisibility() {
-      trucks.forEach(tr => updateTruckMarkerVisibility(tr.id));
+      Object.keys(truckMarkers).forEach(truckId => updateTruckMarkerVisibility(truckId));
     }
     function updateTruckMarkerVisibility(truckId) {
       const marker = truckMarkers[truckId];
       if (!marker) return;
 
-      const truck = trucks.find(tr => tr.id === truckId);
-      if (!truck) return;
-
-      const zoneId = truck.data.zone || "";
+      const zoneId = truckZoneMap[truckId] || "";
       const isActive = !!truckActiveMap[truckId];
 
       // อัปเดต icon ตามสถานะ online/offline
@@ -787,6 +1212,23 @@
         if (!map.hasLayer(marker)) map.addLayer(marker);
       } else {
         if (map.hasLayer(marker)) map.removeLayer(marker);
+      }
+    }
+
+    function focusTruckOnMap(truckId) {
+      if (!truckId) return;
+      const marker = truckMarkers[truckId];
+      if (marker) {
+        const latLng = marker.getLatLng();
+        const nextZoom = Math.max(map.getZoom(), 16);
+        map.setView(latLng, nextZoom, { animate: true });
+        if (marker.getPopup()) marker.openPopup();
+        return;
+      }
+      const last = truckLastPosMap[truckId];
+      if (last && typeof last.lat === "number" && typeof last.lng === "number") {
+        const nextZoom = Math.max(map.getZoom(), 16);
+        map.setView([last.lat, last.lng], nextZoom, { animate: true });
       }
     }
 
@@ -827,6 +1269,18 @@
       truckInfo.innerHTML = `${base} • <span class="ok">${statusLabel}</span>`;
     }
 
+    function applyZoneFilter(nextZoneId) {
+      currentZoneFilter = nextZoneId || "";
+      localStorage.setItem(ZONE_FILTER_KEY, currentZoneFilter);
+
+      updateAllTruckMarkersVisibility();
+      updateTruckInfoPanel();
+      updateUsageTableVisibility();
+
+      if (currentZoneFilter) setupBinsForZone(currentZoneFilter);
+      else clearBinMarkers();
+    }
+
     /* ===== ถังขยะในโซนที่เลือก (realtime จาก bin_data + bin_level) ===== */
     function clearBinMarkers() {
       if (binsDataUnsub) {
@@ -841,6 +1295,7 @@
       binsDataState = {};
     }
 
+    
     function redrawBinMarkers(zoneId) {
       // เคลียร์ marker เดิม
       Object.values(binMarkers).forEach(m => {
@@ -861,7 +1316,7 @@
         const isOnline =
           levelInfo && (NOW - levelInfo.lastUpdate <= ONLINE_TIMEOUT);
 
-        const color = getBinStatusColor(isOnline);
+        const color = getBinStatusColor(isOnline, fill);
 
         // ✅ สร้าง icon พร้อมแสดง % ที่ marker
         const icon = L.divIcon({
@@ -906,6 +1361,7 @@
 
       // ✅ ฟังเฉพาะ Firestore
       binsDataUnsub = dataRef.onSnapshot(snap => {
+        if (zoneId !== currentZoneFilter) return;
         const newState = {};
         snap.forEach(doc => {
           const d = doc.data() || {};
@@ -922,22 +1378,6 @@
         binsDataState = newState;
         redrawBinMarkers(zoneId);
       });
-    }
-
-    let fitTimeout;
-    function fitMapToAllMarkers() {
-      clearTimeout(fitTimeout);
-      fitTimeout = setTimeout(() => {
-        const ms = [];
-        Object.values(truckMarkers).forEach(m => map.hasLayer(m) && ms.push(m));
-        Object.values(binMarkers).forEach(m => map.hasLayer(m) && ms.push(m));
-
-        if (ms.length) {
-          const group = L.featureGroup(ms);
-          map.fitBounds(group.getBounds().pad(0.15));
-        }
-        map.invalidateSize();
-      }, 200);
     }
 
     /* ===== RTDB Realtime Listener (fillLevel) ===== */
@@ -962,6 +1402,15 @@
 
       recomputeDashboard();
     });
+
+    let binStatusTicker = null;
+    function startBinStatusTicker() {
+      if (binStatusTicker) return;
+      binStatusTicker = setInterval(() => {
+        recomputeDashboard();
+        if (currentZoneFilter) redrawBinMarkers(currentZoneFilter);
+      }, 5000);
+    }
 
     function getTruckForZone(zoneId) {
       return trucks.find(tr => tr.data.zone === zoneId) || null;
@@ -1049,8 +1498,6 @@
       // ✅ ปล่อยให้ AdminProfile / AdminUser จัดการ
 
       document.title = t('pageTitle_truck');
-      document.querySelector('.toggle-btn').textContent = t('menuBtn');
-
       if (window.AdminNav?.setLanguage) {
         window.AdminNav.setLanguage(currentLang);
       }
@@ -1062,6 +1509,9 @@
       }
 
       document.getElementById('pageTitleHeading').textContent = t('mainTitle_truck');
+      const subEl = document.getElementById('pageSubtitle');
+      if(subEl) subEl.textContent = t('pageSubtitle_truck') || t('pageSubtitle') || "";
+      if (loaderTextEl) loaderTextEl.textContent = t('loading');
 
 
       const truckIdLabelEl = document.getElementById('truckIdLabel');
@@ -1074,24 +1524,6 @@
       const sidebarTitleEl = document.getElementById('sidebarTitle');
       if (sidebarTitleEl) sidebarTitleEl.textContent = t('sidebarTitle');
 
-      const langBtn = document.getElementById("langIconBtn");
-      if (langBtn) {
-        langBtn.setAttribute("aria-label", t("ariaChangeLanguage"));
-      }
-
-      document.title = t('pageTitle_truck');
-      document.querySelector('.toggle-btn').textContent = t('menuBtn');
-
-      if (window.AdminNav) {
-        window.AdminNav.setLanguage(currentLang);
-      }
-
-      if (window.AdminUser) {
-        window.AdminUser.setLanguage(currentLang);
-      }
-
-      document.getElementById('pageTitleHeading').textContent = t('mainTitle_truck');
-
       // การ์ดสรุประดับถัง
       document.getElementById('cardTotalTitle').textContent = t('cardTotal');
       document.getElementById('cardFullTitle').textContent = t('cardFull');
@@ -1101,10 +1533,12 @@
       // filter zone
       document.getElementById('zoneFilterLabel').textContent = t('zoneFilterLabel');
       if (zoneFilter.options.length > 0) {
-        zoneFilter.options[0].textContent = `(${t('zoneFilterAll')})`;
+        zoneFilter.options[0].textContent = `${t('zoneFilterAll')}`;
       }
-      btnCreate.textContent = t('createTruckBtn');
-      btnCenter.textContent = t('focusBtn');
+      if(btnCreate){
+        const label = t('createTruckBtn');
+        btnCreate.innerHTML = `<span class="btnCreateLabel">+</span><span>${label}</span>`;
+      }
 
       // usage
       document.getElementById('usageTitle').textContent = t('usageTitle');
@@ -1114,11 +1548,12 @@
         monthLabel.textContent = t('monthSelectLabel');
       }
       document.getElementById('usageThDate').textContent = t('usageThDate');
+      const truckTh = document.getElementById('usageThTruck');
+      if (truckTh) truckTh.textContent = t('truckIdLabel');
+      const driverTh = document.getElementById('usageThDriver');
+      if (driverTh) driverTh.textContent = t('usageThDriver');
       document.getElementById('usageThStart').textContent = t('usageThStart');
-      document.getElementById('usageThEnd').textContent = t('usageThEnd');
       document.getElementById('usageThDuration').textContent = t('usageThDuration');
-      document.getElementById('usageThLat').textContent = t('usageThLat');
-      document.getElementById('usageThLng').textContent = t('usageThLng');
 
       // ✅ เพิ่มหัวคอลัมน์โซน
       const zoneTh = document.getElementById('usageThZone');
@@ -1163,44 +1598,53 @@
         }
 
         // ✅ highlight ภาษาใน dropdown
-        document
-          .querySelectorAll("#langMenu button")
-          .forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+        if (langMenu) {
+          document
+            .querySelectorAll("#langMenu button")
+            .forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+        }
 
-        langSelect.value = currentLang;
+        if (langSelect) langSelect.value = currentLang;
         applyLanguage();
+        if (loaderTextEl) loaderTextEl.textContent = t('loading');
       }
     }
 
-    langSelect.addEventListener("change", e => changeLanguage(e.target.value));
-    langSelect.value = currentLang;
+    if (langSelect) {
+      langSelect.addEventListener("change", e => changeLanguage(e.target.value));
+      langSelect.value = currentLang;
+    }
 
-    langIconBtn.addEventListener("click", () => {
-      langMenu.classList.toggle("show");
-    });
+    if (langIconBtn && langMenu) {
+      langIconBtn.addEventListener("click", () => {
+        langMenu.classList.toggle("show");
+      });
 
-    langMenu.addEventListener("click", e => {
-      const btn = e.target.closest("button[data-lang]");
-      if (!btn) return;
-      changeLanguage(btn.dataset.lang);
-      langMenu.classList.remove("show");
-    });
+      langMenu.addEventListener("click", e => {
+        const btn = e.target.closest("button[data-lang]");
+        if (!btn) return;
+        changeLanguage(btn.dataset.lang);
+        langMenu.classList.remove("show");
+      });
+    }
 
     if (LangState && typeof LangState.onChange === "function") {
       LangState.onChange(lang => {
         if (lang && lang !== currentLang) {
           currentLang = lang;
-          langSelect.value = lang;
+          if (langSelect) langSelect.value = lang;
           applyLanguage();
         }
       });
     }
 
     // ปิดเมนูภาษา (ไม่ยุ่งกับ sidebar เพราะใช้ backdrop แล้ว)
-    document.addEventListener("click", e => {
-      const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
-      if (!clickedInLang) langMenu.classList.remove("show");
-    });
+    if (langMenu && langIconBtn) {
+      document.addEventListener("click", e => {
+        const clickedInLang = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+        if (!clickedInLang) langMenu.classList.remove("show");
+      });
+    }
 
     async function loadZonesForTruckForm() {
       truckZoneSelect.innerHTML = `<option value="">${t('selectZoneDefault')}</option>`;
@@ -1255,10 +1699,36 @@
       createPanel.style.animation = 'none';
       void createPanel.offsetWidth;
       createPanel.style.animation = '';
+      document.body.classList.add("overlay-open");
+      // ensure consistent sizing
+      createPanel.classList.add("compact");
+      // hard override sizing (in case cached styles remain)
+      createPanel.style.setProperty("width", "460px", "important");
+      createPanel.style.setProperty("max-width", "92vw", "important");
+      createPanel.style.setProperty("padding", "16px 18px 16px", "important");
+      createPanel.style.setProperty("height", "auto", "important");
+      createPanel.style.setProperty("max-height", "90vh", "important");
+      document.querySelectorAll("#createPanel select, #createPanel input").forEach(el=>{
+        el.style.setProperty("height","44px","important");
+        el.style.setProperty("padding","10px 12px","important");
+        el.style.setProperty("font-size","14px","important");
+        el.style.setProperty("border-radius","12px","important");
+      });
+      const actions = document.querySelector("#createPanel .overlay-actions");
+      if(actions){
+        actions.style.setProperty("gap","10px","important");
+        actions.style.setProperty("margin-top","12px","important");
+      }
+      document.querySelectorAll("#createPanel .overlay-actions button").forEach(btn=>{
+        btn.style.setProperty("min-height","44px","important");
+        btn.style.setProperty("padding","10px 16px","important");
+        btn.style.setProperty("border-radius","12px","important");
+      });
     }
 
     function closeCreateOverlay() {
       createOverlay.style.display = 'none';
+      document.body.classList.remove("overlay-open");
     }
 
     btnCreate.addEventListener('click', async () => {
@@ -1317,23 +1787,9 @@
 
     /* ===== เปลี่ยนโซน filter ===== */
     zoneFilter.addEventListener('change', () => {
-      currentZoneFilter = zoneFilter.value || "";
-      localStorage.setItem(ZONE_FILTER_KEY, currentZoneFilter); // ✅ จำโซน
-      usageBody.innerHTML = `<tr><td colspan="6" class="muted">${t('loading')}</td></tr>`;
-
-      updateAllTruckMarkersVisibility();
-      updateTruckInfoPanel();
-
-      if (currentZoneFilter) setupBinsForZone(currentZoneFilter);
-      else clearBinMarkers();
-
-      updateUsageTableVisibility(); // ✅ ต้องอยู่ในนี้
+      applyZoneFilter(zoneFilter.value || "");
     });
 
-    /* ===== ปุ่มโฟกัสแผนที่ ===== */
-    btnCenter.addEventListener('click', () => {
-      fitMapToAllMarkers();
-    });
 
     window.addEventListener('beforeunload', () => {
       clearBinMarkers();
@@ -1341,46 +1797,8 @@
       dashboardUnsubs.forEach(fn => fn && fn());
     });
 
-    /* ===== ปุ่มเมนู 3 ขีด ===== */
-    function toggleMenu() {
-      const sidebar = document.getElementById('sidebar');
-      const btn = document.querySelector('.toggle-btn');
-      const isShow = sidebar.classList.toggle('show');
-
-      if (window.innerWidth <= 900) {
-        btn.style.display = isShow ? 'none' : 'block';
-      }
-
-      // ✅ บังคับ Leaflet คำนวณขนาดใหม่
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 300);
-    }
-
-    window.toggleMenu = toggleMenu;
-
-    document.addEventListener('click', (e) => {
-      const sidebar = document.getElementById('sidebar');
-      const btn = document.querySelector('.toggle-btn');
-      if (!sidebar.contains(e.target) && e.target !== btn && window.innerWidth <= 900) {
-        sidebar.classList.remove('show');
-        btn.style.display = 'block';
-      }
-    });
-
     window.addEventListener('resize', () => {
-      const sidebar = document.getElementById('sidebar');
-      const btn = document.querySelector('.toggle-btn');
-
-      if (window.innerWidth > 900) {
-        sidebar.classList.remove('show');
-        btn.style.display = 'none';
-      } else {
-        sidebar.classList.remove('show');
-        btn.style.display = 'block';
-      }
-
-      // ✅ สำคัญมาก
+      // ✅ สำคัญ: ปรับขนาดแผนที่เมื่อ viewport เปลี่ยน
       setTimeout(() => {
         map.invalidateSize();
       }, 200);
@@ -1433,7 +1851,10 @@
 
         // sync zone เข้า trucks[] (ถ้ามาจาก RTDB)
         const truckObj = trucks.find(tr => tr.id === truckId);
-        if (truckObj && zoneFromRTDB) truckObj.data.zone = zoneFromRTDB;
+        if (zoneFromRTDB) {
+          truckZoneMap[truckId] = zoneFromRTDB;
+          if (truckObj) truckObj.data.zone = zoneFromRTDB;
+        }
 
         // ✅ จำพิกัดล่าสุด (ใช้สร้าง marker ให้รถออฟไลน์ตอน loadTrucks)
         if (typeof data.lat === "number" && typeof data.lng === "number") {
@@ -1456,8 +1877,9 @@
         marker.setIcon(buildTruckIcon(isActive));
         updateTruckMarkerVisibility(truckId);
 
+        const displayName = truckObj?.data?.name || data.truckName || data.truckId || truckId || "-";
         const popupHtml =
-          `<b>${data.driverName || '-'}</b><br>` +
+          `<b>${displayName}</b><br>` +
           (isActive ? t('truckActiveLabel') : t('truckInactiveLabel'));
 
         if (marker.getPopup()) marker.getPopup().setContent(popupHtml);
@@ -1479,6 +1901,7 @@
         truckActiveMap[truckId] = false;
         updateTruckMarkerVisibility(truckId);
         updateTruckInfoPanel();
+        updateUsageTableVisibility();
 
         // ปิด live row กันค้าง
         const tr = usageBody.querySelector(`tr[data-truck="${truckId}"]`);
@@ -1535,6 +1958,9 @@
       const tbody = usageBody;
       let row = tbody.querySelector(`tr[data-truck="${truckId}"]`);
 
+      const working = data.isWorking === true || data.isworking === true;
+      const driverName = data.driverName || data.driver || "";
+
       let startMs =
         (typeof data.startAt === "number") ? data.startAt :
           (typeof data.lastStartAt === "number") ? data.lastStartAt :
@@ -1544,6 +1970,15 @@
       // ✅ ถ้า RTDB ไม่ส่ง startAt ตอนจบงาน ให้ใช้ค่าเดิมที่เราเคยเก็บไว้ในแถว
       if (!startMs && row && row.dataset.lastStartAt) {
         startMs = Number(row.dataset.lastStartAt);
+      }
+
+      // ✅ fallback สำหรับ live: ถ้าไม่มี startAt แต่กำลังทำงาน ให้ใช้ lastUpdate แทน
+      if (!startMs && working) {
+        const fallbackMs =
+          (typeof data.lastUpdate === "number") ? data.lastUpdate :
+            (typeof data.updatedAt === "number") ? data.updatedAt :
+              Date.now();
+        startMs = fallbackMs;
       }
 
       // ✅ fallback เพิ่ม: ถ้ามี finishedAt + baseElapsedSec ก็ย้อนหา start ได้
@@ -1556,11 +1991,11 @@
         return;
       }
 
-      // ====== สร้างแถวครั้งแรก ======
-      if (!row) {
-        row = document.createElement("tr");
-        row.dataset.truck = truckId;
-        row.dataset.live = "1";
+        // ====== สร้างแถวครั้งแรก ======
+        if (!row) {
+          row = document.createElement("tr");
+          row.dataset.truck = truckId;
+          row.dataset.live = "1";
         row.dataset.source = "rtdb";
         row.dataset.persisted = "0";
         row.dataset.lastStartAt = String(startMs);
@@ -1570,21 +2005,19 @@
 
         // ✅ เพิ่มคอลัมน์โซน
         row.innerHTML = `
-      <td>${new Date().toLocaleDateString()}</td>
-      <td class="zone">${zoneResolved || t('dashPlaceholder')}</td>
-      <td>${new Date(startMs).toLocaleTimeString()}</td>
-      <td class="end">${t('dashPlaceholder')}</td>
+  <td class="truck left">${truckId}</td>
+  <td class="driver left">${driverName || t('dashPlaceholder')}</td>
+  <td class="date left">${new Date().toLocaleDateString()}</td>
+  <td class="zone center"><span class="badge-zone">${zoneResolved || t('dashPlaceholder')}</span></td>
+  <td class="start center">${new Date(startMs).toLocaleTimeString()}</td>
 
-      <td class="dur"
-          data-live="1"
-          data-live-start-ms="${startMs}"
-          data-base-sec="${baseSecInit}">
-        ${formatDurationMs(baseSecInit * 1000)}
-      </td>
-
-      <td class="lat">${t('dashPlaceholder')}</td>
-      <td class="lng">${t('dashPlaceholder')}</td>
-    `;
+  <td class="dur center"
+      data-live="1"
+      data-live-start-ms="${startMs}"
+      data-base-sec="${baseSecInit}">
+    ${formatDurationMs(baseSecInit * 1000)}
+  </td>
+`;
 
         // ลบ placeholder row ถ้ายังอยู่
         const firstRow = tbody.querySelector("tr");
@@ -1593,9 +2026,16 @@
         tbody.appendChild(row);
       }
 
+      // อัปเดตชื่อคนขับถ้ามีการเปลี่ยนแปลงภายหลัง
+      const truckCell = row?.querySelector?.("td.truck");
+      if (truckCell) truckCell.textContent = truckId;
+      const driverCell = row?.querySelector?.("td.driver");
+      if (driverCell) driverCell.textContent = driverName || t('dashPlaceholder');
+
       // ✅ อัปเดตชื่อโซนในตารางทุกครั้ง (เผื่อ RTDB มาเติมทีหลัง)
+      row.dataset.zone = zoneResolved || "";
       const zoneCell = row.querySelector(".zone");
-      if (zoneCell) zoneCell.textContent = zoneResolved || t('dashPlaceholder');
+      if (zoneCell) zoneCell.innerHTML = `<span class="badge-zone">${zoneResolved || t('dashPlaceholder')}</span>`;
 
       // ถ้า startAt เปลี่ยน (เริ่มรอบใหม่) → ปลด persisted
       if (row.dataset.lastStartAt !== String(startMs)) {
@@ -1604,16 +2044,10 @@
       }
 
       // ====== ถ้ายังทำงานอยู่ ======
-      const working = data.isWorking === true || data.isworking === true;
-
       if (working) {
         row.dataset.live = "1";
         row.dataset.source = "rtdb";
         row.dataset.persisted = "0";
-
-        row.querySelector(".end").textContent = t('dashPlaceholder');
-        row.querySelector(".lat").textContent = t('dashPlaceholder');
-        row.querySelector(".lng").textContent = t('dashPlaceholder');
 
         const baseSec =
           (typeof data.baseElapsedSec === "number") ? data.baseElapsedSec : 0;
@@ -1699,32 +2133,75 @@
       // อัปเดต UI ตาราง
       row.dataset.live = "0";
       const durEl = row.querySelector(".dur");
-      durEl.dataset.live = "0";
-      row.querySelector(".end").textContent = new Date(endMs).toLocaleTimeString();
-      durEl.textContent = formatDurationMs(durationSec * 1000);
-
-      if (typeof endLat === "number" && typeof endLng === "number") {
-        row.querySelector(".lat").textContent = endLat.toFixed(6);
-        row.querySelector(".lng").textContent = endLng.toFixed(6);
-      } else {
-        row.querySelector(".lat").textContent = t('dashPlaceholder');
-        row.querySelector(".lng").textContent = t('dashPlaceholder');
+      if (durEl) {
+        durEl.dataset.live = "0";
+        durEl.textContent = formatDurationMs(durationSec * 1000);
       }
     }
 
     function updateUsageTableVisibility() {
+      const searchInput = document.getElementById("usageSearch");
+      const term = (searchInput?.value || "").toLowerCase().trim();
       document.querySelectorAll('#usageBody tr[data-truck]').forEach(tr => {
         const truckId = tr.dataset.truck;
 
         const fromFS = trucks.find(t => t.id === truckId)?.data?.zone || "";
-        const fromRow = tr.querySelector(".zone")?.textContent || "";
+        const fromRow = tr.dataset.zone || tr.querySelector(".zone")?.textContent || "";
         const zoneResolved = fromFS || fromRow || "";
+        if (!tr.dataset.zone && zoneResolved) tr.dataset.zone = zoneResolved;
 
-        if (!currentZoneFilter) {
-          tr.style.display = "";
-        } else {
-          tr.style.display = (zoneResolved === currentZoneFilter) ? "" : "none";
+        const isActive = !!truckActiveMap[truckId];
+        let visible = isActive;
+
+        if (visible && currentZoneFilter) {
+          visible = (zoneResolved === currentZoneFilter);
         }
+
+        if (visible && term) {
+          visible = tr.textContent.toLowerCase().includes(term);
+        }
+
+        tr.style.display = visible ? "" : "none";
+      });
+      updateUsageEmptyState();
+    }
+
+    function updateUsageEmptyState() {
+  if (!usageBody) return;
+
+  const rows = Array.from(usageBody.querySelectorAll('tr[data-truck]'));
+  const visibleRows = rows.filter(tr => tr.style.display !== "none");
+  const nonDataRows = Array.from(usageBody.querySelectorAll('tr:not([data-truck])'));
+
+  if (visibleRows.length > 0) {
+    nonDataRows.forEach(tr => tr.remove());
+    return;
+  }
+
+  const placeholder = usageBody.querySelector('tr[data-empty="1"]');
+  if (!placeholder) {
+    nonDataRows.forEach(tr => tr.remove());
+    const tr = document.createElement("tr");
+    tr.dataset.empty = "1";
+    tr.innerHTML = `<td colspan="5" class="muted">${t('noData')}</td>`;
+    usageBody.appendChild(tr);
+  }
+}
+
+    function setupUsageSearch(){
+      const searchInput = document.getElementById("usageSearch");
+      if(!searchInput) return;
+      searchInput.addEventListener("keyup", ()=>{
+        updateUsageTableVisibility();
+      });
+    }
+
+    function setupUsageRowClick(){
+      if (!usageBody) return;
+      usageBody.addEventListener("click", (e) => {
+        const row = e.target.closest('tr[data-truck]');
+        if (!row) return;
+        focusTruckOnMap(row.dataset.truck);
       });
     }
 
@@ -1746,18 +2223,32 @@
     });
 
     (async function init() {
-      document
-        .querySelectorAll("#langMenu button")
-        .forEach(b => b.classList.toggle("active", b.dataset.lang === currentLang));
+      if (langMenu) {
+        document
+          .querySelectorAll("#langMenu button")
+          .forEach(b => b.classList.toggle("active", b.dataset.lang === currentLang));
+      }
 
-      langSelect.value = currentLang;
-      await loadZonesForFilter();
-      await loadTrucks();
-      await setupDashboardListeners(); // ใช้แบบ realtime แทน updateDashboard แบบเดิม
-      setupDriverLiveListener();
-      startNoScheduleDailyReset();
-      startLiveDurationTicker();
-      applyLanguage();
+      if (langSelect) langSelect.value = currentLang;
+
+      showPageLoader();
+      try{
+        await loadZonesForFilter();
+        await loadTrucks();
+        applyZoneFilter(currentZoneFilter);
+        await setupDashboardListeners(); // ใช้แบบ realtime แทน updateDashboard แบบเดิม
+        startBinStatusTicker();
+        setupDriverLiveListener();
+        startNoScheduleDailyReset();
+        startLiveDurationTicker();
+        // setupUsageSearch();
+        setupUsageRowClick();
+        applyLanguage();
+      }catch(err){
+        console.error("INIT ERROR:", err);
+      } finally {
+        hidePageLoader();
+      }
       // ถ้าอยากให้เลือกโซนอัตโนมัติในอนาคต ค่อยเติมได้
     })();
   </script>

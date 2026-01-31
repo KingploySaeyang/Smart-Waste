@@ -32,7 +32,7 @@ window.SW_Translations.ms = {
 
     /* ---------- Login Status ---------- */
     loginSuccess: "Log masuk berjaya",
-    loginSuccessDriver: "Log masuk berjaya (Pemandu)",
+    loginSuccessDriver: "Log masuk berjaya (Kakitangan Pemandu)",
 
     /* ---------- Validation / Errors ---------- */
     errFillAll: "Sila isi semua maklumat",
@@ -60,7 +60,7 @@ window.SW_Translations.ms = {
     forgotSendSuccess: "Pautan tetapan semula telah dihantar ke",
 
     /* ---------- Forgot Password (Driver) ---------- */
-    forgotDriverTitle: "Akaun Pemandu",
+    forgotDriverTitle: "Akaun Kakitangan Pemandu",
     forgotDriverHint:
         "Sila hubungi pentadbir untuk menetapkan semula kata laluan",
 
@@ -81,7 +81,7 @@ window.SW_Translations.ms = {
     // Menu
     // ================================
     register: "Daftar Tong",
-    addDriver: "Pemandu",
+    addDriver: "Kakitangan Pemandu",
     schedule: "Jadual Kutipan",
     truck: "Lokasi Lori",
     report: "Laporan",
@@ -100,15 +100,15 @@ window.SW_Translations.ms = {
     mainTitle: "Senarai Tong Sampah",
     ariaChangeLanguage: "Tukar bahasa",
 
-    addBinHeaderTitle: "Tambah Tong Sampah",
+    addBinHeaderTitle: "Tambah tong baharu untuk menjejak status dan merancang kutipan dengan cekap",
     btnShowForm: "Tambah Tong",
 
     filterZoneLabel: "Zon",
     filterAreaLabel: "Kawasan Kecil",
     filterBinLabel: "BIN / Pemilik",
-    filterBinPlaceholder: "Tapis mengikut BIN atau nama pemilik",
-    filterZoneAll: "Semua zon",
-    filterAreaAll: "Semua",
+    filterBinPlaceholder: "🔍 Tapis mengikut BIN atau nama pemilik",
+    filterZoneAll: "📍 Semua Zon",
+    filterAreaAll: "📍 Semua",
 
     tableHeaderZone: "Zon",
     tableHeaderArea: "Kawasan",
@@ -137,6 +137,15 @@ window.SW_Translations.ms = {
     placeholderDetails: "Butiran tambahan",
 
     btnGetGps: "Dapatkan GPS",
+    btnSaveBin: "Simpan",
+    mapExit: "Keluar peta",
+    btnPickMap: "Pilih dari peta",
+    mapConfirm: "Guna titik ini",
+    mapModalTitle: "Pilih lokasi di peta",
+    mapHintClick: "Klik pada peta untuk tandakan titik",
+    mapNoPoint: "Sila pilih titik pada peta",
+    mapApplySuccess: "Koordinat disimpan daripada peta",
+    mapLibMissing: "Peta gagal dimuatkan",
     btnSave: "Simpan",
     btnReset: "Kosongkan Borang",
     btnCancel: "Batal",
@@ -191,6 +200,7 @@ window.SW_Translations.ms = {
 
     labelMacAddress: "Peranti (MAC Address)",
     btnConfirmMac: "Sahkan Peranti",
+    btnConfirmMacShort: "Sahkan",
     macSelectOffline: "Tiada peranti dalam talian",
     macSelectDefault: "Pilih peranti (MAC Address)",
     macLoading: "Memuatkan MAC Address...",
@@ -254,18 +264,18 @@ window.SW_Translations.ms = {
     // Halaman Pengurusan Pemandu
     // =====================================================
 
-    pageTitle_driver: "Smart Waste - Pemandu",
-    mainTitle_driver: "Urus Pemandu Lori Sampah",
-    pageHint_driver: "Cipta dan urus akaun pemandu mengikut zon.",
+    pageTitle_driver: "Smart Waste - Kakitangan Pemandu",
+    mainTitle_driver: "Urus Kakitangan Pemandu Lori Sampah",
+    pageHint_driver: "Cipta dan urus akaun kakitangan pemandu mengikut zon.",
 
-    addDriverTitle: "Tambah Pemandu Baharu",
-    addDriverHint: "Klik untuk mendaftar pemandu baharu",
-    btnOpenDriverForm: "Tambah Pemandu",
-    editDriverTitle: "Edit Maklumat Pemandu",
+    addDriverTitle: "Tambah Kakitangan Pemandu Baharu",
+    addDriverHint: "Klik untuk mendaftar kakitangan pemandu baharu",
+    btnOpenDriverForm: "Tambah Kakitangan Pemandu",
+    editDriverTitle: "Edit Maklumat Kakitangan Pemandu",
 
     labelDriverZone: "Zon Operasi",
-    zoneHelp: "Pilih zon dahulu. ID Pemandu akan dijana secara automatik.",
-    labelDriverId: "ID Pemandu",
+    zoneHelp: "Pilih zon dahulu. ID Kakitangan Pemandu akan dijana secara automatik.",
+    labelDriverId: "ID Kakitangan Pemandu",
     labelFullName: "Nama Penuh",
     labelPhone: "Nombor Telefon",
     labelUsername: "Nama Pengguna",
@@ -280,10 +290,10 @@ window.SW_Translations.ms = {
     passwordEditHint: "Biarkan kosong untuk kekalkan kata laluan",
 
     labelZoneFilter_driver: "Zon",
-    labelSearch_driver: "Cari ID Pemandu / Nama Pengguna",
+    labelSearch_driver: "Cari ID Kakitangan Pemandu / Nama Pengguna",
 
     thDriverZone: "Zon",
-    thDriverId: "ID Pemandu",
+    thDriverId: "ID Kakitangan Pemandu",
     thDriverUsername: "Nama Pengguna",
     thDriverFullName: "Nama Penuh",
     thDriverPhone: "Telefon",
@@ -291,24 +301,24 @@ window.SW_Translations.ms = {
     thDriverActions: "Tindakan",
 
     btnClearDriver: "Kosongkan Borang",
-    btnSaveDriver: "Simpan Pemandu",
+    btnSaveDriver: "Simpan Kakitangan Pemandu",
     btnUpdateDriver: "Simpan Perubahan",
 
-    loadingDrivers: "Memuatkan pemandu...",
-    noDrivers: "Tiada pemandu dijumpai",
+    loadingDrivers: "Memuatkan kakitangan pemandu...",
+    noDrivers: "Tiada kakitangan pemandu dijumpai",
 
     statusSelectZoneFirst: "Sila pilih zon dahulu",
-    statusComputingDriverId: "Menjana ID Pemandu...",
-    statusDriverIdExists: "ID Pemandu sudah wujud",
-    statusSavingDriver: "Menyimpan data pemandu...",
-    statusSaveDriverOk: "Pemandu berjaya disimpan",
-    statusUpdateDriverOk: "Maklumat pemandu dikemas kini",
-    statusSaveDriverError: "Gagal menyimpan pemandu",
+    statusComputingDriverId: "Menjana ID Kakitangan Pemandu...",
+    statusDriverIdExists: "ID Kakitangan Pemandu sudah wujud",
+    statusSavingDriver: "Menyimpan data kakitangan pemandu...",
+    statusSaveDriverOk: "Kakitangan pemandu berjaya disimpan",
+    statusUpdateDriverOk: "Maklumat kakitangan pemandu dikemas kini",
+    statusSaveDriverError: "Gagal menyimpan kakitangan pemandu",
 
     statusMissingNamePhone: "Sila masukkan nama dan nombor telefon",
     statusMissingUserPass: "Sila masukkan nama pengguna dan kata laluan",
 
-    confirmDeleteDriver: "Adakah anda mahu memadam (sembunyikan) pemandu ini?",
+    confirmDeleteDriver: "Adakah anda mahu memadam (sembunyikan) kakitangan pemandu ini?",
     deleteDriverFail: "Gagal memadam: ",
 
     // ================================
@@ -316,25 +326,25 @@ window.SW_Translations.ms = {
     // Pengurusan Pemandu (Bahasa Melayu)
     // ================================
     /* ---------- Page ---------- */
-    pageTitle_driver: "Smart Waste - Pemandu Lori Sampah",
-    mainTitle: "Pengurusan Pemandu Lori Sampah",
+    pageTitle_driver: "Smart Waste - Kakitangan Pemandu Lori Sampah",
+    mainTitle: "Pengurusan Kakitangan Pemandu Lori Sampah",
     pageHint:
-        "Tambah / urus akaun pengguna pemandu lori sampah mengikut zon kerja",
+        "Tambah / urus akaun pengguna kakitangan pemandu lori sampah mengikut zon kerja",
 
     /* ---------- Header ---------- */
-    addDriverTitle: "Tambah Pemandu Baharu",
-    editDriverTitle: "Kemaskini Maklumat Pemandu",
+    addDriverTitle: "Tambah Kakitangan Pemandu Baharu",
+    editDriverTitle: "Kemaskini Maklumat Kakitangan Pemandu",
     addDriverHint:
-        "Klik butang untuk menambah / mendaftar pemandu baharu",
-    btnOpenDriverForm: "Tambah Pemandu",
+        "Klik butang untuk menambah / mendaftar kakitangan pemandu baharu",
+    btnOpenDriverForm: "Tambah Kakitangan Pemandu",
 
     /* ---------- Form ---------- */
     labelZone: "Zon Kerja",
     zoneHelp:
-        "Pilih zon dahulu. Sistem akan menjana Driver ID secara automatik.",
+        "Pilih zon dahulu. Sistem akan menjana ID Kakitangan Pemandu secara automatik.",
     zonePlaceholder: "Pilih zon...",
 
-    labelDriverId: "Driver ID",
+    labelDriverId: "ID Kakitangan Pemandu",
     driverIdPlaceholder: "Pilih zon dahulu",
 
     labelFullName: "Nama Penuh",
@@ -352,18 +362,19 @@ window.SW_Translations.ms = {
         "Biarkan kosong jika tidak mahu menukar kata laluan",
 
     btnClear: "Kosongkan Borang",
-    btnSaveDriver: "Simpan Pemandu",
+    btnSaveDriver: "Simpan Kakitangan Pemandu",
     btnUpdateDriver: "Simpan Perubahan",
 
     /* ---------- Filter ---------- */
     labelZoneFilter: "Zon",
-    filterZoneAll: "Semua Zon",
-    labelSearch: "Cari Driver ID / Nama Pengguna",
-    searchPh: "Cari Driver ID / Nama Pengguna",
+    filterZoneAll: "📍 Semua Zon",
+    labelSearch: "Cari ID Kakitangan Pemandu / Nama Pengguna",
+    searchPh: "🔍 Cari ID Kakitangan Pemandu / Nama Pengguna",
 
     /* ---------- Table ---------- */
+    driverTableTitle: "Jadual Data Kakitangan Pemandu",
     thZone: "Zon",
-    thDriverId: "Driver ID",
+    thDriverId: "ID Kakitangan Pemandu",
     thUsername: "Nama Pengguna",
     thFullName: "Nama Penuh",
     thPhone: "Telefon",
@@ -376,13 +387,13 @@ window.SW_Translations.ms = {
     countPrefix: "Papar",
     countSuffix: "rekod",
 
-    loadingText: "Memuatkan data pemandu...",
-    noDrivers: "Tiada data pemandu",
+    loadingText: "Memuatkan data kakitangan pemandu...",
+    noDrivers: "Tiada data kakitangan pemandu",
 
     /* ---------- Status / Validation ---------- */
     statusSaving: "Menyimpan...",
-    statusSaveOk: "Pemandu berjaya disimpan",
-    statusUpdateOk: "Maklumat pemandu berjaya dikemaskini",
+    statusSaveOk: "Kakitangan pemandu berjaya disimpan",
+    statusUpdateOk: "Maklumat kakitangan pemandu berjaya dikemaskini",
     statusSaveErrorPrefix: "Gagal menyimpan: ",
 
     statusMissingNamePhone:
@@ -393,13 +404,13 @@ window.SW_Translations.ms = {
     statusCancelled: "Tindakan dibatalkan",
 
     errorSelectZone: "Sila pilih zon",
-    errorNoDriverId: "Driver ID belum dijana",
+    errorNoDriverId: "ID Kakitangan Pemandu belum dijana",
     errorInvalidPhone: "Nombor telefon tidak sah",
 
     /* ---------- Confirm ---------- */
     confirmTitle: "Pengesahan",
     confirmDelete:
-        "Adakah anda mahu memadam (menyembunyikan) pemandu ini?",
+        "Adakah anda mahu memadam (menyembunyikan) kakitangan pemandu ini?",
     confirmDuplicateName:
         "Nama {name} sudah wujud dalam zon ini. Teruskan?",
     confirmPhoneDuplicate:
@@ -415,9 +426,11 @@ window.SW_Translations.ms = {
     /* ---------- Page ---------- */
     pageTitle_schedule: "Smart Waste - Jadual Lori Sampah",
     mainTitle_schedule: "Jadual Lori Sampah",
+    pageSubtitle_schedule: "Menguruskan jadual operasi lori sampah di setiap kawasan.",
 
     /* ---------- Common ---------- */
     menuBtn: "☰ Menu",
+    scheduleSearch: "🔍 Cari Tarikh/Zon/Kenderaan/Pemandu/Kawasan Servis.",
 
     /* ---------- Header ---------- */
     addScheduleHeaderTitle: "Cipta Jadual Lori",
@@ -441,10 +454,10 @@ window.SW_Translations.ms = {
     truckNoData: "Tiada lori dalam zon ini",
     truckLoadFail: "Gagal memuatkan lori",
 
-    labelDriver: "Pilih Pemandu",
+    labelDriver: "Pilih Kakitangan Pemandu",
     driverPlaceholder: "Pilih zon dahulu...",
-    driverSelect: "Pilih pemandu...",
-    driverNoData: "Tiada pemandu dalam zon ini",
+    driverSelect: "Pilih kakitangan pemandu...",
+    driverNoData: "Tiada kakitangan pemandu dalam zon ini",
 
     btnClear: "Kosongkan Borang",
     btnSave: "Simpan Jadual",
@@ -455,7 +468,7 @@ window.SW_Translations.ms = {
     thWorkDate: "Tarikh Bertugas",
     thZoneArea: "Zon / Kawasan",
     thTruck: "Lori",
-    thDriver: "Pemandu",
+    thDriver: "Kakitangan Pemandu",
     thWorkStatus: "Status Kerja",
     workFinished: "Selesai",
     workNotFinished: "Belum selesai",
@@ -495,6 +508,7 @@ window.SW_Translations.ms = {
     /* ---------- Page / Title ---------- */
     pageTitle_truck: "Smart Waste - Penjejakan Lori",
     mainTitle_truck: "Penjejakan Lori",
+    pageSubtitle_truck: "Lokasi lori sampah dan status kerja masa nyata",
 
     /* ---------- Sidebar / Common ---------- */
     sidebarTitle: "Smart Waste",
@@ -512,7 +526,7 @@ window.SW_Translations.ms = {
 
     /* ---------- Zone Filter / Actions ---------- */
     zoneFilterLabel: "Pilih Zon",
-    zoneFilterAll: "Semua Zon",
+    zoneFilterAll: "📍 Semua Zon",
     createTruckBtn: "Tambah Lori",
     focusBtn: "Fokus Peta",
     noZoneSelected: "Zon belum dipilih",
@@ -540,6 +554,7 @@ window.SW_Translations.ms = {
     usageThStart: "Mula",
     usageThEnd: "Tamat",
     usageThDuration: "Tempoh",
+    usageThDriver: "Pemandu",
     usageThLat: "Latitud",
     usageThLng: "Longitud",
     loading: "Memuatkan...",
@@ -562,33 +577,44 @@ window.SW_Translations.ms = {
     noScheduleTitle: "Tiada Jadual",
     noScheduleText: "Lori ini tiada jadual hari ini",
 
-    // =====================================================
+   // =====================================================
     // DRIVER DASHBOARD (Driver.html)
     // =====================================================
 
     /* ---------- Page / Header ---------- */
-    pageTitle_driverDashboard: "Smart Waste - Papan Pemuka Pemandu",
+    pageTitle_driverDashboard: "Smart Waste - Papan Pemuka Kakitangan Pemandu",
     pageSub_driverDashboard: "Ringkasan kerja hari ini dan laluan lori sampah",
+    pageTitle_driverSchedule: "Smart Waste - Jadual Kakitangan Pemandu",
+    mainTitle_driverDashboard: "Papan Pemuka Kakitangan Pemandu",
+    mainSubtitle_driverDashboard: "Ringkasan kerja hari ini dan laluan lori sampah",
+    mainTitle_driverSchedule: "Jadual Kakitangan Pemandu",
+    mainSubtitle_driverSchedule: "Lihat semua syif (tertunggak, hari ini, syif seterusnya)",
 
     brandDriver: "Smart Waste - Pusat Kawalan",
-    driverRole: "Pemandu Lori Sampah",
+    driverRole: "Kakitangan Pemandu Lori Sampah",
 
     /* ---------- Top Right ---------- */
     btnLogout: "Log Keluar",
-    logoutConfirm: "Adakah anda mahu log keluar?",
+    logoutConfirm: "Log keluar",
 
     /* ---------- Summary Cards ---------- */
-    cardDriverLabel: "Nama Pemandu",
+    cardDriverLabel: "Nama Kakitangan Pemandu",
     cardTodayRouteLabel: "Jadual Hari Ini",
     cardWorkStatusLabel: "Status Kerja Hari Ini",
+    routeDetailDate: "Tarikh",
+    routeDetailZone: "Zon",
+    routeDetailTruck: "Lori",
+    routeDetailAreas: "Kawasan",
+    routeDetailDriver: "Pemandu",
 
-    driverCodePrefix: "ID Pemandu: ",
+    driverCodePrefix: "ID Kakitangan Pemandu: ",
     truckCodePrefix: "Kenderaan",
 
     /* ---------- Work Status ---------- */
     workStatusOff: "Belum Mula",
     workStatusOn: "Sedang Bekerja",
     workStatusDone: "Selesai",
+    workStatusLate: "Selesai lewat",
 
     statusOptionNotStart: "Belum Mula",
     statusOptionWorking: "Mengutip Sampah",
@@ -596,12 +622,36 @@ window.SW_Translations.ms = {
 
     workTimeLabel: "Masa Bekerja Hari Ini",
 
+    /* ---------- Pending Jobs ---------- */
+    pendingTitle: "Tugasan Belum Selesai",
+    pendingSubtitle: "Semua tugasan anda yang belum siap",
+    pendingEmpty: "Tiada tugasan tertunggak",
+    pendingZone: "Zon",
+    pendingTruck: "Lori",
+
+    /* ---------- Schedule Calendar ---------- */
+    scheduleTitle: "Jadual",
+    scheduleSubtitle: "Semua syif yang ditugaskan",
+    scheduleEmpty: "Tiada jadual",
+    scheduleStatusToday: "Hari ini",
+    scheduleStatusPending: "Belum selesai",
+    scheduleStatusFuture: "Syif seterusnya",
+    scheduleStatusDone: "Selesai",
+    scheduleStatusLate: "Selesai lewat",
+    scheduleLegendToday: "Hari ini",
+    scheduleLegendPending: "Belum selesai",
+    scheduleLegendLate: "Selesai lewat",
+    scheduleLegendFuture: "Syif seterusnya",
+    scheduleLegendDone: "Selesai",
+    scheduleFutureLocked: "Tidak boleh mula kerja masa depan lagi",
+
     /* ---------- Map Section ---------- */
     mapSectionTitle: "Peta Laluan",
     mapSectionSub: "Lokasi lori masa nyata dan tong sampah untuk dikutip",
 
     tabLive: "Mula Kerja",
     tabBreak: "Kerja Selesai",
+    startingWork: "Memulakan...",
 
     truckLocationPopup: "Lokasi Lori Sampah",
 
@@ -612,35 +662,41 @@ window.SW_Translations.ms = {
     gpsPermissionRequired: "Kebenaran lokasi diperlukan",
     gpsNotSupported: "GPS tidak disokong pada peranti ini",
     gpsErrorPrefix: "Ralat GPS: ",
-
+    
     /* ---------- Schedule ---------- */
     noScheduleToday: "Tiada jadual hari ini",
     noScheduleSub: "Sila hubungi pentadbir",
     noScheduleForDriver: "Tiada jadual untuk anda",
 
-    errNoZoneAssigned: "Zon belum ditetapkan untuk pemandu ini",
+    errNoZoneAssigned: "Zon belum ditetapkan untuk kakitangan pemandu ini",
     errNoTruckAssigned: "Tiada lori ditetapkan",
 
     /* ---------- Start / Finish Work ---------- */
-    errDriverOrTruckMissing: "Maklumat pemandu atau lori tidak lengkap",
+    errDriverOrTruckMissing: "Maklumat kakitangan pemandu atau lori tidak lengkap",
     errSystemNotReady: "Sistem belum sedia",
     errAlreadyWorkingOtherDevice: "Akaun ini sedang digunakan pada peranti lain",
+    errWorkAlreadyFinished: "Syif ini sudah selesai",
     errStartWorkFailed: "Gagal memulakan kerja. Sila cuba lagi",
 
     confirmFinishTitle: "Sahkan Tamat Kerja",
     confirmFinishDesc: "Adakah anda pasti ingin menamatkan kerja hari ini?",
     confirmYes: "Sahkan",
     confirmNo: "Batal",
+    confirmStartTitle: "Sahkan Mula Kerja",
+    confirmStartDesc: "Adakah anda mahu mula kerja sekarang?",
 
     /* ---------- RFID Scan Popup ---------- */
     scanTitle: "Rekod Kutipan Sampah",
     scanBinId: "Tong",
-    scanDriver: "Pemandu",
+    scanDriver: "Kakitangan Pemandu",
     scanSavedAt: "Masa",
-    scanFillBefore: "Tahap",
-    scanWeightBefore: "Berat",
+    scanFillBefore: "Tahap Tong",
+    scanWeightBefore: "Berat Sisa",
 
     /* ---------- Navigation ---------- */
+    navDashboard: "Papan Pemuka",
+    navSchedule: "Jadual",
+    btnBackDashboard: "Kembali ke Papan Pemuka",
     btnBackLogin: "Kembali ke Log Masuk",
     logoutTitle: "Log keluar?",
     logoutText: "Adakah anda mahu log keluar?",
@@ -669,6 +725,28 @@ window.SW_Translations.ms = {
 
     labelGps: "Koordinat",
     labelUpdated: "Kemas kini terakhir",
+    labelWeight: "Berat Sampah",
+
+    // =====================================================
+    // USER MAP (map.html)
+    // =====================================================
+    pageTitle_userMap: "Smart Waste - Peta",
+    mapTitle: "Peta Tong Saya",
+    mapSubtitle: "Jejaki tong dan lori kutipan secara masa nyata",
+    mapSectionBins: "Senarai Tong",
+    mapSectionTrucks: "Lori Kutipan (Dalam Talian)",
+    mapNoBins: "Tiada tong ditemui untuk anda",
+    mapNoTrucksZone: "Tiada lori di zon anda",
+    mapNoTrucksOnline: "Tiada lori dalam talian sekarang",
+    mapZoneUnknown: "Zon tidak diketahui",
+    mapTruckWorkingPrefix: "Sedang bekerja •",
+    mapPopupOnline: "● Dalam Talian",
+    mapPopupOffline: "○ Luar Talian",
+    mapPopupZoneLabel: "Zon",
+    mapPopupFillLabel: "Tahap Sampah",
+    mapPopupMacLabel: "MAC",
+    mapPopupTruckLabel: "Lori",
+    mapPopupDriverLabel: "Pemandu",
 
     statusLive: "Status:",
     binLive: "Dalam Talian",
