@@ -109,7 +109,7 @@ window.SW_Translations.en = {
     filterZoneLabel: "Zone",
     filterAreaLabel: "Sub-area",
     filterBinLabel: "BIN / Owner",
-    filterBinPlaceholder: "🔍 Filter by BIN or owner name",
+    filterBinPlaceholder: "Filter by BIN or owner name",
     filterZoneAll: "📍 All Zones",
     filterAreaAll: "📍 All Areas",
 
@@ -440,7 +440,7 @@ window.SW_Translations.en = {
     pageSubtitle_schedule: "Manage the operating schedule of garbage trucks in each area.",
     /* ---------- Common ---------- */
     menuBtn: "Menu",
-    scheduleSearch: "🔍 Search for Date/Zone/Vehicle/Driver/Service Area.",
+    scheduleSearch: "Search for Date/Zone/Vehicle/Driver/Service Area.",
 
     /* ---------- Header ---------- */
     addScheduleHeaderTitle: "Create Truck Schedule",
@@ -593,10 +593,10 @@ window.SW_Translations.en = {
     // =====================================================
 
     /* ---------- Page / Header ---------- */
-    pageTitle_driverDashboard: "Smart Waste - Driver Staff Dashboard",
+    pageTitle_driverDashboard: "Smart Waste - Driver's Today's Work",
     pageSub_driverDashboard: "Today's work overview and garbage truck route",
     pageTitle_driverSchedule: "Smart Waste - Driver Schedule",
-    mainTitle_driverDashboard: "Driver Dashboard",
+    mainTitle_driverDashboard: "Driver's Today's Work",
     mainSubtitle_driverDashboard: "Today's work overview and garbage truck route",
     mainTitle_driverSchedule: "Driver Schedule",
     mainSubtitle_driverSchedule: "See all shifts (pending, today, next shift)",
@@ -706,7 +706,7 @@ window.SW_Translations.en = {
     scanWeightBefore: "Waste Weight",
 
     /* ---------- Navigation ---------- */
-    navDashboard: "Dashboard",
+    navDashboard: "Today's Work",
     navSchedule: "Schedule",
     btnBackDashboard: "Back to Dashboard",
     btnBackLogin: "Back to Login",

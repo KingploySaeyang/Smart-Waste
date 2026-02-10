@@ -1,41 +1,70 @@
 (() => {
   const ACTIVE_NAV = document.body.dataset.activeNav || document.documentElement.dataset.activeNav || "home";
-
-  const ROLE_LABELS = {
-    th: { 0: "ผู้ดูแลระบบ", 1: "พนักงานขับรถ", 2: "ผู้ใช้ทั่วไป", admin: "ผู้ดูแลระบบ", driver: "พนักงานขับรถ", user: "ผู้ใช้ทั่วไป" },
-    en: { 0: "Administrator", 1: "Driver Staff", 2: "User", admin: "Administrator", driver: "Driver Staff", user: "User" },
-    ms: { 0: "Pentadbir", 1: "Kakitangan Pemandu", 2: "Pengguna", admin: "Pentadbir", driver: "Kakitangan Pemandu", user: "Pengguna" }
-  };
-
-  let currentLang = (window.AdminLang && typeof AdminLang.getLang === "function")
-    ? AdminLang.getLang()
+  const LangState = window.AdminLang;
+  let currentLang = (LangState && typeof LangState.getLang === "function")
+    ? LangState.getLang()
     : (localStorage.getItem("sw_lang") || "th");
+  let currentAdmin = null;
 
-  function getRoleLabelFromUser(admin) {
-    const labels = ROLE_LABELS[currentLang] || ROLE_LABELS.th;
+  function getTranslation(key) {
+    const dict = window.SW_Translations || {};
+    const langPack = dict[currentLang] || dict.th || {};
+    return langPack[key] || key;
+  }
 
-    // รองรับทั้ง role แบบ string (admin/user/driver) และ status แบบเลข (0/1/2)
-    const role = admin?.role;
-    const status = admin?.status;
+  function getRoleLabel(admin) {
+    if (admin && admin.roleLabel) return admin.roleLabel;
+    const role = admin?.role ?? admin?.status;
+    if (role === "driver" || role === 1) return getTranslation("driverRole");
+    if (role === "user" || role === 2) return getTranslation("userRole_user");
+    return getTranslation("adminRole");
+  }
 
-    if (role != null && labels[role]) return labels[role];
-    if (status != null && labels[status] != null) return labels[status];
+  function applyShellLanguage(lang) {
+    currentLang = lang || currentLang;
+    const menuToggleBtn = document.getElementById("menuToggleBtn");
+    if (menuToggleBtn) menuToggleBtn.setAttribute("aria-label", getTranslation("ariaMenuToggle"));
+    const langIconBtn = document.getElementById("langIconBtn");
+    if (langIconBtn) langIconBtn.setAttribute("aria-label", getTranslation("ariaChangeLanguage"));
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.setAttribute("aria-label", getTranslation("ariaSidebar"));
+    const loaderText = document.getElementById("loaderText");
+    if (loaderText) loaderText.textContent = getTranslation("loading");
+    if (!currentAdmin) {
+      const roleLabel = getTranslation("adminRole");
+      const roleTop = document.getElementById("adminRoleTop");
+      const roleSide = document.getElementById("adminRoleSide");
+      if (roleTop) roleTop.textContent = roleLabel;
+      if (roleSide) roleSide.textContent = roleLabel;
+    }
+    syncLangMenuActive(currentLang);
+  }
 
-    // fallback
-    return labels[2] || "User";
+  function syncLangMenuActive(lang) {
+    const langMenu = document.getElementById("langMenu");
+    const langSelect = document.getElementById("langSelect");
+    if (langSelect && lang) langSelect.value = lang;
+    if (!langMenu || !lang) return;
+    langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.lang === lang);
+    });
   }
 
   function buildShell() {
     if (document.getElementById("adminShellHeader")) return;
 
     const initialNodes = Array.from(document.body.childNodes);
+    const menuToggleLabel = getTranslation("ariaMenuToggle");
+    const langToggleLabel = getTranslation("ariaChangeLanguage");
+    const roleLabel = getTranslation("adminRole");
+    const sidebarLabel = getTranslation("ariaSidebar");
 
     const header = document.createElement("header");
     header.className = "top-header";
     header.id = "adminShellHeader";
     header.innerHTML = `
       <div class="brand-left">
-        <button class="menu-toggle" id="menuToggleBtn" type="button" aria-label="เมนู">
+        <button class="menu-toggle" id="menuToggleBtn" type="button" aria-label="${menuToggleLabel}">
           <i class="ri-menu-fill"></i>
         </button>
         <div class="brand-mark"><i class="ri-recycle-line"></i></div>
@@ -43,7 +72,7 @@
       </div>
       <div class="header-right">
         <div class="lang-switcher" style="position:relative;">
-          <button class="icon-btn" id="langIconBtn" type="button" aria-label="เปลี่ยนภาษา">
+          <button class="icon-btn" id="langIconBtn" type="button" aria-label="${langToggleLabel}">
             <i class="ri-global-line"></i>
           </button>
           <div class="lang-menu" id="langMenu">
@@ -61,7 +90,7 @@
           <img src="images/profile-icon.png" alt="Profile" class="user-avatar" id="adminAvatarTop">
           <div class="user-meta">
             <div class="user-name" id="adminNameTop">-</div>
-<div class="user-role" id="adminRoleTop">-</div>
+            <div class="user-role" id="adminRoleTop">${roleLabel}</div>
           </div>
         </div>
       </div>`;
@@ -73,13 +102,13 @@
     const sidebar = document.createElement("aside");
     sidebar.className = "sidebar";
     sidebar.id = "sidebar";
-    sidebar.setAttribute("aria-label", "เมนูด้านข้าง");
+    sidebar.setAttribute("aria-label", sidebarLabel);
     sidebar.innerHTML = `
       <div class="sidebar-user" id="profileBoxSide">
         <img src="images/profile-icon.png" alt="Profile" class="user-avatar" id="adminAvatarSide">
         <div class="user-meta">
           <div class="user-name" id="adminNameSide">-</div>
-          <div class="user-role" id="adminRoleSide">-</div>
+          <div class="user-role" id="adminRoleSide">${roleLabel}</div>
         </div>
       </div>
       <nav class="menu" data-admin-menu data-active="${ACTIVE_NAV}"></nav>
@@ -123,7 +152,7 @@
     loader.innerHTML = `
       <div class="loader-box">
         <div class="loader-spinner"></div>
-        <div class="loader-text" id="loaderText">กำลังโหลด...</div>
+        <div class="loader-text" id="loaderText">${getTranslation("loading")}</div>
       </div>`;
     document.body.appendChild(loader);
   }
@@ -177,15 +206,10 @@
         const btn = e.target.closest("button[data-lang]");
         if (!btn) return;
         const lang = btn.dataset.lang;
-        currentLang = lang;
         if (window.AdminLang && typeof AdminLang.setLang === "function") {
           AdminLang.setLang(lang);
-        }
-
-        // อัปเดต role ใน shell ทันที
-        const admin = window.ADMIN_AUTH || window.currentUser || (window.SWAuth?.getCurrentUser?.() || null);
-        if (admin) setAdminUI(admin); else {
-          try { localStorage.setItem("sw_lang", lang); } catch (_) { }
+        } else {
+          try { localStorage.setItem("sw_lang", lang); } catch (_) {}
         }
         if (window.AdminNav && typeof AdminNav.setLanguage === "function") {
           AdminNav.setLanguage(lang);
@@ -193,6 +217,7 @@
         if (window.AdminUser && typeof AdminUser.setLanguage === "function") {
           AdminUser.setLanguage(lang);
         }
+        syncLangMenuActive(lang);
         toggleLangMenu(false);
       });
       document.addEventListener("click", e => {
@@ -203,8 +228,9 @@
   }
 
   function setAdminUI(admin) {
+    currentAdmin = admin || currentAdmin;
     const displayName = admin?.fullName || admin?.displayName || admin?.username || admin?.email || admin?.uid || "-";
-    const roleLabel = getRoleLabelFromUser(admin);
+    const roleLabel = getRoleLabel(admin || currentAdmin);
 
     const nameTop = document.getElementById("adminNameTop");
     const roleTop = document.getElementById("adminRoleTop");
@@ -259,5 +285,15 @@
     bindLangMenu();
     watchAdminAuth();
     initNavLanguage();
+    applyShellLanguage(currentLang);
   });
+
+  if (LangState && typeof LangState.onChange === "function") {
+    LangState.onChange(lang => {
+      if (lang && lang !== currentLang) {
+        applyShellLanguage(lang);
+        if (currentAdmin) setAdminUI(currentAdmin);
+      }
+    });
+  }
 })();

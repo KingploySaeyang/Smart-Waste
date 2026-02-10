@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Smart Waste - ยินดีต้อนรับ</title>
+  <title>Smart Waste</title>
 
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -74,31 +74,34 @@
     /* Language Switcher */
     .lang-switcher-nav { position: relative; }
     
-    .icon-btn {
-      width: 42px; height: 42px; border-radius: 50%; border: none;
-      background: rgba(255,255,255,0.8); backdrop-filter: blur(5px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s;
+    .lang-switcher-nav .icon-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255,255,255,0.9); backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
-    .icon-btn:active { transform: scale(0.95); }
-    .icon-btn img { width: 22px; height: 22px; }
+    .lang-switcher-nav .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); }
+    .lang-switcher-nav .icon-btn:active { transform: scale(0.96); }
+    .lang-switcher-nav .icon-btn img { width: 22px; height: 22px; }
 
     .lang-menu {
-      position: absolute; top: 50px; right: 0;
-      background: white; padding: 6px; border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      display: none; flex-direction: column; width: 140px;
+      position: absolute; top: 54px; right: 0;
+      background: #fff; padding: 8px; border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      display: none; flex-direction: column; gap: 6px; min-width: 190px;
       z-index: 200;
     }
     .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
     .lang-menu button {
-      background: transparent; border: none; padding: 10px;
-      text-align: left; border-radius: 8px; font-size: 14px; cursor: pointer;
-      color: var(--text-main); font-family: "Prompt", sans-serif;
+      background: transparent; border: none; padding: 10px 12px;
+      text-align: left; border-radius: 12px; font-size: 15px; font-weight: 600;
+      cursor: pointer; color: #0f172a; font-family: "Prompt", sans-serif;
     }
     .lang-menu button:hover { background: #f1f5f9; }
-    .lang-menu button.active { background: #e0f2fe; color: var(--accent); font-weight: 600; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent, #0ea5e9); font-weight: 700; }
 
     /* --- Hero Section --- */
     .hero-container {
@@ -468,18 +471,21 @@
 
       const dict = {
         th: { 
+          pageTitle: "Smart Waste - ยินดีต้อนรับ",
           title: "ยินดีต้อนรับสู่<br><span>Smart Waste</span>",
           desc: "แพลตฟอร์มจัดการขยะอัจฉริยะที่จะช่วยให้ชีวิตของคุณง่ายขึ้น ร่วมเป็นส่วนหนึ่งในการดูแลสิ่งแวดล้อมและสร้างชุมชนที่น่าอยู่ไปด้วยกัน",
           btnStart: "เริ่มต้นใช้งาน", btnReg: "ลงทะเบียน",
           track: "ติดตามรถ", bin: "ระดับขยะ"
         },
         en: { 
+          pageTitle: "Smart Waste - Welcome",
           title: "Welcome to<br><span>Smart Waste</span>",
           desc: "An intelligent waste management platform to make your life easier. Join us in caring for the environment and creating a better community together.",
           btnStart: "Get Started", btnReg: "Register",
           track: "Tracking", bin: "Bin Status"
         },
         ms: { 
+          pageTitle: "Smart Waste - Selamat Datang",
           title: "Selamat Datang ke<br><span>Smart Waste</span>",
           desc: "Platform pengurusan sisa pintar untuk memudahkan hidup anda. Sertai kami dalam menjaga alam sekitar dan membina komuniti yang lebih baik.",
           btnStart: "Mula Sekarang", btnReg: "Daftar",
@@ -489,6 +495,7 @@
 
       function applyLanguage() {
         const d = dict[currentLang] || dict.th;
+        document.title = d.pageTitle || "Smart Waste";
         document.getElementById("heroTitle").innerHTML = d.title;
         document.getElementById("heroDesc").textContent = d.desc;
         document.getElementById("btnStart1").textContent = d.btnStart;
@@ -515,4 +522,3 @@
 
 </body>
 </html>
-

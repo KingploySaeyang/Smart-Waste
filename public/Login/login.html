@@ -106,14 +106,33 @@
 
     /* Lang Switcher (Right Top) */
     .lang-switcher { position: absolute; top: 20px; right: 20px; z-index: 50; }
-    .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-    .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
-    .icon-btn img { width: 22px; height: 22px; }
-    .lang-menu { position: absolute; top: 50px; right: 0; background: white; padding: 6px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 140px; }
+    .lang-switcher .icon-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255,255,255,0.9); backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .lang-switcher .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); }
+    .lang-switcher .icon-btn:active { transform: scale(0.96); }
+    .lang-switcher .icon-btn img { width: 22px; height: 22px; }
+    .lang-switcher .icon-btn i { font-size: 22px; color: #0f172a; }
+
+    .lang-menu {
+      position: absolute; top: 54px; right: 0;
+      background: #fff; padding: 8px; border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      display: none; flex-direction: column; gap: 6px; min-width: 190px;
+    }
     .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
-    .lang-menu button { background: transparent; border: none; padding: 10px; text-align: left; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .lang-menu button {
+      background: transparent; border: none; padding: 10px 12px; text-align: left;
+      border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: #0f172a;
+    }
     .lang-menu button:hover { background: #f1f5f9; }
-    .lang-menu button.active { background: #e0f2fe; color: var(--accent); font-weight: 600; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent, #0ea5e9); font-weight: 700; }
 
     /* --- Content Styles --- */
     .left-panel { padding: 10px; animation: slideInLeft 0.8s ease-out; }
@@ -161,6 +180,8 @@
       font-size: 1rem; color: var(--text-main); transition: 0.2s;
       position: relative; z-index: 1;
     }
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear { display: none; }
     input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
     input:focus + .input-icon { color: var(--primary); }
 
@@ -341,7 +362,12 @@
             usernameInput.value = savedUsername;
             rememberMeCheckbox.checked = true;
         }
+        resetLoginCard();
         try { setTimeout(applyLanguage, 100); } catch(e) {}
+    });
+
+    window.addEventListener("pageshow", () => {
+      resetLoginCard();
     });
 
     // --- Helpers ---
@@ -361,6 +387,30 @@
       statusEl.innerHTML = text || "";
       statusEl.className = type || "";
     }
+
+    function resetLoginCard() {
+      const card = document.querySelector(".login-card");
+      if (!card) return;
+      card.style.transform = "";
+      card.style.opacity = "";
+    }
+
+    function bindRequiredValidation(form) {
+      if (!form) return;
+      const requiredFields = form.querySelectorAll("[required]");
+      requiredFields.forEach((field) => {
+        field.addEventListener("invalid", () => {
+          if (field.validity.valueMissing) {
+            field.setCustomValidity(tr("requiredField"));
+          } else {
+            field.setCustomValidity("");
+          }
+        });
+        field.addEventListener("input", () => field.setCustomValidity(""));
+      });
+    }
+
+    bindRequiredValidation(loginForm);
 
     async function hashPassword(password) {
       const msgUint8 = new TextEncoder().encode(password);
@@ -402,7 +452,7 @@
         const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        setStatus(`<i class="ri-time-line"></i> Locked. Wait: <b>${hours}h ${minutes}m ${seconds}s</b>`, "err");
+        setStatus(`<i class="ri-time-line"></i> ${formatLockedWait(hours, minutes, seconds)}`, "err");
       };
       updateTimer();
       countdownInterval = setInterval(updateTimer, 1000);
@@ -433,7 +483,7 @@
       }
       const { value: uname } = await Swal.fire({
         title: `<span style="font-size: 20px; color: #047857;">${tr("forgotTitle")}</span>`,
-        html: `<div class="swal-custom-content"><p style="color:#64748b;font-size:14px;margin-bottom:15px;">${tr("forgotInputHint")}</p><input id="swal-input-username" class="swal2-input" placeholder="Username" style="margin: 0 auto; width: 80%;"></div>`,
+        html: `<div class="swal-custom-content"><p style="color:#64748b;font-size:14px;margin-bottom:15px;">${tr("forgotInputHint")}</p><input id="swal-input-username" class="swal2-input" placeholder="${tr("loginUsernamePh")}" style="margin: 0 auto; width: 80%;"></div>`,
         confirmButtonText: tr("forgotSendLink"),
         showCloseButton: true,
         customClass: { popup: 'swal-glass' },
@@ -467,7 +517,7 @@
       if (!username || !password) return setStatus(tr("errFillAll"), "err");
 
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Checking...';
+      submitBtn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> ${tr("checking")}`;
       setStatus("", "");
 
       try {
@@ -548,19 +598,136 @@
     let currentLang = localStorage.getItem("sw_lang") || "th";
     
     const fallbackDict = {
-      th: { pageTitle_login: "เข้าสู่ระบบ", welcomeTitle: "Smart Waste System", welcomeSubtitle: "Waste Tracking Revolution", welcomeDescription: "ระบบติดตามและบริหารจัดการขยะอัจฉริยะ...", loginTitle: "เข้าสู่ระบบ", loginHint: "เข้าสู่ระบบเพื่อจัดการข้อมูลของคุณ", loginUsernamePh: "ชื่อผู้ใช้งาน", loginPasswordPh: "รหัสผ่าน", rememberMe: "จดจำฉันไว้", forgotPassword: "ลืมรหัสผ่าน?", btnLogin: "เข้าสู่ระบบ", noAccount: "ยังไม่มีบัญชี?", signup: "ลงทะเบียน", errFillAll: "กรุณากรอกข้อมูลให้ครบ", errUserNotFound: "ไม่พบชื่อผู้ใช้นี้", errWrongPassword: "รหัสผ่านไม่ถูกต้อง", loginSuccess: "เข้าสู่ระบบสำเร็จ!", btnBack: "กลับหน้าหลัก" },
-      en: { pageTitle_login: "Login", welcomeTitle: "Smart Waste System", welcomeSubtitle: "Waste Tracking Revolution", welcomeDescription: "IoT based waste management system.", loginTitle: "Login", loginHint: "Login to manage your data", loginUsernamePh: "Username", loginPasswordPh: "Password", rememberMe: "Remember Me", forgotPassword: "Forgot Password?", btnLogin: "Sign In", noAccount: "No account yet?", signup: "Register", errFillAll: "Please fill all fields", errUserNotFound: "User not found", errWrongPassword: "Wrong password", loginSuccess: "Login Successful!", btnBack: "Back Home" },
-      ms: { pageTitle_login: "Log Masuk", welcomeTitle: "Sistem Smart Waste", welcomeSubtitle: "Revolusi Penjejakan Sisa", welcomeDescription: "Sistem pengurusan sisa berasaskan IoT.", loginTitle: "Log Masuk", loginHint: "Log masuk untuk mengurus data anda", loginUsernamePh: "Nama Pengguna", loginPasswordPh: "Kata Laluan", rememberMe: "Ingat Saya", forgotPassword: "Lupa Kata Laluan?", btnLogin: "Log Masuk", noAccount: "Tiada akaun lagi?", signup: "Daftar", errFillAll: "Sila isi semua ruangan", errUserNotFound: "Pengguna tidak ditemui", errWrongPassword: "Kata laluan salah", loginSuccess: "Log Masuk Berjaya!", btnBack: "Kembali" }
+      th: {
+        pageTitle_login: "Smart Waste - เข้าสู่ระบบ",
+        welcomeTitle: "Smart Waste System",
+        welcomeSubtitle: "ปฏิวัติการติดตามขยะ<br>แบบอัจฉริยะ",
+        welcomeDescription: "ระบบติดตามและบริหารจัดการขยะอัจฉริยะ ช่วยให้เมืองสะอาดขึ้นด้วยเทคโนโลยี IoT",
+        loginTitle: "เข้าสู่ระบบ",
+        loginHint: "เข้าสู่ระบบเพื่อจัดการข้อมูลของคุณ",
+        loginUsernamePh: "ชื่อผู้ใช้งาน",
+        loginPasswordPh: "รหัสผ่าน",
+        rememberMe: "จดจำฉันไว้",
+        forgotPassword: "ลืมรหัสผ่าน?",
+        btnLogin: "เข้าสู่ระบบ",
+        noAccount: "ยังไม่มีบัญชี?",
+        signup: "ลงทะเบียน",
+        errFillAll: "กรุณากรอกข้อมูลให้ครบ",
+        requiredField: "โปรดกรอกฟิลด์นี้",
+        errUserNotFound: "ไม่พบชื่อผู้ใช้นี้",
+        errWrongPassword: "รหัสผ่านไม่ถูกต้อง",
+        errNoEmail: "บัญชีนี้ไม่ได้ผูกอีเมล",
+        loginSuccess: "เข้าสู่ระบบสำเร็จ!",
+        loginSuccessDriver: "เข้าสู่ระบบสำเร็จ (พนักงานขับรถ)",
+        errTempLocked: "บัญชีถูกระงับชั่วคราว",
+        errorGeneric: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+        statusTempLocked: "ถูกระงับชั่วคราว",
+        statusUnlocked: "สามารถเข้าสู่ระบบได้แล้ว",
+        statusLockedWait: "ถูกล็อกชั่วคราว โปรดรอ: <b>{h}ชม {m}น {s}วิ</b>",
+        forgotTitle: "ลืมรหัสผ่าน?",
+        forgotInputHint: "กรอกชื่อผู้ใช้ (Username)",
+        forgotInputRequired: "กรุณากรอกชื่อผู้ใช้",
+        forgotSendLink: "ส่งลิงก์รีเซ็ต",
+        forgotSendSuccess: "ส่งลิงก์รีเซ็ตไปที่",
+        forgotDriverTitle: "บัญชีพนักงานขับรถ",
+        forgotDriverHint: "กรุณาติดต่อผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน",
+        btnOk: "ตกลง",
+        success: "สำเร็จ",
+        error: "ผิดพลาด",
+        btnBack: "กลับหน้าหลัก",
+        checking: "กำลังตรวจสอบ..."
+      },
+      en: {
+        pageTitle_login: "Smart Waste - Login",
+        welcomeTitle: "Smart Waste System",
+        welcomeSubtitle: "Waste Tracking<br>Revolution",
+        welcomeDescription: "IoT based waste management system.",
+        loginTitle: "Login",
+        loginHint: "Login to manage your data",
+        loginUsernamePh: "Username",
+        loginPasswordPh: "Password",
+        rememberMe: "Remember Me",
+        forgotPassword: "Forgot Password?",
+        btnLogin: "Sign In",
+        noAccount: "No account yet?",
+        signup: "Register",
+        errFillAll: "Please fill all fields",
+        requiredField: "Please fill out this field.",
+        errUserNotFound: "User not found",
+        errWrongPassword: "Wrong password",
+        errNoEmail: "This account is not linked to an email address",
+        loginSuccess: "Login Successful!",
+        loginSuccessDriver: "Login successful (Driver Staff)",
+        errTempLocked: "Account temporarily locked",
+        errorGeneric: "An error occurred. Please try again.",
+        statusTempLocked: "Temporarily locked",
+        statusUnlocked: "You can log in again",
+        statusLockedWait: "Locked. Wait: <b>{h}h {m}m {s}s</b>",
+        forgotTitle: "Forgot password?",
+        forgotInputHint: "Enter your username",
+        forgotInputRequired: "Please enter your username",
+        forgotSendLink: "Send reset link",
+        forgotSendSuccess: "Reset link has been sent to",
+        forgotDriverTitle: "Driver Staff Account",
+        forgotDriverHint: "Please contact the administrator to reset the password",
+        btnOk: "OK",
+        success: "Success",
+        error: "Error",
+        btnBack: "Back Home",
+        checking: "Checking..."
+      },
+      ms: {
+        pageTitle_login: "Smart Waste - Log Masuk",
+        welcomeTitle: "Sistem Smart Waste",
+        welcomeSubtitle: "Revolusi Penjejakan<br>Sisa",
+        welcomeDescription: "Sistem pengurusan sisa berasaskan IoT.",
+        loginTitle: "Log Masuk",
+        loginHint: "Log masuk untuk mengurus data anda",
+        loginUsernamePh: "Nama Pengguna",
+        loginPasswordPh: "Kata Laluan",
+        rememberMe: "Ingat Saya",
+        forgotPassword: "Lupa Kata Laluan?",
+        btnLogin: "Log Masuk",
+        noAccount: "Tiada akaun lagi?",
+        signup: "Daftar",
+        errFillAll: "Sila isi semua ruangan",
+        requiredField: "Sila isi ruangan ini.",
+        errUserNotFound: "Pengguna tidak ditemui",
+        errWrongPassword: "Kata laluan salah",
+        errNoEmail: "Akaun ini tidak dipautkan dengan e-mel",
+        loginSuccess: "Log Masuk Berjaya!",
+        loginSuccessDriver: "Log masuk berjaya (Kakitangan Pemandu)",
+        errTempLocked: "Akaun dikunci sementara",
+        errorGeneric: "Ralat berlaku. Sila cuba lagi.",
+        statusTempLocked: "Dikunci sementara",
+        statusUnlocked: "Anda boleh log masuk semula",
+        statusLockedWait: "Dikunci. Sila tunggu: <b>{h}j {m}min {s}s</b>",
+        forgotTitle: "Lupa kata laluan?",
+        forgotInputHint: "Masukkan nama pengguna",
+        forgotInputRequired: "Sila masukkan nama pengguna",
+        forgotSendLink: "Hantar pautan tetapan semula",
+        forgotSendSuccess: "Pautan tetapan semula telah dihantar ke",
+        forgotDriverTitle: "Akaun Kakitangan Pemandu",
+        forgotDriverHint: "Sila hubungi pentadbir untuk menetapkan semula kata laluan",
+        btnOk: "OK",
+        success: "Berjaya",
+        error: "Ralat",
+        btnBack: "Kembali",
+        checking: "Sedang menyemak..."
+      }
     };
 
     function tr(key) { 
-      const dict = (window.SW_Translations && window.SW_Translations[currentLang]) || fallbackDict[currentLang] || fallbackDict.en; 
-      return dict[key] || fallbackDict.th[key] || key; 
+      const primary = window.SW_Translations && window.SW_Translations[currentLang];
+      const fallback = fallbackDict[currentLang] || fallbackDict.en;
+      return (primary && primary[key]) || fallback[key] || fallbackDict.th[key] || key; 
     }
 
     function applyLanguage() {
       document.title = tr("pageTitle_login");
-      setText("txtWelcomeSubtitle", tr("welcomeSubtitle") || "Waste Tracking Revolution");
+      const backBtn = document.querySelector(".btn-back-desktop");
+      if (backBtn) backBtn.setAttribute("title", tr("btnBack"));
+      setHtml("txtWelcomeSubtitle", tr("welcomeSubtitle") || "Waste Tracking<br>Revolution");
       setText("txtWelcomeDescription", tr("welcomeDescription"));
       setText("txtLoginTitle", tr("loginTitle"));
       setText("txtLoginHint", tr("loginHint"));
@@ -576,7 +743,15 @@
     }
 
     function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+    function setHtml(id, value) { const el = document.getElementById(id); if (el) el.innerHTML = value; }
     function setPlaceholder(id, value) { const el = document.getElementById(id); if (el) el.placeholder = value; }
+    function formatLockedWait(hours, minutes, seconds) {
+      const tpl = tr("statusLockedWait") || "Locked. Wait: <b>{h}h {m}m {s}s</b>";
+      return tpl
+        .replace("{h}", hours)
+        .replace("{m}", minutes)
+        .replace("{s}", seconds);
+    }
 
     langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
     langMenu.addEventListener("click", (e) => { 
@@ -592,4 +767,3 @@
   </script>
 </body>
 </html>
-

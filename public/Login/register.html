@@ -81,14 +81,33 @@
 
     /* Lang Switcher */
     .lang-switcher { position: absolute; top: 20px; right: 20px; z-index: 50; }
-    .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-    .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
-    .icon-btn img { width: 22px; height: 22px; }
-    .lang-menu { position: absolute; top: 50px; right: 0; background: white; padding: 6px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; flex-direction: column; width: 140px; }
+    .lang-switcher .icon-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255,255,255,0.9); backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .lang-switcher .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); }
+    .lang-switcher .icon-btn:active { transform: scale(0.96); }
+    .lang-switcher .icon-btn img { width: 22px; height: 22px; }
+    .lang-switcher .icon-btn i { font-size: 22px; color: #0f172a; }
+
+    .lang-menu {
+      position: absolute; top: 54px; right: 0;
+      background: #fff; padding: 8px; border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      display: none; flex-direction: column; gap: 6px; min-width: 190px;
+    }
     .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
-    .lang-menu button { background: transparent; border: none; padding: 10px; text-align: left; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .lang-menu button {
+      background: transparent; border: none; padding: 10px 12px; text-align: left;
+      border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: #0f172a;
+    }
     .lang-menu button:hover { background: #f1f5f9; }
-    .lang-menu button.active { background: #e0f2fe; color: var(--accent); font-weight: 600; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent, #0ea5e9); font-weight: 700; }
 
     /* Desktop Back Button */
     .btn-back-desktop {
@@ -203,11 +222,11 @@
   <div class="bg-shape blob-2"></div>
   <div class="bg-shape blob-3"></div>
 
-  <a href="index.html" class="mobile-logo-fixed">
+  <a href="#" class="mobile-logo-fixed js-back">
     <div class="brand-badge"><i class="ri-recycle-line"></i> Smart Waste</div>
   </a>
 
-  <a href="index.html" class="btn-back-desktop" title="กลับหน้าหลัก">
+  <a href="#" class="btn-back-desktop js-back" title="กลับหน้าหลัก">
     <i class="ri-arrow-left-line"></i>
   </a>
 
@@ -316,6 +335,23 @@
       }
     }
 
+    function bindRequiredValidation(form) {
+      if (!form) return;
+      const requiredFields = form.querySelectorAll("[required]");
+      requiredFields.forEach((field) => {
+        field.addEventListener("invalid", () => {
+          if (field.validity.valueMissing) {
+            field.setCustomValidity(tr("requiredField"));
+          } else {
+            field.setCustomValidity("");
+          }
+        });
+        field.addEventListener("input", () => field.setCustomValidity(""));
+      });
+    }
+
+    bindRequiredValidation(form);
+
     // --- Language Logic ---
     const langIconBtn = $("langIconBtn");
     const langMenu = $("langMenu");
@@ -323,17 +359,93 @@
     
     // Fallback Dictionary
     const fallbackDict = {
-      th: { regHeader: "ลงทะเบียน", regHint: "กรอกข้อมูลเพื่อเริ่มต้นใช้งาน", btnReg: "ยืนยันการลงทะเบียน", haveAccount: "มีบัญชีอยู่แล้ว?", btnLogin: "เข้าสู่ระบบ", errUserExists: "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว", errEmailExists: "อีเมลนี้ถูกใช้งานแล้ว", errPassMatch: "รหัสผ่านไม่ตรงกัน", successReg: "ลงทะเบียนสำเร็จ!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "ลงทะเบียนเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที" },
-      en: { regHeader: "Register", regHint: "Fill details to create account", btnReg: "Register", haveAccount: "Already have an account?", btnLogin: "Sign In", errUserExists: "Username already taken", errEmailExists: "Email already in use", errPassMatch: "Passwords do not match", successReg: "Registration Successful!", welcomeTitle: "Join Us & Start Tracking", welcomeDesc: "Register to access smart waste management, track trucks, and view statistics instantly." },
-      ms: { regHeader: "Daftar", regHint: "Isi butiran untuk membuat akaun", btnReg: "Daftar", haveAccount: "Sudah mempunyai akaun?", btnLogin: "Log Masuk", errUserExists: "Nama pengguna telah diambil", errEmailExists: "E-mel sudah digunakan", errPassMatch: "Kata laluan tidak sepadan", successReg: "Pendaftaran Berjaya!", welcomeTitle: "Sertai Kami & Mula Menjejak", welcomeDesc: "Daftar untuk mengakses pengurusan sisa pintar, menjejak lori, dan melihat statistik dengan serta-merta." }
+      th: {
+        pageTitle_register: "Smart Waste - ลงทะเบียน",
+        regHeader: "ลงทะเบียน",
+        regHint: "กรอกข้อมูลเพื่อเริ่มต้นใช้งาน",
+        btnReg: "ยืนยันการลงทะเบียน",
+        haveAccount: "มีบัญชีอยู่แล้ว?",
+        btnLogin: "เข้าสู่ระบบ",
+        errUserExists: "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว",
+        errEmailExists: "อีเมลนี้ถูกใช้งานแล้ว",
+        errPassMatch: "รหัสผ่านไม่ตรงกัน",
+        requiredField: "โปรดกรอกฟิลด์นี้",
+        errNameTooShort: "ชื่อต้องยาวอย่างน้อย 3 ตัวอักษร",
+        errPassTooShort: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
+        processing: "กำลังดำเนินการ...",
+        successReg: "ลงทะเบียนสำเร็จ!",
+        welcomeTitle: "ร่วมกับเรา<br>เริ่มติดตามได้ทันที",
+        welcomeDesc: "ลงทะเบียนเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที",
+        fullNamePh: "ชื่อ-นามสกุล",
+        usernamePh: "ชื่อผู้ใช้",
+        phonePh: "เบอร์โทรศัพท์",
+        emailPh: "อีเมล",
+        passwordPh: "รหัสผ่าน",
+        confirmPasswordPh: "ยืนยันรหัสผ่าน",
+        btnBack: "กลับหน้าหลัก"
+      },
+      en: {
+        pageTitle_register: "Smart Waste - Register",
+        regHeader: "Register",
+        regHint: "Fill details to create account",
+        btnReg: "Register",
+        haveAccount: "Already have an account?",
+        btnLogin: "Sign In",
+        errUserExists: "Username already taken",
+        errEmailExists: "Email already in use",
+        errPassMatch: "Passwords do not match",
+        requiredField: "Please fill out this field.",
+        errNameTooShort: "Name is too short",
+        errPassTooShort: "Password must be at least 6 characters",
+        processing: "Processing...",
+        successReg: "Registration Successful!",
+        welcomeTitle: "Join Us &<br>Start Tracking",
+        welcomeDesc: "Register to access smart waste management, track trucks, and view statistics instantly.",
+        fullNamePh: "Full name",
+        usernamePh: "Username",
+        phonePh: "Phone",
+        emailPh: "Email address",
+        passwordPh: "Password",
+        confirmPasswordPh: "Confirm password",
+        btnBack: "Back Home"
+      },
+      ms: {
+        pageTitle_register: "Smart Waste - Daftar",
+        regHeader: "Daftar",
+        regHint: "Isi butiran untuk membuat akaun",
+        btnReg: "Daftar",
+        haveAccount: "Sudah mempunyai akaun?",
+        btnLogin: "Log Masuk",
+        errUserExists: "Nama pengguna telah diambil",
+        errEmailExists: "E-mel sudah digunakan",
+        errPassMatch: "Kata laluan tidak sepadan",
+        requiredField: "Sila isi ruangan ini.",
+        errNameTooShort: "Nama terlalu pendek",
+        errPassTooShort: "Kata laluan mesti sekurang-kurangnya 6 aksara",
+        processing: "Sedang memproses...",
+        successReg: "Pendaftaran Berjaya!",
+        welcomeTitle: "Sertai Kami &<br>Mula Menjejak",
+        welcomeDesc: "Daftar untuk mengakses pengurusan sisa pintar, menjejak lori, dan melihat statistik dengan serta-merta.",
+        fullNamePh: "Nama penuh",
+        usernamePh: "Nama pengguna",
+        phonePh: "Telefon",
+        emailPh: "Alamat e-mel",
+        passwordPh: "Kata laluan",
+        confirmPasswordPh: "Sahkan kata laluan",
+        btnBack: "Kembali ke Laman Utama"
+      }
     };
 
     function tr(key) { 
-      const dict = (window.SW_Translations && window.SW_Translations[currentLang]) || fallbackDict[currentLang] || fallbackDict.en; 
-      return dict[key] || fallbackDict.th[key] || key; 
+      const primary = window.SW_Translations && window.SW_Translations[currentLang];
+      const fallback = fallbackDict[currentLang] || fallbackDict.en;
+      return (primary && primary[key]) || fallback[key] || fallbackDict.th[key] || key; 
     }
 
     function applyLanguage() {
+      document.title = tr("pageTitle_register");
+      const backBtn = document.querySelector(".btn-back-desktop");
+      if (backBtn) backBtn.setAttribute("title", tr("btnBack"));
       // Text Content
       if($("txtRegHeader")) $("txtRegHeader").textContent = tr("regHeader");
       if($("txtRegHint")) $("txtRegHint").textContent = tr("regHint");
@@ -342,16 +454,16 @@
       if($("backLoginBtn")) $("backLoginBtn").textContent = tr("btnLogin");
       
       // Welcome Text (Left Panel)
-      if($("txtJoinSubtitle")) $("txtJoinSubtitle").innerHTML = tr("welcomeTitle").replace("&", "<br>");
+      if($("txtJoinSubtitle")) $("txtJoinSubtitle").innerHTML = tr("welcomeTitle");
       if($("txtJoinDesc")) $("txtJoinDesc").textContent = tr("welcomeDesc");
       
       // Placeholders
-      if($("fullName")) $("fullName").placeholder = currentLang === 'th' ? "ชื่อ-นามสกุล" : "Full Name";
-      if($("username")) $("username").placeholder = "Username";
-      if($("phone")) $("phone").placeholder = currentLang === 'th' ? "เบอร์โทรศัพท์" : "Phone";
-      if($("email")) $("email").placeholder = currentLang === 'th' ? "อีเมล (Email)" : "Email Address";
-      if($("password")) $("password").placeholder = currentLang === 'th' ? "รหัสผ่าน" : "Password";
-      if($("confirmPassword")) $("confirmPassword").placeholder = currentLang === 'th' ? "ยืนยันรหัสผ่าน" : "Confirm Password";
+      if($("fullName")) $("fullName").placeholder = tr("fullNamePh");
+      if($("username")) $("username").placeholder = tr("usernamePh");
+      if($("phone")) $("phone").placeholder = tr("phonePh");
+      if($("email")) $("email").placeholder = tr("emailPh");
+      if($("password")) $("password").placeholder = tr("passwordPh");
+      if($("confirmPassword")) $("confirmPassword").placeholder = tr("confirmPasswordPh");
 
       langMenu.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.lang === currentLang));
     }
@@ -364,6 +476,21 @@
         applyLanguage(); 
         langMenu.classList.remove("show"); 
       } 
+    });
+
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "index.html";
+      }
+    }
+
+    document.querySelectorAll(".js-back").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        goBack();
+      });
     });
 
     // --- Navigation (Animation) ---
@@ -379,8 +506,8 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = { fullName: $("fullName").value.trim(), username: $("username").value.trim(), phone: $("phone").value.replace(/\D/g, ""), email: $("email").value.trim(), pass: $("password").value, confirm: $("confirmPassword").value };
-      if(data.fullName.length < 3) return showErr("Name is too short");
-      if(data.pass.length < 6) return showErr("Password must be 6+ chars");
+      if(data.fullName.length < 3) return showErr(tr("errNameTooShort"));
+      if(data.pass.length < 6) return showErr(tr("errPassTooShort"));
       if(data.pass !== data.confirm) return showErr(tr("errPassMatch"));
       
       setLoading(true);
@@ -421,7 +548,7 @@
     
     function setLoading(state) { 
       submitBtn.disabled = state; 
-      submitBtn.innerHTML = state ? '<i class="ri-loader-4-line ri-spin"></i> Processing...' : `<span id="txtBtnReg">${tr("btnReg")}</span> <i class="ri-arrow-right-line"></i>`; 
+      submitBtn.innerHTML = state ? `<i class="ri-loader-4-line ri-spin"></i> ${tr("processing")}` : `<span id="txtBtnReg">${tr("btnReg")}</span> <i class="ri-arrow-right-line"></i>`; 
     }
     
     // Init Lang
@@ -434,4 +561,3 @@
   </script>
 </body>
 </html>
-

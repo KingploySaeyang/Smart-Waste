@@ -34,7 +34,7 @@
     en: {
       register: "Register Bin",
       addDriver: "Driver Staff",
-      schedule: "Truck Schedule",
+      schedule: "Collection Schedule",
       truck: "Truck Tracking",
       report: "Reports",
       logout: "Logout",

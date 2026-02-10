@@ -89,7 +89,7 @@
 
                             <label class="toolbar-field search-box">
                                 <span id="filterBinLabel">BIN / เจ้าของ</span>
-                                <input id="filterBinText" type="text" placeholder="🔍 กรองตาม BIN หรือชื่อเจ้าของ">
+                                <input id="filterBinText" type="text" placeholder="กรองตาม BIN หรือชื่อเจ้าของ">
                             </label>
                         </div>
                     </div>
@@ -549,6 +549,8 @@
 
         let duplicatedRfidDetected = false;
         let isHandlingRfid = false;
+        let rfidCheckTimer = null;
+        let lastRfidChecked = "";
         const handlingMacs = new Set(); // ⭐ เพิ่มตรงนี้
 
         const LangState = window.AdminLang;
@@ -1346,12 +1348,39 @@
             await assignBinIdForZone(z, a);
         });
 
+        rfidEl.addEventListener("input", () => {
+            const rfidValue = rfidEl.value.trim().toUpperCase();
+            if (!rfidValue) {
+                duplicatedRfidDetected = false;
+                lastRfidChecked = "";
+                return;
+            }
+            if (rfidCheckTimer) clearTimeout(rfidCheckTimer);
+            rfidCheckTimer = setTimeout(async () => {
+                const currentValue = rfidEl.value.trim().toUpperCase();
+                if (!currentValue || currentValue === lastRfidChecked) return;
+                lastRfidChecked = currentValue;
+                try {
+                    const dup = await checkDuplicateRfidRealtime(currentValue);
+                    if (dup) {
+                        duplicatedRfidDetected = true;
+                        showDuplicateRfidModal(dup, currentValue);
+                    }
+                } catch (e) {
+                    console.warn("RFID duplicate check failed", e);
+                }
+            }, 120);
+        });
+
         rfidEl.addEventListener('blur', async () => {
             const rfidValue = rfidEl.value.trim().toUpperCase();
             if (!rfidValue) return;
+            if (rfidValue === lastRfidChecked) return;
 
             const dup = await checkDuplicateRfidRealtime(rfidValue);
             if (dup) {
+                duplicatedRfidDetected = true;
+                lastRfidChecked = rfidValue;
                 showDuplicateRfidModal(dup, rfidValue);
             }
         });
@@ -2060,7 +2089,8 @@
 
 
             const modalHtml = `
-        <div class="modal-title">${t('duplicateModalTitle')}</div>
+        <div class="modal-header">
+            <div class="modal-title">${t('duplicateModalTitle')}</div>
             <button type="button" class="modal-close" id="btnDupCloseTop">✕</button>
         </div>
         <div style="padding: 15px 0;">
@@ -2178,7 +2208,7 @@ ${t('duplicateRfidTitle')}: ${rfid}
         }
 
 
-        function closeDuplicateModal() {
+        async function closeDuplicateModal() {
             duplicatedRfidDetected = false;
             editModalBackdrop.classList.remove("show");
             lockBodyScroll(false);
@@ -2190,6 +2220,13 @@ ${t('duplicateRfidTitle')}: ${rfid}
             rfidEl.value = "";
             binForm.classList.remove("rfid-entered");
 
+            try {
+                await releaseConfirmedMac();
+            } catch (e) {
+                console.warn("Release MAC failed", e);
+            }
+            detachRfidListener();
+            clearForm();
             setTimeout(() => {
                 rfidEl.focus();
             }, 300);
@@ -2506,6 +2543,7 @@ ${t('duplicateRfidTitle')}: ${rfid}
             if (window.AdminProfile) {
                 AdminProfile.setLanguage(currentLang);
             }
+            renderBinsTable();
             if (!isUpdate) {
                 renderZoneSelect();
                 renderZoneList();
@@ -2619,9 +2657,21 @@ ${t('duplicateRfidTitle')}: ${rfid}
                 if (!data?.tagId) return;
 
                 const rfidValue = data.tagId.toUpperCase();
+                if (rfidCheckTimer) clearTimeout(rfidCheckTimer);
+                lastRfidChecked = rfidValue;
                 rfidEl.value = rfidValue;
                 rfidEl.dispatchEvent(new Event("input"));
                 rfidEl.focus();
+
+                try {
+                    const dup = await checkDuplicateRfidRealtime(rfidValue);
+                    if (dup) {
+                        duplicatedRfidDetected = true;
+                        showDuplicateRfidModal(dup, rfidValue);
+                    }
+                } catch (e) {
+                    console.warn("RFID duplicate check failed", e);
+                }
 
                 // เคลียร์หลังรับ
                 await ref.remove();

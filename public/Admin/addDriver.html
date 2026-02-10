@@ -77,6 +77,7 @@
       justify-content: flex-end;
       gap: 12px;
       flex-shrink: 0;
+      margin-left: auto;
     }
 
     .content {
@@ -162,6 +163,12 @@
     input:focus,
     select:focus {
       border-color: rgba(14, 165, 233, .55);
+    }
+
+    /* Hide browser-native password reveal icon to avoid duplicate eye button */
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+      display: none;
     }
 
     .row {
@@ -551,7 +558,7 @@
     @media (max-width: 900px) {
       .page-actions {
         width: 100%;
-        justify-content: flex-start;
+        justify-content: flex-end;
         padding-top: 4px;
       }
 
@@ -690,51 +697,74 @@
   </style>
 
   <style>
-    /* Language Dropdown (match truck page) */
+    /* Language Dropdown (match login style) */
     .lang-switcher {
       position: relative;
     }
 
+    .lang-switcher .icon-btn {
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .lang-switcher .icon-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+    }
+    .lang-switcher .icon-btn:active { transform: scale(0.96); }
+
     .lang-menu {
       position: absolute;
-      top: 46px;
+      top: 54px;
       right: 0;
       background: #ffffff;
-      border-radius: 14px;
-      padding: 6px;
-      min-width: 180px;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+      border-radius: 18px;
+      padding: 8px;
+      min-width: 190px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
       display: none;
+      flex-direction: column;
+      gap: 6px;
       z-index: 1200;
     }
 
     .lang-menu.show {
-      display: block;
+      display: flex;
     }
 
     .lang-menu button {
       width: 100%;
       text-align: left;
-      padding: 10px 14px;
-      border-radius: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
       border: none;
       background: transparent;
       font-size: 15px;
+      font-weight: 600;
       cursor: pointer;
       transition: background 0.15s ease;
+      color: #0f172a;
     }
 
     .lang-menu button:hover {
-      background: #e0f2fe;
+      background: #f1f5f9;
     }
 
     .lang-menu button:active {
-      background: #bae6fd;
+      background: #e2e8f0;
     }
 
     .lang-menu button.active {
       background: #e0f2fe;
-      font-weight: 600;
+      color: var(--accent, #0ea5e9);
+      font-weight: 700;
     }
   </style>
 </head>

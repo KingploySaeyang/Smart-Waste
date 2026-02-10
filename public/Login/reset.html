@@ -11,6 +11,10 @@
 
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../i18n/lang.js"></script>
+  <script src="../i18n/th.js"></script>
+  <script src="../i18n/en.js"></script>
+  <script src="../i18n/ms.js"></script>
 
   <style>
     /* --- CSS Core Theme --- */
@@ -55,6 +59,35 @@
       font-weight: 600; font-size: 14px; border: 1px solid rgba(16, 185, 129, 0.2);
       box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
+
+    /* Lang Switcher (Right Top) */
+    .lang-switcher { position: absolute; top: 20px; right: 20px; z-index: 50; }
+    .lang-switcher .icon-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255,255,255,0.9); backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .lang-switcher .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); }
+    .lang-switcher .icon-btn:active { transform: scale(0.96); }
+    .lang-switcher .icon-btn i { font-size: 22px; color: #0f172a; }
+
+    .lang-menu {
+      position: absolute; top: 54px; right: 0;
+      background: #fff; padding: 8px; border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      display: none; flex-direction: column; gap: 6px; min-width: 190px;
+    }
+    .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
+    .lang-menu button {
+      background: transparent; border: none; padding: 10px 12px; text-align: left;
+      border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: #0f172a;
+    }
+    .lang-menu button:hover { background: #f1f5f9; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent, #0ea5e9); font-weight: 700; }
 
     /* Main Container */
     .container {
@@ -103,6 +136,8 @@
       border: 2px solid transparent; background: #f8fafc; border-radius: 14px;
       font-size: 1rem; color: var(--text-main); transition: 0.2s;
     }
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear { display: none; }
     input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
     input:focus + .input-icon { color: var(--primary); }
 
@@ -126,6 +161,7 @@
 
     /* Responsive */
     @media (max-width: 600px) {
+      .lang-switcher { top: 16px; right: 16px; }
       .mobile-logo-fixed { display: flex; } /* โชว์โลโก้บนมือถือ */
       .card { padding: 30px 20px; max-width: 100%; }
       h2 { font-size: 1.6rem; }
@@ -144,25 +180,33 @@
     <div class="brand-badge"><i class="ri-recycle-line"></i> Smart Waste</div>
   </a>
 
+  <div class="lang-switcher">
+    <button class="icon-btn" id="langIconBtn" type="button" aria-label="Change language">
+      <i class="ri-global-line" aria-hidden="true"></i>
+    </button>
+    <div class="lang-menu" id="langMenu">
+      <button type="button" data-lang="th">🇹🇭 ไทย</button>
+      <button type="button" data-lang="en">🇬🇧 English</button>
+      <button type="button" data-lang="ms">🇲🇾 Bahasa Melayu</button>
+    </div>
+  </div>
+
   <div class="container">
     <div class="card">
-      <div class="icon-header">
-        <i class="ri-lock-reset-line"></i>
-      </div>
-      <h2>ตั้งรหัสผ่านใหม่</h2>
-      <p class="desc">สร้างรหัสผ่านใหม่เพื่อเข้าใช้งานบัญชีของคุณ<br>กรุณาใช้อย่างน้อย 6 ตัวอักษร</p>
+      <h2 id="resetTitle">ตั้งรหัสผ่านใหม่</h2>
+      <p class="desc" id="resetDesc">สร้างรหัสผ่านใหม่เพื่อเข้าใช้งานบัญชีของคุณ<br>กรุณาใช้อย่างน้อย 6 ตัวอักษร</p>
       
       <form id="resetForm">
         <div class="input-wrapper">
           <i class="ri-lock-2-line input-icon"></i>
-          <input type="password" id="newPassword" placeholder="รหัสผ่านใหม่ (New Password)" required minlength="6">
+          <input type="password" id="newPassword" placeholder="รหัสผ่านใหม่" required minlength="6">
           <i class="ri-eye-off-line toggle-password" onclick="togglePass()"></i>
         </div>
         <button type="submit" id="btnSubmit">ยืนยันการเปลี่ยนรหัส</button>
       </form>
 
       <a href="login.html" class="back-link">
-        <i class="ri-arrow-left-line"></i> กลับไปหน้าเข้าสู่ระบบ
+        <i class="ri-arrow-left-line"></i> <span id="resetBackLink">กลับไปหน้าเข้าสู่ระบบ</span>
       </a>
     </div>
   </div>
@@ -179,6 +223,149 @@
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+
+    // --- i18n (Reset Password) ---
+    const fallbackDict = {
+      th: {
+        pageTitle_reset: "Smart Waste - ตั้งรหัสผ่านใหม่",
+        resetTitle: "ตั้งรหัสผ่านใหม่",
+        resetDesc: "สร้างรหัสผ่านใหม่เพื่อเข้าใช้งานบัญชีของคุณ<br>กรุณาใช้อย่างน้อย 6 ตัวอักษร",
+        resetPasswordPh: "รหัสผ่านใหม่",
+        resetSubmit: "ยืนยันการเปลี่ยนรหัส",
+        resetBack: "กลับไปหน้าเข้าสู่ระบบ",
+        invalidLinkTitle: "ลิงก์ไม่ถูกต้อง",
+        invalidLinkText: "ลิงก์นี้อาจหมดอายุหรือถูกใช้งานไปแล้ว",
+        invalidLinkConfirm: "กลับหน้าเข้าสู่ระบบ",
+        shortPassTitle: "รหัสผ่านสั้นเกินไป",
+        shortPassText: "กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร",
+        saving: "กำลังบันทึก...",
+        successTitle: "สำเร็จ!",
+        successText: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว",
+        successConfirm: "เข้าสู่ระบบทันที",
+        errorTitle: "ไม่สำเร็จ",
+        errorConfirm: "ตกลง",
+        errExpiredLink: "ลิงก์หมดอายุแล้ว กรุณาขอลิงก์ใหม่",
+        errInvalidLink: "ลิงก์ไม่ถูกต้องหรือถูกใช้ไปแล้ว",
+        errWeakPassword: "รหัสผ่านง่ายเกินไป",
+        errorGeneric: "เกิดข้อผิดพลาด กรุณาลองใหม่"
+      },
+      en: {
+        pageTitle_reset: "Smart Waste - Reset Password",
+        resetTitle: "Reset Password",
+        resetDesc: "Create a new password to access your account.<br>Please use at least 6 characters.",
+        resetPasswordPh: "New password",
+        resetSubmit: "Confirm password reset",
+        resetBack: "Back to login",
+        invalidLinkTitle: "Invalid link",
+        invalidLinkText: "This link may have expired or already been used.",
+        invalidLinkConfirm: "Back to login",
+        shortPassTitle: "Password too short",
+        shortPassText: "Please use at least 6 characters.",
+        saving: "Saving...",
+        successTitle: "Success!",
+        successText: "Your password has been reset.",
+        successConfirm: "Sign in now",
+        errorTitle: "Failed",
+        errorConfirm: "OK",
+        errExpiredLink: "This link has expired. Please request a new one.",
+        errInvalidLink: "This link is invalid or already used.",
+        errWeakPassword: "Password is too weak",
+        errorGeneric: "Something went wrong. Please try again."
+      },
+      ms: {
+        pageTitle_reset: "Smart Waste - Tetapkan Semula Kata Laluan",
+        resetTitle: "Tetapkan Semula Kata Laluan",
+        resetDesc: "Cipta kata laluan baharu untuk akses akaun anda.<br>Sila guna sekurang-kurangnya 6 aksara.",
+        resetPasswordPh: "Kata laluan baharu",
+        resetSubmit: "Sahkan penetapan semula",
+        resetBack: "Kembali ke log masuk",
+        invalidLinkTitle: "Pautan tidak sah",
+        invalidLinkText: "Pautan ini mungkin tamat tempoh atau telah digunakan.",
+        invalidLinkConfirm: "Kembali ke log masuk",
+        shortPassTitle: "Kata laluan terlalu pendek",
+        shortPassText: "Sila guna sekurang-kurangnya 6 aksara.",
+        saving: "Menyimpan...",
+        successTitle: "Berjaya!",
+        successText: "Kata laluan berjaya ditetapkan semula.",
+        successConfirm: "Log masuk sekarang",
+        errorTitle: "Gagal",
+        errorConfirm: "OK",
+        errExpiredLink: "Pautan telah tamat tempoh. Sila minta pautan baharu.",
+        errInvalidLink: "Pautan tidak sah atau telah digunakan.",
+        errWeakPassword: "Kata laluan terlalu lemah",
+        errorGeneric: "Ralat berlaku. Sila cuba lagi."
+      }
+    };
+
+    let currentLang = localStorage.getItem("sw_lang") || "th";
+    document.documentElement.setAttribute("lang", currentLang);
+
+    function tr(key) {
+      const primary = window.SW_Translations && window.SW_Translations[currentLang];
+      const fallback = fallbackDict[currentLang] || fallbackDict.en;
+      return (primary && primary[key]) || fallback[key] || fallbackDict.th[key] || key;
+    }
+
+    function applyLanguage() {
+      document.title = tr("pageTitle_reset");
+      const titleEl = document.getElementById("resetTitle");
+      const descEl = document.getElementById("resetDesc");
+      const passEl = document.getElementById("newPassword");
+      const backEl = document.getElementById("resetBackLink");
+      if (titleEl) titleEl.textContent = tr("resetTitle");
+      if (descEl) descEl.innerHTML = tr("resetDesc");
+      if (passEl) passEl.placeholder = tr("resetPasswordPh");
+      if (backEl) backEl.textContent = tr("resetBack");
+      const btn = document.getElementById("btnSubmit");
+      if (btn && !btn.disabled) btn.textContent = tr("resetSubmit");
+    }
+
+    applyLanguage();
+
+    const langIconBtn = document.getElementById("langIconBtn");
+    const langMenu = document.getElementById("langMenu");
+
+    function updateLangMenu() {
+      if (!langMenu) return;
+      langMenu.querySelectorAll("button").forEach(b => {
+        b.classList.toggle("active", b.dataset.lang === currentLang);
+      });
+    }
+
+    function setLang(lang) {
+      if (!lang || lang === currentLang) return;
+      currentLang = lang;
+      try { localStorage.setItem("sw_lang", currentLang); } catch (_) {}
+      document.documentElement.setAttribute("lang", currentLang);
+      applyLanguage();
+      updateLangMenu();
+    }
+
+    if (langIconBtn && langMenu) {
+      langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
+      langMenu.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-lang]");
+        if (!btn) return;
+        setLang(btn.dataset.lang);
+        langMenu.classList.remove("show");
+      });
+      document.addEventListener("click", (e) => {
+        const inMenu = langMenu.contains(e.target) || langIconBtn.contains(e.target);
+        if (!inMenu) langMenu.classList.remove("show");
+      });
+      updateLangMenu();
+    }
+
+    window.addEventListener("storage", (e) => {
+      if (e.key !== "sw_lang") return;
+      const lang = e.newValue || "th";
+      if (lang && lang !== currentLang) {
+        currentLang = lang;
+        document.documentElement.setAttribute("lang", currentLang);
+        applyLanguage();
+        updateLangMenu();
+      }
+    });
 
     // Toggle Password Visibility
     function togglePass() {
@@ -210,9 +397,9 @@
     if (!actionCode || mode !== 'resetPassword') {
       Swal.fire({
         icon: 'error',
-        title: 'ลิงก์ไม่ถูกต้อง',
-        text: 'ลิงก์นี้อาจหมดอายุหรือถูกใช้งานไปแล้ว',
-        confirmButtonText: 'กลับหน้าเข้าสู่ระบบ',
+        title: tr("invalidLinkTitle"),
+        text: tr("invalidLinkText"),
+        confirmButtonText: tr("invalidLinkConfirm"),
         confirmButtonColor: '#10b981',
         allowOutsideClick: false
       }).then(() => {
@@ -227,20 +414,20 @@
       const newPassword = document.getElementById('newPassword').value;
 
       if(newPassword.length < 6) {
-        Swal.fire({ icon: 'warning', title: 'รหัสผ่านสั้นเกินไป', text: 'กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร', confirmButtonColor: '#eab308' });
+        Swal.fire({ icon: 'warning', title: tr("shortPassTitle"), text: tr("shortPassText"), confirmButtonColor: '#eab308' });
         return;
       }
 
-      btnSubmit.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> กำลังบันทึก...';
+      btnSubmit.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> ${tr("saving")}`;
       btnSubmit.disabled = true;
 
       auth.confirmPasswordReset(actionCode, newPassword)
         .then(() => {
           Swal.fire({
             icon: 'success',
-            title: 'สำเร็จ!',
-            text: 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว',
-            confirmButtonText: 'เข้าสู่ระบบทันที',
+            title: tr("successTitle"),
+            text: tr("successText"),
+            confirmButtonText: tr("successConfirm"),
             confirmButtonColor: '#10b981',
             allowOutsideClick: false
           }).then((result) => {
@@ -250,19 +437,19 @@
           });
         })
         .catch((error) => {
-          btnSubmit.innerHTML = 'ยืนยันการเปลี่ยนรหัส';
+          btnSubmit.innerHTML = tr("resetSubmit");
           btnSubmit.disabled = false;
           
-          let msg = "เกิดข้อผิดพลาด กรุณาลองใหม่";
-          if (error.code === 'auth/expired-action-code') msg = "ลิงก์หมดอายุแล้ว กรุณาขอลิงก์ใหม่";
-          if (error.code === 'auth/invalid-action-code') msg = "ลิงก์ไม่ถูกต้องหรือถูกใช้ไปแล้ว";
-          if (error.code === 'auth/weak-password') msg = "รหัสผ่านง่ายเกินไป";
+          let msg = tr("errorGeneric");
+          if (error.code === 'auth/expired-action-code') msg = tr("errExpiredLink");
+          if (error.code === 'auth/invalid-action-code') msg = tr("errInvalidLink");
+          if (error.code === 'auth/weak-password') msg = tr("errWeakPassword");
 
           Swal.fire({
             icon: 'error',
-            title: 'ไม่สำเร็จ',
+            title: tr("errorTitle"),
             text: msg,
-            confirmButtonText: 'ตกลง',
+            confirmButtonText: tr("errorConfirm"),
             confirmButtonColor: '#ef4444'
           });
         });

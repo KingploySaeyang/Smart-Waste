@@ -106,7 +106,7 @@ window.SW_Translations.ms = {
     filterZoneLabel: "Zon",
     filterAreaLabel: "Kawasan Kecil",
     filterBinLabel: "BIN / Pemilik",
-    filterBinPlaceholder: "🔍 Tapis mengikut BIN atau nama pemilik",
+    filterBinPlaceholder: "Tapis mengikut BIN atau nama pemilik",
     filterZoneAll: "📍 Semua Zon",
     filterAreaAll: "📍 Semua",
 
@@ -430,7 +430,7 @@ window.SW_Translations.ms = {
 
     /* ---------- Common ---------- */
     menuBtn: "☰ Menu",
-    scheduleSearch: "🔍 Cari Tarikh/Zon/Kenderaan/Pemandu/Kawasan Servis.",
+    scheduleSearch: "Cari Tarikh/Zon/Kenderaan/Pemandu/Kawasan Servis.",
 
     /* ---------- Header ---------- */
     addScheduleHeaderTitle: "Cipta Jadual Lori",
@@ -551,6 +551,7 @@ window.SW_Translations.ms = {
     usageTitle: "Pemantauan Lori Masa Nyata",
     usageHint: "Rekod operasi lori secara masa nyata",
     usageThDate: "Tarikh",
+    usageThZone: "Zon",
     usageThStart: "Mula",
     usageThEnd: "Tamat",
     usageThDuration: "Tempoh",
@@ -582,10 +583,10 @@ window.SW_Translations.ms = {
     // =====================================================
 
     /* ---------- Page / Header ---------- */
-    pageTitle_driverDashboard: "Smart Waste - Papan Pemuka Kakitangan Pemandu",
+    pageTitle_driverDashboard: "Smart Waste - Kerja Hari Ini Kakitangan Pemandu",
     pageSub_driverDashboard: "Ringkasan kerja hari ini dan laluan lori sampah",
     pageTitle_driverSchedule: "Smart Waste - Jadual Kakitangan Pemandu",
-    mainTitle_driverDashboard: "Papan Pemuka Kakitangan Pemandu",
+    mainTitle_driverDashboard: "Kerja Hari Ini Kakitangan Pemandu",
     mainSubtitle_driverDashboard: "Ringkasan kerja hari ini dan laluan lori sampah",
     mainTitle_driverSchedule: "Jadual Kakitangan Pemandu",
     mainSubtitle_driverSchedule: "Lihat semua syif (tertunggak, hari ini, syif seterusnya)",
@@ -694,7 +695,7 @@ window.SW_Translations.ms = {
     scanWeightBefore: "Berat Sisa",
 
     /* ---------- Navigation ---------- */
-    navDashboard: "Papan Pemuka",
+    navDashboard: "Kerja Hari Ini",
     navSchedule: "Jadual",
     btnBackDashboard: "Kembali ke Papan Pemuka",
     btnBackLogin: "Kembali ke Log Masuk",

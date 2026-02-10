@@ -292,7 +292,7 @@
     .usage-table td.driver,
     .usage-table th.driver{
       text-align: left;
-      font-weight: 600;
+      font-weight: 800;
     }
     .usage-table tbody tr[data-truck]{
       cursor: pointer;
@@ -736,52 +736,75 @@
     }
 
     /* =========================
-   Language Dropdown (Modern)
+   Language Dropdown (Login Style)
    ========================= */
     .lang-switcher {
       position: relative;
     }
 
+    .lang-switcher .icon-btn {
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .lang-switcher .icon-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+    }
+    .lang-switcher .icon-btn:active { transform: scale(0.96); }
+
     .lang-menu {
       position: absolute;
-      top: 46px;
+      top: 54px;
       right: 0;
       background: #ffffff;
-      border-radius: 14px;
-      padding: 6px;
-      min-width: 180px;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+      border-radius: 18px;
+      padding: 8px;
+      min-width: 190px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
       display: none;
+      flex-direction: column;
+      gap: 6px;
       z-index: 1200;
     }
 
     .lang-menu.show {
-      display: block;
+      display: flex;
     }
 
     .lang-menu button {
       width: 100%;
       text-align: left;
-      padding: 10px 14px;
-      border-radius: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
       border: none;
       background: transparent;
       font-size: 15px;
+      font-weight: 600;
       cursor: pointer;
       transition: background 0.15s ease;
+      color: #0f172a;
     }
 
     .lang-menu button:hover {
-      background: #e0f2fe;
+      background: #f1f5f9;
     }
 
     .lang-menu button:active {
-      background: #bae6fd;
+      background: #e2e8f0;
     }
 
     .lang-menu button.active {
       background: #e0f2fe;
-      font-weight: 600;
+      color: var(--accent, #0ea5e9);
+      font-weight: 700;
     }
   </style>
 </head>
@@ -881,29 +904,29 @@
   <!-- การ์ดเด้งเพิ่มรถใหม่ -->
   <div id="createOverlay" class="overlay" style="display:none;">
     <div id="createPanel" class="card overlay-card compact">
-      <h3 id="createPanelTitle"></h3>
+      <h3 id="createPanelTitle">เพิ่มรถเก็บขยะ</h3>
 
       <div class="form-row">
         <div>
-          <label id="zoneSelectLabel"></label>
-          <select id="truckZoneSelect">
-            <option value=""></option>
-          </select>
+            <label id="zoneSelectLabel">เลือกเขต</label>
+            <select id="truckZoneSelect">
+              <option value="">เลือกเขต</option>
+            </select>
         </div>
 
       </div>
 
       <div class="form-row">
         <div>
-          <label id="truckIdLabel"></label>
-          <input id="truckIdPreview" readonly />
+            <label id="truckIdLabel">รหัสรถ</label>
+            <input id="truckIdPreview" readonly />
         </div>
       </div>
 
       <div class="overlay-actions" style="margin-top:12px;">
-        <button id="btnCancelCreate" class="ghost"></button>
-        <button id="btnSaveTruck" type="button" class="primary"></button>
-      </div>
+          <button id="btnCancelCreate" class="ghost">ยกเลิก</button>
+          <button id="btnSaveTruck" type="button" class="primary">บันทึก</button>
+        </div>
 
     </div>
   </div>
@@ -927,6 +950,7 @@
     const truckRunsUnsubMap = {};    // truckId -> unsubscribe active runs
     const truckActiveMap = {};       // truckId -> bool
     const truckZoneMap = {};         // truckId -> zoneId
+    const truckDisplayNameMap = {};  // truckId -> display name
 
     const binMarkers = {};           // zone_binDocId -> marker
     let binsDataUnsub = null;        // listener สำหรับ bin_data
@@ -942,6 +966,12 @@
     const langIconBtn = document.getElementById("langIconBtn");
     const langMenu = document.getElementById("langMenu");
     const langSelect = document.getElementById('langSelect');
+    const syncLangMenuActive = (lang) => {
+      if (!langMenu || !lang) return;
+      langMenu.querySelectorAll("button[data-lang]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === lang);
+      });
+    };
     const pageLoader = document.getElementById("pageLoader");
     const loaderTextEl = document.getElementById("loaderText");
 
@@ -1002,6 +1032,7 @@
       (LangState && typeof LangState.getLang === "function")
         ? LangState.getLang()
         : (localStorage.getItem("sw_lang") || "th");
+    syncLangMenuActive(currentLang);
 
     function t(key) {
       const dict =
@@ -1010,6 +1041,7 @@
         {};
       return dict[key] !== undefined ? dict[key] : key;
     }
+
 
     function setStatusForm(text, type) {
       if (typeof msg === "undefined" || !msg) return;
@@ -1062,6 +1094,18 @@
         .replace('%m%', m)
         .replace('%s%', s);
 
+    }
+
+    function updateTruckPopupsLanguage() {
+      Object.keys(truckMarkers).forEach(truckId => {
+        const marker = truckMarkers[truckId];
+        if (!marker) return;
+        const displayName = truckDisplayNameMap[truckId] || truckId || "-";
+        const statusLabel = truckActiveMap[truckId] ? t('truckActiveLabel') : t('truckInactiveLabel');
+        const popupHtml = `<b>${displayName}</b><br>${statusLabel}`;
+        if (marker.getPopup()) marker.getPopup().setContent(popupHtml);
+        else marker.bindPopup(popupHtml);
+      });
     }
 
     function showUsageMessage(key) {
@@ -1184,6 +1228,7 @@
         const marker = L.marker([lat, lng], { icon: buildTruckIcon(isActive) }).addTo(map);
         truckMarkers[truckId] = marker;
         const displayName = tr.data.name || tr.data.truckId || truckId;
+        truckDisplayNameMap[truckId] = displayName;
         marker.bindPopup(`<b>${displayName}</b><br>${t('truckInactiveLabel')}`);
       });
 
@@ -1559,11 +1604,16 @@
       const zoneTh = document.getElementById('usageThZone');
       if (zoneTh) zoneTh.textContent = t('usageThZone');
 
-      document.getElementById('usageThStart').textContent = t('usageThStart');
-      document.getElementById('usageThEnd').textContent = t('usageThEnd');
-      document.getElementById('usageThDuration').textContent = t('usageThDuration');
-      document.getElementById('usageThLat').textContent = t('usageThLat');
-      document.getElementById('usageThLng').textContent = t('usageThLng');
+      const usageStartTh = document.getElementById('usageThStart');
+      if (usageStartTh) usageStartTh.textContent = t('usageThStart');
+      const usageEndTh = document.getElementById('usageThEnd');
+      if (usageEndTh) usageEndTh.textContent = t('usageThEnd');
+      const usageDurationTh = document.getElementById('usageThDuration');
+      if (usageDurationTh) usageDurationTh.textContent = t('usageThDuration');
+      const usageLatTh = document.getElementById('usageThLat');
+      if (usageLatTh) usageLatTh.textContent = t('usageThLat');
+      const usageLngTh = document.getElementById('usageThLng');
+      if (usageLngTh) usageLngTh.textContent = t('usageThLng');
 
       // overlay เพิ่มรถ
       const createTitleEl = document.getElementById('createPanelTitle');
@@ -1585,7 +1635,9 @@
       //   const isActive = !!truckActiveMap[id];
       //   m.bindPopup(isActive ? t('mapPopupTruckActive') : t('mapPopupTruckInactive'));
       // });
+      updateTruckPopupsLanguage();
       updateTruckInfoPanel();
+      updateUsageEmptyState();
     }
 
     function changeLanguage(lang) {
@@ -1598,11 +1650,7 @@
         }
 
         // ✅ highlight ภาษาใน dropdown
-        if (langMenu) {
-          document
-            .querySelectorAll("#langMenu button")
-            .forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
-        }
+        syncLangMenuActive(lang);
 
         if (langSelect) langSelect.value = currentLang;
         applyLanguage();
@@ -1633,6 +1681,7 @@
         if (lang && lang !== currentLang) {
           currentLang = lang;
           if (langSelect) langSelect.value = lang;
+          syncLangMenuActive(lang);
           applyLanguage();
         }
       });
@@ -1695,6 +1744,7 @@
     truckZoneSelect.addEventListener("change", refreshTruckIdPreview);
 
     function openCreateOverlay() {
+      applyLanguage();
       createOverlay.style.display = 'flex';
       createPanel.style.animation = 'none';
       void createPanel.offsetWidth;
@@ -1878,6 +1928,7 @@
         updateTruckMarkerVisibility(truckId);
 
         const displayName = truckObj?.data?.name || data.truckName || data.truckId || truckId || "-";
+        truckDisplayNameMap[truckId] = displayName;
         const popupHtml =
           `<b>${displayName}</b><br>` +
           (isActive ? t('truckActiveLabel') : t('truckInactiveLabel'));
@@ -2179,13 +2230,17 @@
   }
 
   const placeholder = usageBody.querySelector('tr[data-empty="1"]');
-  if (!placeholder) {
-    nonDataRows.forEach(tr => tr.remove());
-    const tr = document.createElement("tr");
-    tr.dataset.empty = "1";
-    tr.innerHTML = `<td colspan="5" class="muted">${t('noData')}</td>`;
-    usageBody.appendChild(tr);
+  if (placeholder) {
+    const cell = placeholder.querySelector("td");
+    if (cell) cell.textContent = t('noData');
+    return;
   }
+
+  nonDataRows.forEach(tr => tr.remove());
+  const tr = document.createElement("tr");
+  tr.dataset.empty = "1";
+  tr.innerHTML = `<td colspan="6" class="muted">${t('noData')}</td>`;
+  usageBody.appendChild(tr);
 }
 
     function setupUsageSearch(){

@@ -301,6 +301,31 @@
             })} g`;
         }
 
+        function normalizeFillLevel(value) {
+            if (typeof value !== "number" || Number.isNaN(value)) return null;
+            return Math.max(0, Math.min(100, Math.round(value)));
+        }
+
+        function renderFillLevel(level) {
+            if (typeof level !== "number" || Number.isNaN(level)) {
+                binFill.style.height = "0%";
+                binPercent.textContent = "--";
+                binFill.style.background = "linear-gradient(180deg, #cbd5e1, #cbd5e1)";
+                return;
+            }
+
+            binFill.style.height = level + "%";
+            binPercent.textContent = level + "%";
+
+            if (level >= 80) {
+                binFill.style.background = "linear-gradient(180deg, #ef4444, #ef4444)";
+            } else if (level >= 50) {
+                binFill.style.background = "linear-gradient(180deg, #f59e0b, #f59e0b)";
+            } else {
+                binFill.style.background = "linear-gradient(180deg, #10b981, #10b981)";
+            }
+        }
+
         // --- UPDATED: Load My Bins (Group Query) ---
         async function loadMyBins() {
             myBins = [];
@@ -380,8 +405,7 @@
                     : (typeof entry.weight === "number" ? entry.weight : null);
             binWeight.textContent = formatWeight(weightValue);
 
-            binFill.style.height = "0%";
-            binPercent.textContent = "0%";
+            renderFillLevel(normalizeFillLevel(entry.fillLevel));
             liveBadge.style.display = "none";
 
             if (!entry.macAddress) {
@@ -398,7 +422,26 @@
                 const device = snapshot.val();
                 console.log("📦 RTDB DATA =", device);
 
-                if (!device || typeof device.lastUpdate !== "number") {
+                if (!device) {
+                    setOffline(T.errNoDevice);
+                    return;
+                }
+
+                const level = normalizeFillLevel(device.fillLevel);
+                if (level !== null) {
+                    renderFillLevel(level);
+                }
+
+                if (typeof device.lastUpdate === "number") {
+                    binUpdated.textContent = formatTimestamp(device.lastUpdate);
+                }
+                if (typeof device.weight === "number") {
+                    binWeight.textContent = formatWeight(device.weight);
+                } else if (typeof device.weightGram === "number") {
+                    binWeight.textContent = formatWeight(device.weightGram);
+                }
+
+                if (typeof device.lastUpdate !== "number") {
                     setOffline(T.errNoDevice);
                     return;
                 }
@@ -410,33 +453,15 @@
                     return;
                 }
 
-                if (typeof device.fillLevel !== "number") {
+                if (level === null) {
                     setStatus(T.errNoFillLevel, "err");
                     return;
-                }
-
-                const level = Math.max(0, Math.min(100, Math.round(device.fillLevel)));
-
-                binFill.style.height = level + "%";
-                binPercent.textContent = level + "%";
-
-                if (level > 80) {
-                    binFill.style.background = "linear-gradient(180deg, #dc2626, #ef4444)";
-                } else {
-                    binFill.style.background = "linear-gradient(180deg, #f97316, #fb923c)";
                 }
 
                 liveBadge.style.background = "#dcfce7";
                 liveBadge.style.color = "#16a34a";
                 liveBadge.innerHTML = `<span class="live-dot"></span> ${T.binLive}`;
-
                 liveBadge.style.display = "inline-flex";
-                binUpdated.textContent = new Date(device.lastUpdate).toLocaleString("th-TH");
-                if (typeof device.weight === "number") {
-                    binWeight.textContent = formatWeight(device.weight);
-                } else if (typeof device.weightGram === "number") {
-                    binWeight.textContent = formatWeight(device.weightGram);
-                }
                 setStatus(`${T.statusLive} ${level}%`, "ok");
             };
 
@@ -448,9 +473,6 @@
             liveBadge.style.background = "#fee2e2";
             liveBadge.style.color = "#dc2626";
             liveBadge.innerHTML = T.binOffline;
-
-            binFill.style.height = "0%";
-            binPercent.textContent = "--";
 
             setStatus(msg || T.errOffline, "err");
         }

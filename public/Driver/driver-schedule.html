@@ -210,63 +210,64 @@
     .lang-switcher select { display: none; }
 
     .icon-btn {
-      width: 58px;
-      height: 58px;
-      min-height: 58px;
-      border-radius: 18px;
-      border: 1px solid var(--border);
-      background: #fff;
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(6px);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 10px 22px rgba(17, 24, 39, .06);
-      transition: transform .2s, border-color .2s, box-shadow .2s;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
+    .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); }
     .icon-btn:active { transform: scale(0.96); }
 
-    .icon-btn:hover {
-      border-color: rgba(0, 0, 0, .22);
-      box-shadow: 0 14px 28px rgba(17, 24, 39, .09);
-    }
-
     .icon-btn i {
-      font-size: 28px;
-      color: #000;
+      font-size: 22px;
+      color: #0f172a;
       opacity: 1;
     }
 
     .lang-menu {
       position: absolute;
       right: 0;
-      top: 60px;
+      top: 54px;
       background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: var(--shadow);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 18px;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
       display: none;
-      overflow: hidden;
-      min-width: 120px;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 190px;
       z-index: 1500;
+      padding: 8px;
     }
 
-    .lang-menu.show { display: block; }
+    .lang-menu.show { display: flex; }
 
     .lang-menu button {
       width: 100%;
       border: none;
       background: transparent;
-      padding: 12px 14px;
+      padding: 10px 12px;
       text-align: left;
       cursor: pointer;
-      font-weight: 800;
-      color: var(--text-main);
+      font-weight: 600;
+      color: #0f172a;
       white-space: nowrap;
+      border-radius: 12px;
+      font-size: 15px;
     }
 
-    .lang-menu button:hover { background: #f8fafc; }
-    .lang-menu button.active { background: #e0edff; }
+    .lang-menu button:hover { background: #f1f5f9; }
+    .lang-menu button.active { background: #e0f2fe; color: var(--accent, #0ea5e9); font-weight: 700; }
 
     .header-user {
       display: flex;
@@ -1119,7 +1120,7 @@
     }
 
     const DRIVER_MENU_ITEMS = [
-      { id: "dashboard", href: "Driver.html", icon: "ri-dashboard-2-line", labelKey: "navDashboard" },
+      { id: "dashboard", href: "Driver.html", icon: "ri-truck-line", labelKey: "navDashboard" },
       { id: "schedule", href: "driver-schedule.html", icon: "ri-calendar-event-line", labelKey: "navSchedule" }
     ];
 
@@ -1465,6 +1466,7 @@
             : `<div>${escapeHtml(tr("scheduleEmpty"))}</div>`;
         }
 
+        daySheet.dataset.date = dateStr;
         daySheet.classList.remove("hidden");
         daySheet.setAttribute("aria-hidden", "false");
         document.body.classList.add("sheet-open");
@@ -1499,6 +1501,7 @@
     if (typeof window.currentLang === "undefined") {
       window.currentLang = localStorage.getItem("sw_lang") || "th";
     }
+    let currentLang = window.currentLang;
 
     if (typeof window.tr !== "function") {
       window.tr = function (key) {
@@ -1536,9 +1539,19 @@
     }
 
     langSelect.addEventListener("change", e => {
-      currentLang = e.target.value;
+      const nextLang = e.target.value;
+      if (!nextLang || nextLang === currentLang) return;
+      currentLang = nextLang;
+      window.currentLang = nextLang;
       localStorage.setItem("sw_lang", currentLang);
-      location.reload();
+      applyTranslations();
+      syncLangMenu(currentLang);
+      renderCalendarGrid();
+      if (daySheet && !daySheet.classList.contains("hidden")) {
+        const dateStr = daySheet.dataset.date;
+        const item = dateStr ? scheduleByDate[dateStr] : null;
+        if (item) openDaySheet(dateStr, item);
+      }
     });
 
     document.addEventListener("driver-auth-ready", () => {
@@ -1547,6 +1560,7 @@
       currentUser = driver;
       fillDriverProfile();
       applyTranslations();
+      syncLangMenu(currentLang);
 
       const zoneId = currentUser.zoneId;
       if (!zoneId) {
