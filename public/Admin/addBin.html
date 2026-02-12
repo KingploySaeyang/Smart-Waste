@@ -136,7 +136,6 @@
 
             <div class="modal-footer">
                 <span class="muted" id="zoneModalMsg"></span>
-                <button type="button" class="ghost" id="btnZoneDone">ยืนยัน</button>
             </div>
 
         </div>
@@ -162,7 +161,6 @@
 
             <div class="modal-footer">
                 <span class="muted" id="areaModalMsg"></span>
-                <button type="button" class="ghost" id="btnAreaDone">ยืนยัน</button>
             </div>
 
         </div>
@@ -351,7 +349,7 @@
     <script>
         // ✅ App Check DEBUG MODE (ต้องอยู่บนสุด)
         // self.FIREBASE_APPCHECK_DEBUG_TOKEN = '69292E90-2881-49B1-8F56-968136924EB1';
-        // ---------- Firebase Configuration (จากโค้ดเดิมของคุณ) ----------
+        // ---------- Firebase Configuration ----------
         var firebaseConfig = {
             apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
             authDomain: "smart-waste2568.firebaseapp.com",
@@ -372,7 +370,6 @@
 
         const zonesCol = db.collection("zones");
         const usersCol = db.collection("users");
-        const allBinsGroup = db.collectionGroup("bin_data");
 
         // 🚨 NEW: RTDB Paths for RFID and MAC/Sensor
         const RTDB_RFID_PATH = 'rfid_input/tagId';
@@ -483,20 +480,20 @@
 
         // zone modal
         const zoneModalBackdrop = $("zoneModalBackdrop");
+        const zoneModalTitleEl = $("zoneModalTitle");
         const zoneListEl = $("zoneList");
         const newZoneNameEl = $("newZoneName");
         const btnAddZone = $("btnAddZone");
         const btnCloseZoneModal = $("btnCloseZoneModal");
-        const btnZoneDone = $("btnZoneDone");
         const zoneModalMsg = $("zoneModalMsg");
 
         // area modal
         const areaModalBackdrop = $("areaModalBackdrop");
+        const areaModalTitleEl = $("areaModalTitle");
         const areaListEl = $("areaList");
         const newAreaNameEl = $("newAreaName");
         const btnAddArea = $("btnAddArea");
         const btnCloseAreaModal = $("btnCloseAreaModal");
-        const btnAreaDone = $("btnAreaDone");
         const areaModalMsg = $("areaModalMsg");
         const currentZoneNameEl = $("currentZoneName");
         let activeZoneForArea = null;
@@ -763,6 +760,26 @@
             }
         }
 
+        async function deleteAreasForZone(zoneId) {
+            const colRef = zonesCol.doc(zoneId).collection("areas");
+            const snap = await colRef.get();
+            if (snap.empty) return;
+            let batch = db.batch();
+            let count = 0;
+            const commits = [];
+            snap.forEach(doc => {
+                batch.delete(doc.ref);
+                count += 1;
+                if (count >= 400) {
+                    commits.push(batch.commit());
+                    batch = db.batch();
+                    count = 0;
+                }
+            });
+            if (count > 0) commits.push(batch.commit());
+            await Promise.all(commits);
+        }
+
         function renderZoneList() {
             zoneListEl.innerHTML = "";
             if (!zones.length) {
@@ -803,7 +820,12 @@
                     }
 
                     try {
-                        const binsSnap = await allBinsGroup.where("zone", "==", oldId).limit(1).get();
+                        const binsSnap = await db
+                            .collection("smartbins")
+                            .doc(oldId)
+                            .collection("bin_data")
+                            .limit(1)
+                            .get();
                         if (!binsSnap.empty) {
                             zoneModalMsg.textContent = getTranslation('zoneModalCannotChange');
                             zoneModalMsg.className = "muted err";
@@ -837,18 +859,29 @@
                     }
                 });
 
-                // เปลี่ยนจาก zonesCol.doc(id).delete(); เป็นการอัปเดต isHidden
                 btnDeleteZone.addEventListener("click", async () => {
                     const id = input.dataset.oldId;
-                    if (!confirm(`${t('areaModalConfirmDelete')} "${id}"?`)) return;
+                    if (!confirm(`${t('zoneModalConfirmDelete')} "${id}"?`)) return;
                     try {
-                        // อัปเดต isHidden เป็น true แทนการลบจริง
-                        await zonesCol.doc(id).update({
-                            isHidden: true,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                        const binsSnap = await db
+                            .collection("smartbins")
+                            .doc(id)
+                            .collection("bin_data")
+                            .limit(1)
+                            .get();
+                        if (!binsSnap.empty) {
+                            zoneModalMsg.textContent = t('zoneModalCannotDelete');
+                            zoneModalMsg.className = "muted err";
+                            return;
+                        }
+                        await deleteAreasForZone(id);
+                        await zonesCol.doc(id).delete();
                         zoneModalMsg.textContent = getTranslation('zoneModalDeleteSuccess');
                         zoneModalMsg.className = "muted ok";
+                        zones = zones.filter(z => z.id !== id);
+                        renderZoneSelect();
+                        renderZoneList();
+                        renderZoneFilterOptions();
                     } catch (e) {
                         zoneModalMsg.textContent = `Error: ${e.message}`;
                         zoneModalMsg.className = "muted err";
@@ -884,7 +917,6 @@
 
 
         btnCloseZoneModal.addEventListener("click", closeZoneModal);
-        btnZoneDone.addEventListener("click", closeZoneModal);
 
         btnAddZone.addEventListener("click", async () => {
             const name = newZoneNameEl.value.trim();
@@ -897,9 +929,15 @@
                 const docRef = zonesCol.doc(name);
                 const snap = await docRef.get();
                 if (snap.exists) {
-                    zoneModalMsg.textContent = getTranslation('zoneModalExists');
-                    zoneModalMsg.className = "muted err";
-                    return;
+                    const data = snap.data() || {};
+                    if (data.isHidden) {
+                        await deleteAreasForZone(name);
+                        await docRef.delete();
+                    } else {
+                        zoneModalMsg.textContent = getTranslation('zoneModalExists');
+                        zoneModalMsg.className = "muted err";
+                        return;
+                    }
                 }
                 await docRef.set({
                     name,
@@ -947,10 +985,16 @@
 
             try {
                 const snap = await getAreasCollection(zoneId).orderBy("name").get();
-                areas = snap.docs.map(doc => ({
-                    id: doc.id,
-                    name: (doc.data() && doc.data().name) || doc.id
-                }));
+                areas = snap.docs
+                    .map(doc => {
+                        const data = doc.data() || {};
+                        if (data.isHidden) return null;
+                        return {
+                            id: doc.id,
+                            name: data.name || doc.id
+                        };
+                    })
+                    .filter(Boolean);
                 renderAreaSelect();
             } catch (e) {
                 console.error("loadAreasForZone error", e);
@@ -1074,7 +1118,13 @@
 
                     try {
                         // Check if renaming is possible (no existing bins in this area)
-                        const binsSnap = await allBinsGroup.where("zone", "==", zoneId).where("area", "==", oldId).limit(1).get();
+                        const binsSnap = await db
+                            .collection("smartbins")
+                            .doc(zoneId)
+                            .collection("bin_data")
+                            .where("area", "==", oldId)
+                            .limit(1)
+                            .get();
                         if (!binsSnap.empty) {
                             areaModalMsg.textContent = t('areaModalCannotChange');
                             areaModalMsg.className = "muted err";
@@ -1109,20 +1159,32 @@
                     }
                 });
 
-                // เปลี่ยนจากการสั่ง delete() เป็น update({ isHidden: true })
                 btnDeleteArea.addEventListener("click", async () => {
                     const id = input.dataset.oldId;
                     if (!confirm(`${t('areaModalConfirmDelete')} "${id}"?`)) return;
                     try {
-                        await getAreasCollection(zoneId).doc(id).update({
-                            isHidden: true,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                        const binsSnap = await db
+                            .collection("smartbins")
+                            .doc(zoneId)
+                            .collection("bin_data")
+                            .where("area", "==", id)
+                            .limit(1)
+                            .get();
+                        if (!binsSnap.empty) {
+                            areaModalMsg.textContent = t('areaModalCannotDelete');
+                            areaModalMsg.className = "muted err";
+                            return;
+                        }
+                        await getAreasCollection(zoneId).doc(id).delete();
                         areaModalMsg.textContent = t('areaModalDeleteSuccess');
                         areaModalMsg.className = "muted ok";
-                        // รีโหลดลิสต์ใน Modal
-                        const updatedSnap = await getAreasCollection(zoneId).where("isHidden", "==", false).get();
-                        // ... โค้ดแสดงผลใหม่ ...
+                        row.remove();
+                        if (!areaListEl.querySelector(".zone-row")) {
+                            areaListEl.innerHTML = `<p class="muted">${t('areaModalNoAreas')}</p>`;
+                        }
+                        if (zoneEl.value === zoneId) {
+                            loadAreasForZone(zoneId);
+                        }
                     } catch (e) {
                         areaModalMsg.textContent = `Error: ${e.message}`;
                     }
@@ -1134,11 +1196,43 @@
             });
         }
 
+        function updateAreaModalTitlePrefix() {
+            if (!areaModalTitleEl) return;
+            const prefix = `${t('areaModalTitle')} ${t('inZone')} `;
+            const firstNode = areaModalTitleEl.firstChild;
+            if (firstNode && firstNode.nodeType === Node.TEXT_NODE) {
+                firstNode.textContent = prefix;
+            } else {
+                areaModalTitleEl.insertBefore(document.createTextNode(prefix), areaModalTitleEl.firstChild);
+            }
+        }
+
+        function updateZoneListButtonLabels() {
+            if (!zoneListEl) return;
+            zoneListEl.querySelectorAll(".zone-row").forEach(row => {
+                const saveBtn = row.querySelector("button.primary");
+                if (saveBtn) saveBtn.textContent = t('zoneModalSaveBtn');
+                const delBtn = row.querySelector("button.danger");
+                if (delBtn) delBtn.textContent = t('zoneModalDeleteBtn');
+            });
+        }
+
+        function updateAreaListButtonLabels() {
+            if (!areaListEl) return;
+            areaListEl.querySelectorAll(".zone-row").forEach(row => {
+                const saveBtn = row.querySelector("button.primary");
+                if (saveBtn) saveBtn.textContent = t('areaModalSaveBtn');
+                const delBtn = row.querySelector("button.danger");
+                if (delBtn) delBtn.textContent = t('areaModalDeleteBtn');
+            });
+        }
+
         async function openAreaModal(zoneId) {
             if (!zoneId) return;
 
             activeZoneForArea = zoneId;
             currentZoneNameEl.textContent = zoneId;
+            updateAreaModalTitlePrefix();
             areaModalMsg.textContent = "";
             areaModalMsg.className = "muted";
             newAreaNameEl.value = "";
@@ -1149,10 +1243,16 @@
             let currentAreas = [];
             try {
                 const snap = await getAreasCollection(zoneId).orderBy("name").get();
-                currentAreas = snap.docs.map(doc => ({
-                    id: doc.id,
-                    name: (doc.data() && doc.data().name) || doc.id
-                }));
+                currentAreas = snap.docs
+                    .map(doc => {
+                        const data = doc.data() || {};
+                        if (data.isHidden) return null;
+                        return {
+                            id: doc.id,
+                            name: data.name || doc.id
+                        };
+                    })
+                    .filter(Boolean);
             } catch (e) {
                 console.error("Error loading areas for modal:", e);
             }
@@ -1178,7 +1278,6 @@
 
 
         btnCloseAreaModal.addEventListener("click", closeAreaModal);
-        btnAreaDone.addEventListener("click", closeAreaModal);
 
         btnAddArea.addEventListener("click", async () => {
             const zoneId = activeZoneForArea;
@@ -1194,9 +1293,14 @@
                 const docRef = areasColRef.doc(name);
                 const snap = await docRef.get();
                 if (snap.exists) {
-                    areaModalMsg.textContent = t('areaModalExists');
-                    areaModalMsg.className = "muted err";
-                    return;
+                    const data = snap.data() || {};
+                    if (data.isHidden) {
+                        await docRef.delete();
+                    } else {
+                        areaModalMsg.textContent = t('areaModalExists');
+                        areaModalMsg.className = "muted err";
+                        return;
+                    }
                 }
                 await docRef.set({
                     name,
@@ -1217,10 +1321,16 @@
 
                 // รีโหลดรายการใน Modal Area (ถ้ายังเปิดอยู่)
                 const updatedSnap = await getAreasCollection(zoneId).orderBy("name").get();
-                const updatedAreas = updatedSnap.docs.map(doc => ({
-                    id: doc.id,
-                    name: (doc.data() && doc.data().name) || doc.id
-                }));
+                const updatedAreas = updatedSnap.docs
+                    .map(doc => {
+                        const data = doc.data() || {};
+                        if (data.isHidden) return null;
+                        return {
+                            id: doc.id,
+                            name: data.name || doc.id
+                        };
+                    })
+                    .filter(Boolean);
                 renderAreaList(zoneId, updatedAreas);
                 // -----------------------
 
@@ -1936,10 +2046,16 @@
                 if (!areasColRef) return;
 
                 const unsub = areasColRef.orderBy("name").onSnapshot(snap => {
-                    const zoneAreas = snap.docs.map(doc => ({
-                        id: doc.id,
-                        name: (doc.data() && doc.data().name) || doc.id
-                    }));
+                    const zoneAreas = snap.docs
+                        .map(doc => {
+                            const data = doc.data() || {};
+                            if (data.isHidden) return null;
+                            return {
+                                id: doc.id,
+                                name: data.name || doc.id
+                            };
+                        })
+                        .filter(Boolean);
                     areasCache.set(zoneId, zoneAreas);
 
                     filterAreaSelect.innerHTML = `<option value="">${t('filterAreaAll')}</option>`;
@@ -1971,6 +2087,7 @@
 
             snap.forEach(doc => {
                 const d = doc.data() || {};
+                if (d.isHidden) return;
                 zones.push({
                     id: doc.id,
                     name: d.name || doc.id
@@ -2523,8 +2640,14 @@ ${t('duplicateRfidTitle')}: ${rfid}
             $("editCancel").textContent = t('btnCancel');
             $("btnSaveChanges").textContent = t('btnSaveChanges');
 
-            newZoneNameEl.placeholder = t('zoneModalNewPlaceholder');
-            newAreaNameEl.placeholder = t('areaModalNewPlaceholder');
+            if (zoneModalTitleEl) zoneModalTitleEl.textContent = t('zoneModalTitle');
+            if (btnAddZone) btnAddZone.textContent = t('zoneModalAddBtn');
+            updateAreaModalTitlePrefix();
+            if (btnAddArea) btnAddArea.textContent = t('areaModalAddBtn');
+            newZoneNameEl.placeholder = t('zoneModalNewZonePlaceholder');
+            newAreaNameEl.placeholder = t('areaModalNewAreaPlaceholder');
+            updateZoneListButtonLabels();
+            updateAreaListButtonLabels();
             // ---------- MAC Address ----------
             $("labelMacAddress").textContent = t('labelMacAddress');
             updateConfirmMacLabel();

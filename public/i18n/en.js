@@ -178,8 +178,17 @@ window.SW_Translations.en = {
     areaSelectAdd: "+ Add area",
 
     /* ---------- Zone Modal ---------- */
+    zoneModalTitle: "Manage Zones",
+    zoneModalAddBtn: "Add Zone",
+    zoneModalConfirmBtn: "Confirm",
     zoneModalNewPlaceholder: "New zone name",
+    zoneModalNewZonePlaceholder: "New zone name",
     areaModalNewPlaceholder: "New area name",
+    areaModalTitle: "Manage Areas",
+    areaModalAddBtn: "Add Area",
+    areaModalConfirmBtn: "Confirm",
+    areaModalNewAreaPlaceholder: "New area name",
+    inZone: "in Zone",
 
     zoneModalNoZones: "No zones available",
     zoneModalSaveBtn: "Save",
@@ -193,6 +202,8 @@ window.SW_Translations.en = {
     zoneModalDeleteSuccess: "Zone deleted",
     zoneModalAddSuccess: "Zone added successfully",
     zoneModalAddError: "Failed to add zone",
+    zoneModalConfirmDelete: "Confirm zone deletion",
+    zoneModalCannotDelete: "Cannot delete zone with existing bins",
 
     /* ---------- Area Modal ---------- */
     areaModalNoAreas: "No sub-areas available",
@@ -208,6 +219,7 @@ window.SW_Translations.en = {
     areaModalAddSuccess: "Area added successfully",
     areaModalAddError: "Failed to add area",
     areaModalConfirmDelete: "Confirm deletion",
+    areaModalCannotDelete: "Cannot delete area with existing bins",
 
     /* ---------- MAC ---------- */
     labelMacAddress: "Device Board (MAC Address)",

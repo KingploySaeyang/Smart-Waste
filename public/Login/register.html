@@ -10,10 +10,10 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  
+
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <script src="../i18n/lang.js" defer></script>
   <script src="../i18n/th.js" defer></script>
   <script src="../i18n/en.js" defer></script>
@@ -33,187 +33,539 @@
       --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Prompt", sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
-    input { user-select: text; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Prompt", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
 
-    html, body {
-      width: 100%; height: 100%; overflow: hidden;
-      background-color: var(--bg-color); position: relative;
+    input {
+      user-select: text;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      position: relative;
     }
 
     /* Fixed Background */
     .bg-shape {
-      position: absolute; border-radius: 50%; filter: blur(80px);
-      z-index: 0; opacity: 0.6; animation: blobFloat 10s infinite alternate; pointer-events: none;
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: 0;
+      opacity: 0.6;
+      animation: blobFloat 10s infinite alternate;
+      pointer-events: none;
     }
-    .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #34d399; }
-    .blob-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #38bdf8; animation-delay: -2s; }
-    .blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: #2dd4bf; animation-delay: -5s; }
-    @keyframes blobFloat { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, 50px) scale(1.1); } }
+
+    .blob-1 {
+      top: -10%;
+      left: -10%;
+      width: 500px;
+      height: 500px;
+      background: #34d399;
+    }
+
+    .blob-2 {
+      bottom: -10%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: #38bdf8;
+      animation-delay: -2s;
+    }
+
+    .blob-3 {
+      top: 40%;
+      left: 40%;
+      width: 300px;
+      height: 300px;
+      background: #2dd4bf;
+      animation-delay: -5s;
+    }
+
+    @keyframes blobFloat {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      100% {
+        transform: translate(30px, 50px) scale(1.1);
+      }
+    }
 
     /* Scroll Container */
     .scroll-container {
-      width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
-      position: relative; z-index: 10; -webkit-overflow-scrolling: touch; 
-      display: flex; justify-content: center; padding: 40px 20px;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      z-index: 10;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
     }
+
     .content-wrapper {
-      width: 100%; max-width: 1100px; display: grid; grid-template-columns: 0.9fr 1.1fr; /* ปรับสัดส่วนให้ฝั่งขวากว้างหน่อยเพราะฟอร์มยาว */
-      gap: 3rem; align-items: center; margin: auto 0;
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      /* ปรับสัดส่วนให้ฝั่งขวากว้างหน่อยเพราะฟอร์มยาว */
+      gap: 3rem;
+      align-items: center;
+      margin: auto 0;
     }
 
     /* --- Fixed UI Elements --- */
-    
+
     /* Mobile Logo (Back Button) */
     .mobile-logo-fixed {
-      display: none; position: absolute; top: 20px; left: 20px; z-index: 50;
+      display: none;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 50;
       text-decoration: none;
     }
+
     .mobile-logo-fixed .brand-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
-      color: var(--primary-dark); padding: 8px 16px; border-radius: 50px; 
-      font-weight: 600; font-size: 14px; border: 1px solid rgba(16, 185, 129, 0.2);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      color: var(--primary-dark);
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s;
     }
-    .mobile-logo-fixed:active .brand-badge { transform: scale(0.95); }
-    .mobile-logo-fixed .brand-badge i { font-size: 1.2rem; color: var(--primary); }
+
+    .mobile-logo-fixed:active .brand-badge {
+      transform: scale(0.95);
+    }
+
+    .mobile-logo-fixed .brand-badge i {
+      font-size: 1.2rem;
+      color: var(--primary);
+    }
 
     /* Lang Switcher */
-    .lang-switcher { position: absolute; top: 20px; right: 20px; z-index: 50; }
+    .lang-switcher {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 50;
+    }
+
     .lang-switcher .icon-btn {
-      width: 44px; height: 44px; border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
       border: 1px solid rgba(15, 23, 42, 0.08);
-      background: rgba(255,255,255,0.9); backdrop-filter: blur(6px);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(6px);
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
-    .lang-switcher .icon-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16); }
-    .lang-switcher .icon-btn:active { transform: scale(0.96); }
-    .lang-switcher .icon-btn img { width: 22px; height: 22px; }
-    .lang-switcher .icon-btn i { font-size: 22px; color: #0f172a; }
+
+    .lang-switcher .icon-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+    }
+
+    .lang-switcher .icon-btn:active {
+      transform: scale(0.96);
+    }
+
+    .lang-switcher .icon-btn img {
+      width: 22px;
+      height: 22px;
+    }
+
+    .lang-switcher .icon-btn i {
+      font-size: 22px;
+      color: #0f172a;
+    }
 
     .lang-menu {
-      position: absolute; top: 54px; right: 0;
-      background: #fff; padding: 8px; border-radius: 18px;
+      position: absolute;
+      top: 54px;
+      right: 0;
+      background: #fff;
+      padding: 8px;
+      border-radius: 18px;
       border: 1px solid rgba(226, 232, 240, 0.9);
       box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-      display: none; flex-direction: column; gap: 6px; min-width: 190px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 190px;
     }
-    .lang-menu.show { display: flex; animation: scaleIn 0.2s ease; }
+
+    .lang-menu.show {
+      display: flex;
+      animation: scaleIn 0.2s ease;
+    }
+
     .lang-menu button {
-      background: transparent; border: none; padding: 10px 12px; text-align: left;
-      border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: #0f172a;
+      background: transparent;
+      border: none;
+      padding: 10px 12px;
+      text-align: left;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #0f172a;
     }
-    .lang-menu button:hover { background: #f1f5f9; }
-    .lang-menu button.active { background: #e0f2fe; color: var(--accent, #0ea5e9); font-weight: 700; }
+
+    .lang-menu button:hover {
+      background: #f1f5f9;
+    }
+
+    .lang-menu button.active {
+      background: #e0f2fe;
+      color: var(--accent, #0ea5e9);
+      font-weight: 700;
+    }
 
     /* Desktop Back Button */
     .btn-back-desktop {
-      position: absolute; top: 20px; left: 20px; z-index: 50;
-      width: 42px; height: 42px;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 50;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      text-decoration: none; color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       font-size: 1.2rem;
       transition: all 0.2s ease;
     }
+
     .btn-back-desktop:hover {
-      background: white; color: var(--primary);
-      box-shadow: 0 6px 15px rgba(0,0,0,0.15); transform: translateY(-2px);
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
     }
 
     /* --- Content Styles --- */
-    .left-panel { padding: 10px; animation: slideInLeft 0.8s ease-out; }
+    .left-panel {
+      padding: 10px;
+      animation: slideInLeft 0.8s ease-out;
+    }
+
     .left-brand {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(16, 185, 129, 0.15); color: var(--primary-dark);
-      padding: 6px 14px; border-radius: 50px; font-weight: 600; font-size: 13px;
-      margin-bottom: 15px; border: 1px solid rgba(16, 185, 129, 0.2);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--primary-dark);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 15px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
     }
-    .left-panel h1 { 
-      font-size: 3rem; line-height: 1.1; font-weight: 800;
+
+    .left-panel h1 {
+      font-size: 3rem;
+      line-height: 1.1;
+      font-weight: 800;
       background: linear-gradient(135deg, #065f46 0%, #059669 100%);
-      background-clip: text; -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent; margin-bottom: 1rem;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
     }
-    .left-panel p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; opacity: 0.9; }
+
+    .left-panel p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      opacity: 0.9;
+    }
 
     .register-card {
-      width: 100%; max-width: 480px;
-      background: var(--glass-bg); backdrop-filter: blur(24px);
-      border: 1px solid var(--glass-border); border-radius: 28px; padding: 2.5rem;
-      box-shadow: var(--shadow-lg); transition: all 0.3s ease; animation: slideInUp 0.8s ease-out;
+      width: 100%;
+      max-width: 480px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      padding: 2.5rem;
+      box-shadow: var(--shadow-lg);
+      transition: all 0.3s ease;
+      animation: slideInUp 0.8s ease-out;
     }
-    .form-header { text-align: center; margin-bottom: 1.5rem; }
-    .form-header h2 { font-size: 1.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem; }
-    .form-header p { color: var(--text-muted); font-size: 0.9rem; }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-header h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
 
     /* Form Grid & Inputs */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .col-full { grid-column: span 2; }
-    .input-wrapper { position: relative; margin-bottom: 5px; }
-    
-    .input-icon { 
-      position: absolute; left: 16px; top: 50%; transform: translateY(-50%); 
-      color: #94a3b8; font-size: 1.2rem; z-index: 5; pointer-events: none;
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
-    
+
+    .col-full {
+      grid-column: span 2;
+    }
+
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 5px;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 1.2rem;
+      z-index: 5;
+      pointer-events: none;
+    }
+
     .toggle-password {
-      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-      color: #cbd5e1; font-size: 1.2rem; z-index: 5; cursor: pointer; transition: color 0.2s;
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #cbd5e1;
+      font-size: 1.2rem;
+      z-index: 5;
+      cursor: pointer;
+      transition: color 0.2s;
     }
-    .toggle-password:hover { color: var(--primary); }
+
+    .toggle-password:hover {
+      color: var(--primary);
+    }
 
     input {
-      width: 100%; height: 50px; 
-      padding: 0 48px 0 48px; 
-      border: 2px solid transparent; background: #f8fafc; border-radius: 14px;
-      font-size: 1rem; color: var(--text-main); transition: 0.2s;
-      position: relative; z-index: 1;
+      width: 100%;
+      height: 50px;
+      padding: 0 48px 0 48px;
+      border: 2px solid transparent;
+      background: #f8fafc;
+      border-radius: 14px;
+      font-size: 1rem;
+      color: var(--text-main);
+      transition: 0.2s;
+      position: relative;
+      z-index: 1;
     }
-    input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
-    input:focus + .input-icon { color: var(--primary); }
+
+    input:focus {
+      outline: none;
+      background: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+
+    input:focus+.input-icon {
+      color: var(--primary);
+    }
 
     .btn-submit {
-      width: 100%; height: 54px; margin-top: 15px;
-      background: linear-gradient(90deg, #10b981, #059669); color: white;
-      border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 600;
-      cursor: pointer; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.25);
-      transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      height: 54px;
+      margin-top: 15px;
+      background: linear-gradient(90deg, #10b981, #059669);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.25);
+      transition: transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    .btn-submit:active { transform: scale(0.97); }
-    .btn-submit:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
 
-    .form-footer { text-align: center; margin-top: 1.5rem; font-size: 0.95rem; color: var(--text-muted); }
-    .link-login { color: var(--primary-dark); font-weight: 700; cursor: pointer; text-decoration: none; margin-left: 5px; }
-    
-    #status { margin-top: 15px; text-align: center; font-size: 0.9rem; border-radius: 12px; padding: 5px; }
-    .err { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 8px; display: inline-block; }
+    .btn-submit:active {
+      transform: scale(0.97);
+    }
+
+    .btn-submit:disabled {
+      background: #cbd5e1;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .form-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .link-login {
+      color: var(--primary-dark);
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      margin-left: 5px;
+    }
+
+    #status {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 0.9rem;
+      border-radius: 12px;
+      padding: 5px;
+    }
+
+    .err {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: inline-block;
+    }
 
     /* --- 📱 MOBILE OPTIMIZATIONS --- */
     @media (max-width: 900px) {
-      .scroll-container { display: block; padding: 80px 20px 40px 20px; }
-      .mobile-logo-fixed { display: flex; } /* Show mobile logo */
-      .btn-back-desktop { display: none; } /* Hide desktop back button */
-      .content-wrapper { display: block; width: 100%; }
-      .left-panel { display: none; } /* Hide left panel on mobile */
+      .scroll-container {
+        display: block;
+        padding: 80px 20px 40px 20px;
+      }
 
-      .register-card { width: 100%; max-width: 100%; padding: 25px 20px; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
-      
-      .form-grid { grid-template-columns: 1fr; gap: 12px; } /* Stack inputs on mobile */
-      .col-full { grid-column: span 1; }
-      
-      input { font-size: 16px !important; height: 52px; background: #f1f5f9; }
-      .btn-submit { height: 56px; font-size: 1.15rem; }
+      .mobile-logo-fixed {
+        display: flex;
+      }
+
+      /* Show mobile logo */
+      .btn-back-desktop {
+        display: none;
+      }
+
+      /* Hide desktop back button */
+      .content-wrapper {
+        display: block;
+        width: 100%;
+      }
+
+      .left-panel {
+        display: none;
+      }
+
+      /* Hide left panel on mobile */
+
+      .register-card {
+        width: 100%;
+        max-width: 100%;
+        padding: 25px 20px;
+        background: #ffffff;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      /* Stack inputs on mobile */
+      .col-full {
+        grid-column: span 1;
+      }
+
+      input {
+        font-size: 16px !important;
+        height: 52px;
+        background: #f1f5f9;
+      }
+
+      .btn-submit {
+        height: 56px;
+        font-size: 1.15rem;
+      }
     }
 
-    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
   </style>
 </head>
 
@@ -232,7 +584,8 @@
 
   <div class="lang-switcher">
     <button class="icon-btn" id="langIconBtn" type="button">
-      <img src="../Admin/images/lang-icon.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/197/197374.png'" alt="Language">
+      <img src="../Admin/images/lang-icon.png"
+        onerror="this.src='https://cdn-icons-png.flaticon.com/512/197/197374.png'" alt="Language">
     </button>
     <div class="lang-menu" id="langMenu">
       <button type="button" data-lang="th">🇹🇭 ไทย</button>
@@ -243,7 +596,7 @@
 
   <div class="scroll-container">
     <div class="content-wrapper">
-      
+
       <div class="left-panel">
         <div class="left-brand"><i class="ri-recycle-line"></i> Smart Waste</div>
         <h1 id="txtJoinSubtitle">Join Us &<br>Start Tracking</h1>
@@ -260,19 +613,19 @@
           <div class="form-grid">
             <div class="col-full input-wrapper">
               <i class="ri-user-smile-line input-icon"></i>
-              <input id="fullName" type="text" placeholder="ชื่อ-นามสกุล (Full Name)" required />
+              <input id="fullName" type="text" placeholder="ชื่อ-นามสกุล" required />
             </div>
             <div class="input-wrapper">
               <i class="ri-user-3-line input-icon"></i>
-              <input id="username" type="text" placeholder="Username" required />
+              <input id="username" type="text" placeholder="ชื่อผู้ใช้" required />
             </div>
             <div class="input-wrapper">
               <i class="ri-phone-line input-icon"></i>
-              <input id="phone" type="tel" placeholder="Phone" required />
+              <input id="phone" type="tel" placeholder="เบอร์โทรศัพท์" required />
             </div>
             <div class="col-full input-wrapper">
               <i class="ri-mail-line input-icon"></i>
-              <input id="email" type="email" placeholder="อีเมล (Email)" required />
+              <input id="email" type="email" placeholder="อีเมล" required />
             </div>
 
             <div class="input-wrapper">
@@ -282,7 +635,7 @@
             </div>
 
             <div class="input-wrapper">
-              <i class="ri-shield-check-line input-icon"></i> 
+              <i class="ri-shield-check-line input-icon"></i>
               <input id="confirmPassword" type="password" placeholder="ยืนยันรหัสผ่าน" required />
               <i class="ri-eye-off-line toggle-password" onclick="togglePass('confirmPassword', this)"></i>
             </div>
@@ -308,7 +661,7 @@
     const statusEl = $("status");
     const submitBtn = $("submitBtn");
 
-    // --- Firebase Config (ตรวจสอบค่า Config ให้ถูกต้อง) ---
+    // --- Firebase Config ---
     var firebaseConfig = {
       apiKey: "AIzaSyCyTSsRmX642krpJYOI-TfFpIhnxJBbzxk",
       authDomain: "smart-waste2568.firebaseapp.com",
@@ -316,6 +669,7 @@
       storageBucket: "smart-waste2568.firebasestorage.app",
       messagingSenderId: "122699752010",
       appId: "1:122699752010:web:c22ab9b28ac15beaedbcb3"
+
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -327,11 +681,11 @@
       if (input.type === "password") {
         input.type = "text";
         icon.classList.replace("ri-eye-off-line", "ri-eye-line");
-        icon.style.color = "#10b981"; 
+        icon.style.color = "#10b981";
       } else {
         input.type = "password";
         icon.classList.replace("ri-eye-line", "ri-eye-off-line");
-        icon.style.color = "#cbd5e1"; 
+        icon.style.color = "#cbd5e1";
       }
     }
 
@@ -356,7 +710,7 @@
     const langIconBtn = $("langIconBtn");
     const langMenu = $("langMenu");
     let currentLang = localStorage.getItem("sw_lang") || "th";
-    
+
     // Fallback Dictionary
     const fallbackDict = {
       th: {
@@ -376,12 +730,12 @@
         successReg: "ลงทะเบียนสำเร็จ!",
         welcomeTitle: "ร่วมกับเรา<br>เริ่มติดตามได้ทันที",
         welcomeDesc: "ลงทะเบียนเพื่อเข้าถึงระบบจัดการขยะอัจฉริยะ ติดตามรถขยะ และดูสถิติย้อนหลังได้ทันที",
-        fullNamePh: "ชื่อ-นามสกุล",
-        usernamePh: "ชื่อผู้ใช้",
-        phonePh: "เบอร์โทรศัพท์",
-        emailPh: "อีเมล",
-        passwordPh: "รหัสผ่าน",
-        confirmPasswordPh: "ยืนยันรหัสผ่าน",
+        regFullNamePh: "ชื่อ-นามสกุล",
+        regUsernamePh: "ชื่อผู้ใช้",
+        regPhonePh: "เบอร์โทรศัพท์",
+        regEmailPh: "อีเมล",
+        regPasswordPh: "รหัสผ่าน",
+        regConfirmPasswordPh: "ยืนยันรหัสผ่าน",
         btnBack: "กลับหน้าหลัก"
       },
       en: {
@@ -401,12 +755,12 @@
         successReg: "Registration Successful!",
         welcomeTitle: "Join Us &<br>Start Tracking",
         welcomeDesc: "Register to access smart waste management, track trucks, and view statistics instantly.",
-        fullNamePh: "Full name",
-        usernamePh: "Username",
-        phonePh: "Phone",
-        emailPh: "Email address",
-        passwordPh: "Password",
-        confirmPasswordPh: "Confirm password",
+        regFullNamePh: "Full name",
+        regUsernamePh: "Username",
+        regPhonePh: "Phone number",
+        regEmailPh: "Email address",
+        regPasswordPh: "Password",
+        regConfirmPasswordPh: "Confirm password",
         btnBack: "Back Home"
       },
       ms: {
@@ -426,20 +780,20 @@
         successReg: "Pendaftaran Berjaya!",
         welcomeTitle: "Sertai Kami &<br>Mula Menjejak",
         welcomeDesc: "Daftar untuk mengakses pengurusan sisa pintar, menjejak lori, dan melihat statistik dengan serta-merta.",
-        fullNamePh: "Nama penuh",
-        usernamePh: "Nama pengguna",
-        phonePh: "Telefon",
-        emailPh: "Alamat e-mel",
-        passwordPh: "Kata laluan",
-        confirmPasswordPh: "Sahkan kata laluan",
+        regFullNamePh: "Nama penuh",
+        regUsernamePh: "Nama pengguna",
+        regPhonePh: "Nombor telefon",
+        regEmailPh: "Alamat e-mel",
+        regPasswordPh: "Kata laluan",
+        regConfirmPasswordPh: "Sahkan kata laluan",
         btnBack: "Kembali ke Laman Utama"
       }
     };
 
-    function tr(key) { 
+    function tr(key) {
       const primary = window.SW_Translations && window.SW_Translations[currentLang];
       const fallback = fallbackDict[currentLang] || fallbackDict.en;
-      return (primary && primary[key]) || fallback[key] || fallbackDict.th[key] || key; 
+      return (primary && primary[key]) || fallback[key] || fallbackDict.th[key] || key;
     }
 
     function applyLanguage() {
@@ -447,35 +801,35 @@
       const backBtn = document.querySelector(".btn-back-desktop");
       if (backBtn) backBtn.setAttribute("title", tr("btnBack"));
       // Text Content
-      if($("txtRegHeader")) $("txtRegHeader").textContent = tr("regHeader");
-      if($("txtRegHint")) $("txtRegHint").textContent = tr("regHint");
-      if($("txtBtnReg")) $("txtBtnReg").textContent = tr("btnReg");
-      if($("txtHaveAccount")) $("txtHaveAccount").textContent = tr("haveAccount");
-      if($("backLoginBtn")) $("backLoginBtn").textContent = tr("btnLogin");
-      
+      if ($("txtRegHeader")) $("txtRegHeader").textContent = tr("regHeader");
+      if ($("txtRegHint")) $("txtRegHint").textContent = tr("regHint");
+      if ($("txtBtnReg")) $("txtBtnReg").textContent = tr("btnReg");
+      if ($("txtHaveAccount")) $("txtHaveAccount").textContent = tr("haveAccount");
+      if ($("backLoginBtn")) $("backLoginBtn").textContent = tr("btnLogin");
+
       // Welcome Text (Left Panel)
-      if($("txtJoinSubtitle")) $("txtJoinSubtitle").innerHTML = tr("welcomeTitle");
-      if($("txtJoinDesc")) $("txtJoinDesc").textContent = tr("welcomeDesc");
-      
+      if ($("txtJoinSubtitle")) $("txtJoinSubtitle").innerHTML = tr("welcomeTitle");
+      if ($("txtJoinDesc")) $("txtJoinDesc").textContent = tr("welcomeDesc");
+
       // Placeholders
-      if($("fullName")) $("fullName").placeholder = tr("fullNamePh");
-      if($("username")) $("username").placeholder = tr("usernamePh");
-      if($("phone")) $("phone").placeholder = tr("phonePh");
-      if($("email")) $("email").placeholder = tr("emailPh");
-      if($("password")) $("password").placeholder = tr("passwordPh");
-      if($("confirmPassword")) $("confirmPassword").placeholder = tr("confirmPasswordPh");
+      if ($("fullName")) $("fullName").placeholder = tr("regFullNamePh");
+      if ($("username")) $("username").placeholder = tr("regUsernamePh");
+      if ($("phone")) $("phone").placeholder = tr("regPhonePh");
+      if ($("email")) $("email").placeholder = tr("regEmailPh");
+      if ($("password")) $("password").placeholder = tr("regPasswordPh");
+      if ($("confirmPassword")) $("confirmPassword").placeholder = tr("regConfirmPasswordPh");
 
       langMenu.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.lang === currentLang));
     }
-    
+
     langIconBtn.addEventListener("click", () => langMenu.classList.toggle("show"));
-    langMenu.addEventListener("click", (e) => { 
-      if(e.target.tagName === "BUTTON") { 
-        currentLang = e.target.dataset.lang; 
-        localStorage.setItem("sw_lang", currentLang); 
-        applyLanguage(); 
-        langMenu.classList.remove("show"); 
-      } 
+    langMenu.addEventListener("click", (e) => {
+      if (e.target.tagName === "BUTTON") {
+        currentLang = e.target.dataset.lang;
+        localStorage.setItem("sw_lang", currentLang);
+        applyLanguage();
+        langMenu.classList.remove("show");
+      }
     });
 
     function goBack() {
@@ -506,58 +860,59 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = { fullName: $("fullName").value.trim(), username: $("username").value.trim(), phone: $("phone").value.replace(/\D/g, ""), email: $("email").value.trim(), pass: $("password").value, confirm: $("confirmPassword").value };
-      if(data.fullName.length < 3) return showErr(tr("errNameTooShort"));
-      if(data.pass.length < 6) return showErr(tr("errPassTooShort"));
-      if(data.pass !== data.confirm) return showErr(tr("errPassMatch"));
-      
+      if (data.fullName.length < 3) return showErr(tr("errNameTooShort"));
+      if (data.pass.length < 6) return showErr(tr("errPassTooShort"));
+      if (data.pass !== data.confirm) return showErr(tr("errPassMatch"));
+
       setLoading(true);
       let newUser = null;
       try {
         const check = await db.collection("users").doc(data.username).get();
-        if(check.exists) throw new Error(tr("errUserExists"));
-        
+        if (check.exists) throw new Error(tr("errUserExists"));
+
         const cred = await auth.createUserWithEmailAndPassword(data.email, data.pass);
         newUser = cred.user;
-        
-        await db.collection("users").doc(data.username).set({ 
-          uid: newUser.uid, 
-          username: data.username, 
-          fullName: data.fullName, 
-          email: data.email, 
-          phone: data.phone, 
-          status: 2, 
-          createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+
+        await db.collection("users").doc(data.username).set({
+          uid: newUser.uid,
+          username: data.username,
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          status: 2,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
+
         Swal.fire({ icon: 'success', title: tr("successReg"), timer: 1500, showConfirmButton: false }).then(() => location.href = "login.html");
       } catch (err) {
         console.error(err);
-        if(newUser) newUser.delete();
+        if (newUser) newUser.delete();
         let msg = err.message;
-        if(err.code === "auth/email-already-in-use") msg = tr("errEmailExists");
+        if (err.code === "auth/email-already-in-use") msg = tr("errEmailExists");
         showErr(msg);
         setLoading(false);
       }
     });
 
-    function showErr(msg) { 
-      statusEl.innerHTML = `<span class="err"><i class="ri-error-warning-fill"></i> ${msg}</span>`; 
-      submitBtn.classList.add("shake"); 
-      setTimeout(() => submitBtn.classList.remove("shake"), 500); 
+    function showErr(msg) {
+      statusEl.innerHTML = `<span class="err"><i class="ri-error-warning-fill"></i> ${msg}</span>`;
+      submitBtn.classList.add("shake");
+      setTimeout(() => submitBtn.classList.remove("shake"), 500);
     }
-    
-    function setLoading(state) { 
-      submitBtn.disabled = state; 
-      submitBtn.innerHTML = state ? `<i class="ri-loader-4-line ri-spin"></i> ${tr("processing")}` : `<span id="txtBtnReg">${tr("btnReg")}</span> <i class="ri-arrow-right-line"></i>`; 
+
+    function setLoading(state) {
+      submitBtn.disabled = state;
+      submitBtn.innerHTML = state ? `<i class="ri-loader-4-line ri-spin"></i> ${tr("processing")}` : `<span id="txtBtnReg">${tr("btnReg")}</span> <i class="ri-arrow-right-line"></i>`;
     }
-    
+
     // Init Lang
-    try { setTimeout(applyLanguage, 100); } catch(e) { console.warn("Lang init warning:", e); }
-    
+    try { setTimeout(applyLanguage, 100); } catch (e) { console.warn("Lang init warning:", e); }
+
     // CSS Shake Animation
-    const st = document.createElement("style"); 
-    st.innerHTML = `@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} } .shake{animation:shake 0.4s ease}`; 
+    const st = document.createElement("style");
+    st.innerHTML = `@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} } .shake{animation:shake 0.4s ease}`;
     document.head.appendChild(st);
   </script>
 </body>
+
 </html>

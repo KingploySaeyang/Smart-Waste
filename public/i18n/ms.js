@@ -168,8 +168,17 @@ window.SW_Translations.ms = {
     areaSelectDefault: "Pilih kawasan",
     areaSelectAdd: "+ Tambah kawasan",
 
+    zoneModalTitle: "Urus Zon",
+    zoneModalAddBtn: "Tambah Zon",
+    zoneModalConfirmBtn: "Sahkan",
     zoneModalNewPlaceholder: "Nama zon baharu",
+    zoneModalNewZonePlaceholder: "Nama zon baharu",
     areaModalNewPlaceholder: "Nama kawasan baharu",
+    areaModalTitle: "Urus Kawasan",
+    areaModalAddBtn: "Tambah Kawasan",
+    areaModalConfirmBtn: "Sahkan",
+    areaModalNewAreaPlaceholder: "Nama kawasan baharu",
+    inZone: "dalam Zon",
 
     zoneModalNoZones: "Tiada zon",
     zoneModalSaveBtn: "Simpan",
@@ -183,6 +192,8 @@ window.SW_Translations.ms = {
     zoneModalDeleteSuccess: "Zon dipadam",
     zoneModalAddSuccess: "Zon berjaya ditambah",
     zoneModalAddError: "Gagal menambah zon",
+    zoneModalConfirmDelete: "Sahkan pemadaman zon",
+    zoneModalCannotDelete: "Tidak boleh padam zon yang mempunyai tong",
 
     areaModalNoAreas: "Tiada kawasan",
     areaModalSaveBtn: "Simpan",
@@ -197,6 +208,7 @@ window.SW_Translations.ms = {
     areaModalAddSuccess: "Kawasan berjaya ditambah",
     areaModalAddError: "Gagal menambah kawasan",
     areaModalConfirmDelete: "Sahkan pemadaman",
+    areaModalCannotDelete: "Tidak boleh padam kawasan yang mempunyai tong",
 
     labelMacAddress: "Peranti (MAC Address)",
     btnConfirmMac: "Sahkan Peranti",
